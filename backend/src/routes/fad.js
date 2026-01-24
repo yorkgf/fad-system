@@ -1,0 +1,301 @@
+const { Router } = require('express')
+const { ObjectId } = require('mongodb')
+const { getCollection, Collections } = require('../utils/db.js')
+const { authMiddleware } = require('../utils/auth.js')
+
+const router = Router()
+
+// 获取FAD记录列表
+router.get('/', authMiddleware, async (req, res) => {
+  try {
+    const {
+      semester,
+      sourceType,
+      executed,
+      delivered,
+      student,
+      page = 1,
+      pageSize = 20
+    } = req.query
+
+    const filter = { 是否已撤回: { $ne: true } }
+
+    if (semester) filter.学期 = semester
+    if (sourceType) filter.FAD来源类型 = sourceType
+    if (executed === 'true') filter.是否已执行或冲抵 = true
+    if (executed === 'false') filter.是否已执行或冲抵 = false
+    if (delivered === 'true') filter.是否已发放 = true
+    if (delivered === 'false') filter.是否已发放 = { $ne: true }
+    if (student) filter.学生 = { $regex: student, $options: 'i' }
+
+    const skip = (parseInt(page) - 1) * parseInt(pageSize)
+    const limit = parseInt(pageSize)
+
+    const [records, total] = await Promise.all([
+      getCollection(Collections.FADRecords).find(filter).sort({ 记录日期: -1 }).skip(skip).limit(limit).toArray(),
+      getCollection(Collections.FADRecords).countDocuments(filter)
+    ])
+
+    res.json({ success: true, data: records, total })
+  } catch (error) {
+    console.error('Get FAD records error:', error)
+    res.status(500).json({ success: false, error: '获取FAD记录失败' })
+  }
+})
+
+// 获取未执行的FAD
+router.get('/unexecuted', authMiddleware, async (req, res) => {
+  try {
+    const { semester, sourceType, page = 1, pageSize = 20 } = req.query
+
+    const filter = {
+      是否已执行或冲抵: false,
+      是否已撤回: { $ne: true }
+    }
+
+    if (semester) filter.学期 = semester
+    if (sourceType) filter.FAD来源类型 = sourceType
+
+    const skip = (parseInt(page) - 1) * parseInt(pageSize)
+    const limit = parseInt(pageSize)
+
+    const [records, total] = await Promise.all([
+      getCollection(Collections.FADRecords).find(filter).sort({ 记录日期: -1 }).skip(skip).limit(limit).toArray(),
+      getCollection(Collections.FADRecords).countDocuments(filter)
+    ])
+
+    res.json({ success: true, data: records, total })
+  } catch (error) {
+    console.error('Get unexecuted FAD error:', error)
+    res.status(500).json({ success: false, error: '获取未执行FAD失败' })
+  }
+})
+
+// 获取未发放的FAD
+router.get('/undelivered', authMiddleware, async (req, res) => {
+  try {
+    const { semester, sourceType, page = 1, pageSize = 20 } = req.query
+
+    const filter = {
+      是否已发放: { $ne: true },
+      是否已撤回: { $ne: true }
+    }
+
+    if (semester) filter.学期 = semester
+    if (sourceType) filter.FAD来源类型 = sourceType
+
+    const skip = (parseInt(page) - 1) * parseInt(pageSize)
+    const limit = parseInt(pageSize)
+
+    const [records, total] = await Promise.all([
+      getCollection(Collections.FADRecords).find(filter).sort({ 记录日期: -1 }).skip(skip).limit(limit).toArray(),
+      getCollection(Collections.FADRecords).countDocuments(filter)
+    ])
+
+    res.json({ success: true, data: records, total })
+  } catch (error) {
+    console.error('Get undelivered FAD error:', error)
+    res.status(500).json({ success: false, error: '获取未发放FAD失败' })
+  }
+})
+
+// FAD统计
+router.get('/stats', authMiddleware, async (req, res) => {
+  try {
+    const { semester, studentClass } = req.query
+
+    const baseFilter = { 是否已撤回: { $ne: true } }
+    if (semester) baseFilter.学期 = semester
+    if (studentClass) baseFilter.班级 = studentClass
+
+    // 总体统计
+    const [total, executed, delivered, offset] = await Promise.all([
+      getCollection(Collections.FADRecords).countDocuments(baseFilter),
+      getCollection(Collections.FADRecords).countDocuments({ ...baseFilter, 是否已执行或冲抵: true }),
+      getCollection(Collections.FADRecords).countDocuments({ ...baseFilter, 是否已发放: true }),
+      getCollection(Collections.FADRecords).countDocuments({ ...baseFilter, 是否已冲销记录: true })
+    ])
+
+    // 按来源类型统计
+    const bySourceType = await getCollection(Collections.FADRecords).aggregate([
+      { $match: baseFilter },
+      {
+        $group: {
+          _id: '$FAD来源类型',
+          count: { $sum: 1 },
+          executed: { $sum: { $cond: ['$是否已执行或冲抵', 1, 0] } },
+          delivered: { $sum: { $cond: ['$是否已发放', 1, 0] } },
+          offset: { $sum: { $cond: ['$是否已冲销记录', 1, 0] } }
+        }
+      }
+    ]).toArray()
+
+    // 按班级统计
+    const byClass = await getCollection(Collections.FADRecords).aggregate([
+      { $match: baseFilter },
+      {
+        $group: {
+          _id: '$班级',
+          count: { $sum: 1 },
+          executed: { $sum: { $cond: ['$是否已执行或冲抵', 1, 0] } },
+          unexecuted: { $sum: { $cond: ['$是否已执行或冲抵', 0, 1] } }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 10 }
+    ]).toArray()
+
+    // 按学生统计
+    const byStudent = await getCollection(Collections.FADRecords).aggregate([
+      { $match: baseFilter },
+      {
+        $group: {
+          _id: { student: '$学生', class: '$班级' },
+          count: { $sum: 1 },
+          executed: { $sum: { $cond: ['$是否已执行或冲抵', 1, 0] } },
+          unexecuted: { $sum: { $cond: ['$是否已执行或冲抵', 0, 1] } },
+          offset: { $sum: { $cond: ['$是否已冲销记录', 1, 0] } },
+          dorm: { $sum: { $cond: [{ $eq: ['$FAD来源类型', 'dorm'] }, 1, 0] } },
+          teach: { $sum: { $cond: [{ $eq: ['$FAD来源类型', 'teach'] }, 1, 0] } },
+          other: { $sum: { $cond: [{ $eq: ['$FAD来源类型', 'other'] }, 1, 0] } }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: 20 }
+    ]).toArray()
+
+    res.json({
+      success: true,
+      data: {
+        total,
+        executed,
+        delivered,
+        offset,
+        bySourceType: bySourceType.map(s => ({
+          type: s._id || 'other',
+          count: s.count,
+          executed: s.executed,
+          delivered: s.delivered,
+          offset: s.offset
+        })),
+        byClass: byClass.map(c => ({
+          class: c._id,
+          count: c.count,
+          executed: c.executed,
+          unexecuted: c.unexecuted
+        })),
+        byStudent: byStudent.map(s => ({
+          student: s._id.student,
+          class: s._id.class,
+          count: s.count,
+          executed: s.executed,
+          unexecuted: s.unexecuted,
+          offset: s.offset,
+          dorm: s.dorm,
+          teach: s.teach,
+          other: s.other
+        }))
+      }
+    })
+  } catch (error) {
+    console.error('Get FAD stats error:', error)
+    res.status(500).json({ success: false, error: '获取FAD统计失败' })
+  }
+})
+
+// 执行FAD
+router.put('/:id/execute', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params
+
+    const result = await getCollection(Collections.FADRecords).updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          是否已执行或冲抵: true,
+          执行日期: new Date()
+        }
+      }
+    )
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, error: 'FAD记录不存在' })
+    }
+
+    res.json({ success: true, message: 'FAD执行成功' })
+  } catch (error) {
+    console.error('Execute FAD error:', error)
+    res.status(500).json({ success: false, error: 'FAD执行失败' })
+  }
+})
+
+// 发放FAD通知单
+router.put('/:id/deliver', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params
+    const { deliverTeacher } = req.body
+
+    const result = await getCollection(Collections.FADRecords).updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          是否已发放: true,
+          发放日期: new Date(),
+          发放老师: deliverTeacher || req.user.name
+        }
+      }
+    )
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, error: 'FAD记录不存在' })
+    }
+
+    res.json({
+      success: true,
+      data: {
+        是否已发放: true,
+        发放日期: new Date(),
+        发放老师: deliverTeacher || req.user.name
+      }
+    })
+  } catch (error) {
+    console.error('Deliver FAD error:', error)
+    res.status(500).json({ success: false, error: 'FAD发放失败' })
+  }
+})
+
+// 学生会FAD记录
+router.get('/student-union', authMiddleware, async (req, res) => {
+  try {
+    const { semester, page = 1, pageSize = 20 } = req.query
+
+    // 先获取学生会成员
+    const studentUnionMembers = await getCollection(Collections.Students)
+      .find({ 学生会: true })
+      .toArray()
+
+    const memberNames = studentUnionMembers.map(s => s.学生姓名)
+
+    const filter = {
+      学生: { $in: memberNames },
+      是否已撤回: { $ne: true }
+    }
+
+    if (semester) filter.学期 = semester
+
+    const skip = (parseInt(page) - 1) * parseInt(pageSize)
+    const limit = parseInt(pageSize)
+
+    const [records, total] = await Promise.all([
+      getCollection(Collections.FADRecords).find(filter).sort({ 记录日期: -1 }).skip(skip).limit(limit).toArray(),
+      getCollection(Collections.FADRecords).countDocuments(filter)
+    ])
+
+    res.json({ success: true, data: records, total })
+  } catch (error) {
+    console.error('Get student union FAD error:', error)
+    res.status(500).json({ success: false, error: '获取学生会FAD记录失败' })
+  }
+})
+
+module.exports = router

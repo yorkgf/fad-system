@@ -1,0 +1,43 @@
+service: fad-backend
+
+provider:
+  name: tencent
+  runtime: Nodejs18.15
+  region: ap-guangzhou
+  memorySize: 256
+  timeout: 30
+  environment:
+    MONGO_URI: mongodb://49.235.189.246:27017
+    DB_NAME: GHA
+    JWT_SECRET: ${env:JWT_SECRET}
+    SENDER_NAME: FAD管理系统
+
+plugins:
+  - serverless-tencent
+
+package:
+  exclude:
+    - node_modules/**
+    - .git/**
+    - .env
+    - upload/**
+
+functions:
+  api:
+    handler: src/index.handler
+    description: FAD Backend API
+    events:
+      - apigw:
+          parameters:
+            serviceName: fad-api
+            description: FAD管理后端API
+            environment: release
+            endpoints:
+              - path: /
+                method: ANY
+                description: API根路径
+                enableCORS: true
+              - path: /{proxy+}
+                method: ANY
+                description: 代理所有路径
+                enableCORS: true
