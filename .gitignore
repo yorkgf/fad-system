@@ -37,3 +37,6 @@ nul
 
 # Serverless
 .serverless/
+
+# Old appsmith export
+tencent-gha-fad-record/
