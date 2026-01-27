@@ -764,7 +764,7 @@ async function handleRewardOffset(student, semester, priorityOffset) {
         {
           $set: {
             是否已冲销记录: true,
-            冲销记录FAD_ID: targetFAD._id.toString()
+            '冲销记录FAD ID': targetFAD._id.toString()
           }
         }
       )
@@ -793,7 +793,7 @@ async function handleRewardOffset(student, semester, priorityOffset) {
         {
           $set: {
             是否已冲销记录: true,
-            冲销记录FAD_ID: targetFAD._id.toString()
+            '冲销记录FAD ID': targetFAD._id.toString()
           }
         }
       )
