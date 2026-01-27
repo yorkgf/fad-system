@@ -308,4 +308,63 @@ function getSourceTypeTag(type) {
   color: #909399;
   font-size: 14px;
 }
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  /* 筛选表单垂直布局 */
+  .filter-form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .filter-form :deep(.el-form-item) {
+    margin-right: 0 !important;
+    margin-bottom: 0 !important;
+    width: 100%;
+  }
+
+  .filter-form :deep(.el-form-item__label) {
+    width: 80px !important;
+    text-align: left;
+  }
+
+  .filter-form :deep(.el-form-item__content) {
+    flex: 1;
+  }
+
+  .filter-form :deep(.el-select),
+  .filter-form :deep(.el-input),
+  .filter-form :deep(.el-date-editor) {
+    width: 100% !important;
+  }
+
+  /* 按钮组 */
+  .filter-form :deep(.el-form-item:last-child .el-form-item__content) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .filter-form :deep(.el-form-item:last-child .el-button) {
+    flex: 1;
+    min-width: 80px;
+  }
+
+  /* 表格底部 */
+  .table-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .total-info {
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .filter-form :deep(.el-form-item__label) {
+    font-size: 13px !important;
+  }
+}
 </style>

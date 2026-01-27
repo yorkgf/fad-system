@@ -64,7 +64,8 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCommonStore } from '@/stores/common'
 import { getRewardablePraise, praiseToReward } from '@/api/room'
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import { PDFDocument, rgb } from 'pdf-lib'
+import fontkit from '@pdf-lib/fontkit'
 import dayjs from 'dayjs'
 
 const commonStore = useCommonStore()
@@ -112,55 +113,76 @@ async function generateRewardPDF(rewardData) {
     console.log('PDF模板加载成功, 大小:', templateBytes.byteLength)
 
     const pdfDoc = await PDFDocument.load(templateBytes)
+
+    // 注册 fontkit 以支持自定义字体
+    pdfDoc.registerFontkit(fontkit)
     console.log('PDF文档解析成功')
+
+    // 加载中文字体
+    const fontUrl = '/SourceHanSansSC-Regular.ttf'
+    let font
+    try {
+      const fontResponse = await fetch(fontUrl)
+      if (fontResponse.ok) {
+        const fontBytes = await fontResponse.arrayBuffer()
+        font = await pdfDoc.embedFont(fontBytes)
+        console.log('中文字体加载成功')
+      } else {
+        throw new Error('字体文件不存在')
+      }
+    } catch (fontError) {
+      console.warn('加载中文字体失败，尝试使用备用方案:', fontError)
+      // 如果没有中文字体，使用英文显示
+      const { StandardFonts } = await import('pdf-lib')
+      font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+    }
 
     // 获取第一页
     const pages = pdfDoc.getPages()
     const firstPage = pages[0]
 
-    // 嵌入字体
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
-
-    // 获取页面尺寸
+    // 获取页面尺寸 (A4: 595 x 842 点)
     const { width, height } = firstPage.getSize()
     console.log('页面尺寸:', width, height)
 
-    // 在PDF上添加文字（根据模板位置调整坐标）
-    const fontSize = 12
+    // 在PDF上添加文字
+    // PDF坐标系：原点在左下角，y轴向上
+    const fontSize = 14
     const textColor = rgb(0, 0, 0)
 
-    // 学生姓名
+    // 学生姓名 - Name (左上)
     firstPage.drawText(rewardData.student, {
       x: 180,
-      y: height - 195,
+      y: 580,
       size: fontSize,
       font,
       color: textColor
     })
 
-    // 班级
+    // 班级 - Class (右上)
     firstPage.drawText(rewardData.studentClass, {
-      x: 180,
-      y: height - 220,
+      x: 410,
+      y: 580,
       size: fontSize,
       font,
       color: textColor
     })
 
-    // 日期
+    // 奖励原因 - Reason
+    const reasonText = '累计10次寝室表扬兑换'
+    firstPage.drawText(reasonText, {
+      x: 180,
+      y: 530,
+      size: fontSize,
+      font,
+      color: textColor
+    })
+
+    // 日期 - Date
     const dateStr = dayjs(rewardData.date).format('YYYY-MM-DD')
     firstPage.drawText(dateStr, {
-      x: 180,
-      y: height - 245,
-      size: fontSize,
-      font,
-      color: textColor
-    })
-
-    // 事由
-    firstPage.drawText('累计10次寝室表扬兑换', {
-      x: 180,
-      y: height - 270,
+      x: 385,
+      y: 350,
       size: fontSize,
       font,
       color: textColor

@@ -522,4 +522,41 @@ function resetForm() {
   color: #909399;
   font-size: 12px;
 }
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .insert-record {
+    max-width: 100%;
+  }
+
+  /* 表单 label 顶部显示 */
+  :deep(.el-form-item__label) {
+    float: none !important;
+    display: block !important;
+    text-align: left !important;
+    padding-bottom: 8px !important;
+    width: 100% !important;
+  }
+
+  :deep(.el-form-item__content) {
+    margin-left: 0 !important;
+  }
+
+  .tip {
+    display: block;
+    margin-left: 0;
+    margin-top: 8px;
+  }
+
+  /* 标签换行显示 */
+  :deep(.el-tag) {
+    margin-bottom: 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .tip {
+    font-size: 11px;
+  }
+}
 </style>

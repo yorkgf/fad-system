@@ -663,7 +663,7 @@ function hasFADStatus(row) {
 .table-footer {
   display: flex;
   justify-content: flex-end;
-align-items: center;
+  align-items: center;
   margin-top: 16px;
   gap: 12px;
 }
@@ -681,5 +681,69 @@ align-items: center;
   color: #e6a23c;
   margin-bottom: 10px;
   font-weight: bold;
+}
+
+/* 响应式优化 */
+@media (max-width: 992px) {
+  .filters {
+    width: 100%;
+  }
+
+  .filters .el-select,
+  .filters .el-input {
+    width: calc(50% - 6px) !important;
+    min-width: 120px;
+  }
+
+  .filters .el-date-editor {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .filters {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .filters .el-select,
+  .filters .el-input,
+  .filters .el-date-editor {
+    width: 100% !important;
+  }
+
+  .filters .el-button {
+    width: 100%;
+  }
+
+  .table-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .table-footer .el-button {
+    width: 100%;
+  }
+
+  /* 撤回对话框响应式 */
+  :deep(.el-dialog) {
+    width: 90% !important;
+    max-width: 90% !important;
+  }
+
+  .chain-records :deep(.el-table) {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chain-title {
+    font-size: 13px;
+  }
 }
 </style>

@@ -12,10 +12,24 @@
   box-sizing: border-box;
 }
 
+html {
+  /* 防止 iOS 双击缩放 */
+  touch-action: manipulation;
+  /* 平滑滚动 */
+  scroll-behavior: smooth;
+  /* 防止文字大小自动调整 */
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB',
     'Microsoft YaHei', Arial, sans-serif;
   background: linear-gradient(135deg, #f0f7fc 0%, #e8f4f8 100%);
+  /* 防止橡皮筋滚动效果 */
+  overscroll-behavior: none;
+  /* 优化字体渲染 */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Element Plus 组件样式覆盖 - 清新校园风格 */
@@ -201,5 +215,237 @@ body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(91, 155, 213, 0.5);
+}
+
+/* ========== 移动端响应式优化 ========== */
+
+/* 表格响应式 - 移动端横向滚动 */
+@media (max-width: 768px) {
+  /* 表格容器横向滚动 */
+  .el-table {
+    width: 100% !important;
+  }
+
+  .el-card__body {
+    padding: 12px !important;
+    overflow-x: auto;
+  }
+
+  /* 表格内容最小宽度，确保可滚动 */
+  .el-table__body-wrapper {
+    overflow-x: auto !important;
+  }
+
+  /* 表格单元格紧凑 */
+  .el-table .el-table__cell {
+    padding: 8px 4px !important;
+    font-size: 13px !important;
+  }
+
+  .el-table th.el-table__cell {
+    padding: 10px 4px !important;
+    font-size: 13px !important;
+  }
+
+  /* 表格操作按钮紧凑 */
+  .el-table .el-button--small {
+    padding: 5px 8px !important;
+    font-size: 12px !important;
+  }
+
+  /* 表单响应式 - label 顶部显示 */
+  .el-form--label-top .el-form-item__label,
+  .el-form-item__label {
+    float: none !important;
+    display: block !important;
+    text-align: left !important;
+    padding-bottom: 8px !important;
+  }
+
+  .el-form-item__content {
+    margin-left: 0 !important;
+  }
+
+  /* 表单项间距调整 */
+  .el-form-item {
+    margin-bottom: 16px !important;
+  }
+
+  /* 卡片头部响应式 */
+  .el-card__header {
+    padding: 12px 16px !important;
+  }
+
+  .card-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .card-header .filters {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+  }
+
+  .card-header .filters .el-select {
+    width: 100% !important;
+    min-width: unset !important;
+  }
+
+  /* 分页响应式 */
+  .el-pagination {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 8px !important;
+  }
+
+  .el-pagination .el-pagination__sizes {
+    margin: 0 !important;
+  }
+
+  .el-pagination .el-pagination__total {
+    width: 100% !important;
+    text-align: center !important;
+    margin-bottom: 8px !important;
+  }
+
+  /* 表格底部操作区响应式 */
+  .table-footer {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .table-footer .batch-actions {
+    width: 100% !important;
+  }
+
+  .table-footer .batch-actions .el-button {
+    width: 100% !important;
+  }
+
+  /* 对话框响应式 */
+  .el-dialog {
+    width: 90% !important;
+    max-width: 90% !important;
+    margin: 5vh auto !important;
+  }
+
+  .el-dialog__body {
+    padding: 16px !important;
+  }
+
+  /* 消息框响应式 */
+  .el-message-box {
+    width: 90% !important;
+    max-width: 90% !important;
+  }
+
+  /* 下拉选择器响应式 */
+  .el-select-dropdown {
+    max-width: 90vw !important;
+  }
+
+  /* 日期选择器响应式 */
+  .el-date-picker {
+    width: 100% !important;
+  }
+
+  .el-picker-panel {
+    max-width: 95vw !important;
+  }
+
+  /* 标签响应式 */
+  .el-tag {
+    font-size: 12px !important;
+    padding: 0 6px !important;
+    height: 24px !important;
+    line-height: 22px !important;
+  }
+
+  /* 按钮触摸优化 - 增大点击区域 */
+  .el-button {
+    min-height: 36px !important;
+  }
+
+  .el-button--small {
+    min-height: 28px !important;
+  }
+}
+
+/* 超小屏幕优化 */
+@media (max-width: 480px) {
+  .el-card__body {
+    padding: 8px !important;
+  }
+
+  .el-table .el-table__cell {
+    padding: 6px 2px !important;
+    font-size: 12px !important;
+  }
+
+  .el-form-item__label {
+    font-size: 13px !important;
+  }
+
+  /* 隐藏表格中不重要的列 */
+  .el-table .hide-on-mobile {
+    display: none !important;
+  }
+
+  /* 分页简化 */
+  .el-pagination .el-pagination__sizes,
+  .el-pagination .el-pagination__jump {
+    display: none !important;
+  }
+}
+
+/* 触摸设备优化 */
+@media (hover: none) and (pointer: coarse) {
+  /* 增大可点击元素的触摸区域 */
+  .el-button {
+    min-height: 40px !important;
+    min-width: 40px !important;
+  }
+
+  .el-checkbox__inner,
+  .el-radio__inner {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .el-input__wrapper {
+    min-height: 40px !important;
+  }
+
+  /* 移除 hover 效果，改用 active */
+  .el-button:hover {
+    transform: none !important;
+  }
+
+  .el-button:active {
+    transform: scale(0.98) !important;
+    opacity: 0.9;
+  }
+
+  .function-card:hover {
+    transform: none !important;
+  }
+
+  .function-card:active {
+    transform: scale(0.98) !important;
+  }
+}
+
+/* 横屏模式优化 */
+@media (max-height: 500px) and (orientation: landscape) {
+  .el-dialog {
+    margin: 2vh auto !important;
+    max-height: 96vh !important;
+  }
+
+  .el-dialog__body {
+    max-height: 70vh !important;
+    overflow-y: auto !important;
+  }
 }
 </style>

@@ -210,4 +210,40 @@ function getSourceTypeTag(type) {
   align-items: center;
   margin-top: 16px;
 }
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .filters {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .filters .el-select {
+    width: 100% !important;
+  }
+
+  .table-footer {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .batch-actions {
+    width: 100%;
+  }
+
+  .batch-actions .el-button {
+    width: 100%;
+  }
+
+  /* 移动端隐藏部分列 */
+  :deep(.el-table) .hide-mobile {
+    display: none;
+  }
+}
 </style>

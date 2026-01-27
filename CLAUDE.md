@@ -63,7 +63,7 @@ backend/src/
 
 ## Database
 
-- MongoDB at `mongodb://49.235.189.246:27017`, database: `GHA`
+- MongoDB connection via `MONGO_URI` env var, database: `GHA`
 - Collections follow `{Type}_Records` pattern (e.g., `FAD_Records`, `Late_Records`)
 - System collections: `Teachers`, `Students`, `All_Classes`
 
@@ -78,9 +78,13 @@ backend/src/
 **Accumulation Rules** (in `constants.js`):
 - 2 早点名迟到 → 1 FAD
 - 2 寝室迟出 → 1 FAD
+- 2 未按规定返校 → 1 FAD
+- 2 擅自进入会议室或接待室 → 1 FAD
 - 5 寝室批评 → 1 FAD
+- 2 寝室垃圾未倒 → 1 寝室批评
 - 3 Teaching FAD Tickets → 1 FAD
 - 10 寝室表扬 → Reward hint
+- 6 Teaching Reward Tickets → Reward hint
 
 **Record Withdrawal**: Cascade deletes any generated FAD/warnings from accumulated records.
 
@@ -97,6 +101,8 @@ MONGO_URI=mongodb://...
 DB_NAME=GHA
 JWT_SECRET=your-secret
 BREVO_API_KEY=your-key (for email notifications)
+SENDER_EMAIL=sender@example.com
+SENDER_NAME=FAD系统
 ```
 
 ## Deployment
