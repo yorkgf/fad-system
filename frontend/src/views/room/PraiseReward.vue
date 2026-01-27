@@ -97,10 +97,22 @@ async function fetchData() {
 // 生成Reward PDF
 async function generateRewardPDF(rewardData) {
   try {
+    console.log('开始生成PDF, rewardData:', rewardData)
+
     // 加载PDF模板
     const templateUrl = '/reward-template.pdf'
-    const templateBytes = await fetch(templateUrl).then(res => res.arrayBuffer())
+    console.log('加载PDF模板:', templateUrl)
+
+    const response = await fetch(templateUrl)
+    if (!response.ok) {
+      throw new Error(`加载PDF模板失败: ${response.status}`)
+    }
+
+    const templateBytes = await response.arrayBuffer()
+    console.log('PDF模板加载成功, 大小:', templateBytes.byteLength)
+
     const pdfDoc = await PDFDocument.load(templateBytes)
+    console.log('PDF文档解析成功')
 
     // 获取第一页
     const pages = pdfDoc.getPages()
@@ -111,6 +123,7 @@ async function generateRewardPDF(rewardData) {
 
     // 获取页面尺寸
     const { width, height } = firstPage.getSize()
+    console.log('页面尺寸:', width, height)
 
     // 在PDF上添加文字（根据模板位置调整坐标）
     const fontSize = 12
@@ -156,18 +169,24 @@ async function generateRewardPDF(rewardData) {
     // 为每个Reward生成一份PDF并下载
     for (let i = 0; i < rewardData.count; i++) {
       const pdfBytes = await pdfDoc.save()
+      console.log('PDF生成成功, 大小:', pdfBytes.byteLength)
+
       const blob = new Blob([pdfBytes], { type: 'application/pdf' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
       a.download = `Reward_${rewardData.student}_${dateStr}_${i + 1}.pdf`
+      document.body.appendChild(a)
       a.click()
+      document.body.removeChild(a)
       URL.revokeObjectURL(url)
+      console.log('PDF下载触发:', a.download)
     }
 
     return true
   } catch (error) {
     console.error('生成PDF失败:', error)
+    ElMessage.error('生成PDF失败: ' + error.message)
     return false
   }
 }
