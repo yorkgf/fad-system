@@ -100,6 +100,23 @@ router.post('/', authMiddleware, async (req, res) => {
       const result = await getCollection(Collections.FADRecords).insertOne(fadRecord)
       insertedId = result.insertedId
     } else if (recordType === 'Reward') {
+      // 检查是否存在可冲抵的FAD（未执行或未冲销）
+      const availableFAD = await getCollection(Collections.FADRecords).findOne({
+        学生: student,
+        学期: semester,
+        $or: [
+          { 是否已执行或冲抵: false },
+          { 是否已冲销记录: false }
+        ]
+      })
+
+      if (!availableFAD) {
+        return res.status(400).json({
+          success: false,
+          error: '该学生不存在未执行或未冲销的FAD，无需录入Reward'
+        })
+      }
+
       const rewardRecord = {
         ...baseRecord,
         记录事由: description,
