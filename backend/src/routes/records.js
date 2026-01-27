@@ -696,9 +696,9 @@ async function handleRewardOffset(student, semester, priorityOffset) {
     .sort({ 记录日期: -1 })
     .toArray()
 
-  // Reward数量不足2个，不触发冲抵
-  if (rewards.length < 2) {
-    console.log('Reward数量不足2个，不触发冲抵')
+  // 没有未冲销的Reward，不触发冲抵
+  if (rewards.length === 0) {
+    console.log('没有未冲销的Reward，不触发冲抵')
     return
   }
 
@@ -737,15 +737,17 @@ async function handleRewardOffset(student, semester, priorityOffset) {
     return
   }
 
-  // 步骤3：根据FAD状态和Reward数量执行冲抵
+  // 步骤3：根据FAD状态执行冲抵（每1张Reward执行1次冲抵）
   const fadIsUnexecuted = targetFAD.是否已执行或冲抵 === false
   const fadIsUnoffset = targetFAD.是否已冲销记录 === false
 
-  if (fadIsUnexecuted && rewards.length >= 2) {
-    // FAD未执行，用2个Reward冲抵执行
-    console.log('执行冲抵：2个Reward冲抵FAD执行')
-    const rewardsToUse = rewards.slice(0, 2)
-    const rewardIds = rewardsToUse.map(r => r._id.toString())
+  // 取1张Reward进行冲抵
+  const rewardToUse = rewards[0]
+  const rewardId = rewardToUse._id.toString()
+
+  if (fadIsUnexecuted) {
+    // FAD未执行，用1个Reward冲抵执行
+    console.log('执行冲抵：1个Reward冲抵FAD执行')
 
     await getCollection(Collections.FADRecords).updateOne(
       { _id: targetFAD._id },
@@ -754,28 +756,24 @@ async function handleRewardOffset(student, semester, priorityOffset) {
           是否已执行或冲抵: true,
           执行日期: new Date()
         },
-        $push: { '冲销记录Reward ID': { $each: rewardIds } }
+        $push: { '冲销记录Reward ID': rewardId }
       }
     )
 
-    for (const reward of rewardsToUse) {
-      await getCollection(Collections.RewardRecords).updateOne(
-        { _id: reward._id },
-        {
-          $set: {
-            是否已冲销记录: true,
-            '冲销记录FAD ID': targetFAD._id.toString()
-          }
+    await getCollection(Collections.RewardRecords).updateOne(
+      { _id: rewardToUse._id },
+      {
+        $set: {
+          是否已冲销记录: true,
+          '冲销记录FAD ID': targetFAD._id.toString()
         }
-      )
-    }
+      }
+    )
 
     console.log('冲抵执行完成')
-  } else if (fadIsUnoffset && rewards.length >= 3) {
-    // FAD已执行但未冲销，用3个Reward冲销记录
-    console.log('执行冲抵：3个Reward冲销FAD记录')
-    const rewardsToUse = rewards.slice(0, 3)
-    const rewardIds = rewardsToUse.map(r => r._id.toString())
+  } else if (fadIsUnoffset) {
+    // FAD已执行但未冲销，用1个Reward冲销记录
+    console.log('执行冲抵：1个Reward冲销FAD记录')
 
     await getCollection(Collections.FADRecords).updateOne(
       { _id: targetFAD._id },
@@ -783,25 +781,23 @@ async function handleRewardOffset(student, semester, priorityOffset) {
         $set: {
           是否已冲销记录: true
         },
-        $push: { '冲销记录Reward ID': { $each: rewardIds } }
+        $push: { '冲销记录Reward ID': rewardId }
       }
     )
 
-    for (const reward of rewardsToUse) {
-      await getCollection(Collections.RewardRecords).updateOne(
-        { _id: reward._id },
-        {
-          $set: {
-            是否已冲销记录: true,
-            '冲销记录FAD ID': targetFAD._id.toString()
-          }
+    await getCollection(Collections.RewardRecords).updateOne(
+      { _id: rewardToUse._id },
+      {
+        $set: {
+          是否已冲销记录: true,
+          '冲销记录FAD ID': targetFAD._id.toString()
         }
-      )
-    }
+      }
+    )
 
     console.log('冲销记录完成')
   } else {
-    console.log('条件不满足，不进行冲抵。fadIsUnexecuted:', fadIsUnexecuted, 'fadIsUnoffset:', fadIsUnoffset, 'rewards.length:', rewards.length)
+    console.log('条件不满足，不进行冲抵。fadIsUnexecuted:', fadIsUnexecuted, 'fadIsUnoffset:', fadIsUnoffset)
   }
 }
 
