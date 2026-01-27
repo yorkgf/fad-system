@@ -198,48 +198,12 @@
         </el-form-item>
       </el-form>
     </el-card>
-
-    <!-- 提交结果 -->
-    <el-card v-if="submitResult" class="result-card">
-      <template #header>
-        <span>提交结果</span>
-      </template>
-      <el-result
-        :icon="submitResult.success ? 'success' : 'error'"
-        :title="submitResult.success ? '提交成功' : '提交失败'"
-      >
-        <template #sub-title>
-          <div v-if="submitResult.success">
-            <p>成功为 {{ submitResult.count }} 名学生创建了 {{ form.recordType }} 记录</p>
-            <p v-if="submitResult.accumulatedFAD">
-              已触发 {{ submitResult.accumulatedFAD }} 条FAD累计
-            </p>
-            <el-alert
-              v-if="submitResult.warningMessage"
-              type="warning"
-              :closable="false"
-              style="margin-top: 16px"
-            >
-              {{ submitResult.warningMessage }}
-            </el-alert>
-          </div>
-          <div v-else>
-            <p>{{ submitResult.error }}</p>
-          </div>
-        </template>
-        <template #extra>
-          <el-button type="primary" @click="submitResult = null">
-            继续录入
-          </el-button>
-        </template>
-      </el-result>
-    </el-card>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useCommonStore } from '@/stores/common'
 import { getStudents } from '@/api/students'
@@ -255,7 +219,6 @@ const studentsLoading = ref(false)
 const students = ref([])
 const dorms = ref([]) // 寝室列表
 const studentClassMap = ref({}) // 学生姓名 -> 班级 的映射
-const submitResult = ref(null)
 
 const form = reactive({
   recordType: '',
@@ -494,32 +457,46 @@ async function handleSubmit() {
     })
 
     if (failedCount === 0) {
-      submitResult.value = {
-        success: true,
-        count: successCount,
-        accumulatedFAD,
-        warningMessage: Array.from(warningMessages).join('\n') || null
+      // 使用弹窗提示成功
+      let message = `成功为 ${successCount} 名学生创建了记录`
+      if (accumulatedFAD > 0) {
+        message += `\n已触发 ${accumulatedFAD} 条FAD累计`
       }
-      // 提交成功后清空表单（保留日期）
-      form.recordType = ''
-      form.semester = ''
-      form.selectedStudents = []
-      form.description = ''
-      form.dorm = ''
-      form.ticketCount = 1
-      studentClassMap.value = {}
-      students.value = []
+      if (warningMessages.size > 0) {
+        message += `\n${Array.from(warningMessages).join('\n')}`
+      }
+      ElMessageBox.alert(message, '提交成功', {
+        confirmButtonText: '确定',
+        type: 'success'
+      })
     } else {
-      submitResult.value = {
-        success: false,
-        error: `${successCount} 条成功，${failedCount} 条失败`
-      }
+      ElMessageBox.alert(`${successCount} 条成功，${failedCount} 条失败`, '提交失败', {
+        confirmButtonText: '确定',
+        type: 'error'
+      })
     }
+
+    // 不管成功与否，清空记录类型、学生、记录事由（保留学期和日期）
+    form.recordType = ''
+    form.selectedStudents = []
+    form.description = ''
+    form.dorm = ''
+    form.ticketCount = 1
+    studentClassMap.value = {}
+    students.value = []
   } catch (error) {
-    submitResult.value = {
-      success: false,
-      error: '提交失败，请重试'
-    }
+    ElMessageBox.alert('提交失败，请重试', '提交失败', {
+      confirmButtonText: '确定',
+      type: 'error'
+    })
+    // 清空表单
+    form.recordType = ''
+    form.selectedStudents = []
+    form.description = ''
+    form.dorm = ''
+    form.ticketCount = 1
+    studentClassMap.value = {}
+    students.value = []
   } finally {
     submitting.value = false
   }
@@ -532,17 +509,12 @@ function resetForm() {
   form.selectedStudents = []
   students.value = []
   studentClassMap.value = {}
-  submitResult.value = null
 }
 </script>
 
 <style scoped>
 .insert-record {
   max-width: 800px;
-}
-
-.result-card {
-  margin-top: 20px;
 }
 
 .tip {
