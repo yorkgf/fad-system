@@ -92,10 +92,7 @@ router.post('/', authMiddleware, async (req, res) => {
         是否已执行或冲抵: false,
         执行日期: null,
         是否已冲销记录: false,
-        '冲销记录Reward ID': [],
-        是否已发放: false,
-        发放日期: null,
-        发放老师: ''
+        '冲销记录Reward ID': []
       }
       const result = await getCollection(Collections.FADRecords).insertOne(fadRecord)
       insertedId = result.insertedId
@@ -561,10 +558,7 @@ async function insertFAD({ student, studentClass, semester, teacher, description
     是否已执行或冲抵: false,
     执行日期: null,
     是否已冲销记录: false,
-    '冲销记录Reward ID': [],
-    是否已发放: false,
-    发放日期: null,
-    发放老师: ''
+    '冲销记录Reward ID': []
   }
   return await getCollection(Collections.FADRecords).insertOne(fadRecord)
 }
