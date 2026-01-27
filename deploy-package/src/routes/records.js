@@ -845,68 +845,58 @@ async function handleRewardOffset(student, semester, priorityOffset) {
     return
   }
 
-  // 步骤3：根据FAD状态执行冲抵（每1张Reward执行1次冲抵）
-  const fadIsUnexecuted = targetFAD.是否已执行或冲抵 === false
-  const fadIsUnoffset = targetFAD.是否已冲销记录 === false
-
-  // 取1张Reward进行冲抵
+  // 步骤3：关联Reward到FAD，根据关联数量决定是否更新状态
   const rewardToUse = rewards[0]
   const rewardId = rewardToUse._id.toString()
 
-  if (fadIsUnexecuted) {
-    // FAD未执行，用1个Reward冲抵执行
-    console.log('执行冲抵：1个Reward冲抵FAD执行')
+  // 获取当前FAD已关联的Reward数量
+  const currentRewardIds = targetFAD['冲销记录Reward ID'] || []
+  const newRewardCount = currentRewardIds.length + 1
 
-    await getCollection(Collections.FADRecords).updateOne(
-      { _id: targetFAD._id },
-      {
-        $set: {
-          是否已执行或冲抵: true,
-          执行日期: new Date()
-        },
-        $push: { '冲销记录Reward ID': rewardId }
-      }
-    )
+  console.log(`FAD当前关联${currentRewardIds.length}张Reward，关联后将有${newRewardCount}张`)
 
-    await getCollection(Collections.RewardRecords).updateOne(
-      { _id: rewardToUse._id },
-      {
-        $set: {
-          是否已冲销记录: true,
-          '冲销记录FAD ID': targetFAD._id.toString()
-        }
-      }
-    )
-
-    console.log('冲抵执行完成')
-  } else if (fadIsUnoffset) {
-    // FAD已执行但未冲销，用1个Reward冲销记录
-    console.log('执行冲抵：1个Reward冲销FAD记录')
-
-    await getCollection(Collections.FADRecords).updateOne(
-      { _id: targetFAD._id },
-      {
-        $set: {
-          是否已冲销记录: true
-        },
-        $push: { '冲销记录Reward ID': rewardId }
-      }
-    )
-
-    await getCollection(Collections.RewardRecords).updateOne(
-      { _id: rewardToUse._id },
-      {
-        $set: {
-          是否已冲销记录: true,
-          '冲销记录FAD ID': targetFAD._id.toString()
-        }
-      }
-    )
-
-    console.log('冲销记录完成')
-  } else {
-    console.log('条件不满足，不进行冲抵。fadIsUnexecuted:', fadIsUnexecuted, 'fadIsUnoffset:', fadIsUnoffset)
+  // 构建FAD更新操作
+  const fadUpdate = {
+    $push: { '冲销记录Reward ID': rewardId }
   }
+
+  // 根据关联数量决定是否更新状态字段
+  if (newRewardCount === 2) {
+    // 满2张Reward，设置"是否已执行或冲抵"为true
+    console.log('关联满2张Reward，设置是否已执行或冲抵为true')
+    fadUpdate.$set = {
+      是否已执行或冲抵: true,
+      执行日期: new Date()
+    }
+  } else if (newRewardCount === 3) {
+    // 满3张Reward，设置"是否已冲销记录"为true
+    console.log('关联满3张Reward，设置是否已冲销记录为true')
+    fadUpdate.$set = {
+      是否已冲销记录: true
+    }
+  } else {
+    // 只有1张Reward，不更新状态字段
+    console.log('只关联1张Reward，不更新FAD状态字段')
+  }
+
+  // 更新FAD
+  await getCollection(Collections.FADRecords).updateOne(
+    { _id: targetFAD._id },
+    fadUpdate
+  )
+
+  // 更新Reward
+  await getCollection(Collections.RewardRecords).updateOne(
+    { _id: rewardToUse._id },
+    {
+      $set: {
+        是否已冲销记录: true,
+        '冲销记录FAD ID': targetFAD._id.toString()
+      }
+    }
+  )
+
+  console.log('Reward关联FAD完成')
 }
 
 // 辅助函数：获取链式记录
