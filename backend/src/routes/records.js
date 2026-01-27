@@ -322,6 +322,10 @@ router.get('/my', authMiddleware, async (req, res) => {
   try {
     const { collection, semester, teacher } = req.query
 
+    console.log('=== /my API ===')
+    console.log('User:', req.user.name, 'Group:', req.user.group)
+    console.log('Params:', { collection, semester, teacher })
+
     const collectionName = collection || 'FAD_Records'
     const filter = {}
 
@@ -334,15 +338,20 @@ router.get('/my', authMiddleware, async (req, res) => {
       filter.记录老师 = { $regex: req.user.name, $options: 'i' }
     }
 
+    console.log('Query:', { collection: collectionName, filter })
+
     // 返回所有记录，不分页
     const records = await getCollection(collectionName)
       .find(filter)
       .sort({ 记录日期: -1 })
       .toArray()
 
+    console.log('Found records:', records.length)
+
     // 为累计产生FAD的记录添加状态
     const recordsWithStatus = await addFADStatus(records, collectionName)
 
+    console.log('Response: success, total:', recordsWithStatus.length)
     res.json({ success: true, data: recordsWithStatus, total: recordsWithStatus.length })
   } catch (error) {
     console.error('Get my records error:', error)
