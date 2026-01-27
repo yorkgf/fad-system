@@ -708,16 +708,37 @@ async function handleRewardOffset(student, semester, priorityOffset) {
   let targetFAD = null
 
   if (priorityOffset) {
-    // 优先冲抵执行：找时间最新的未执行的FAD
+    // 优先冲抵执行：按优先级查找未执行的FAD
+    console.log('优先冲抵执行模式，按优先级查找未执行的FAD')
+
+    // 优先级1：查找已关联1张Reward的未执行FAD
     targetFAD = await getCollection(Collections.FADRecords).findOne(
       {
         学生: student,
         学期: semester,
-        是否已执行或冲抵: false
+        是否已执行或冲抵: false,
+        '冲销记录Reward ID': { $size: 1 }
       },
       { sort: { 记录日期: -1 } }
     )
-    console.log('优先冲抵执行模式，查找未执行的FAD:', targetFAD ? '找到' : '未找到')
+    if (targetFAD) {
+      console.log('找到已关联1张Reward的未执行FAD')
+    }
+
+    // 优先级2：查找任意未执行的FAD
+    if (!targetFAD) {
+      targetFAD = await getCollection(Collections.FADRecords).findOne(
+        {
+          学生: student,
+          学期: semester,
+          是否已执行或冲抵: false
+        },
+        { sort: { 记录日期: -1 } }
+      )
+      if (targetFAD) {
+        console.log('找到未执行的FAD')
+      }
+    }
 
     // 如果没有未执行的FAD，按优先级查找未冲销的FAD进行冲销
     if (!targetFAD) {
