@@ -523,6 +523,15 @@ function isWithdrawable(row) {
   if (hasFADStatus(row) && row.fadStatus === '已累计FAD，已发放') {
     return false
   }
+  // FAD记录已执行或已冲销的不可撤回
+  if (row.记录类型 === 'FAD') {
+    if (row.是否已执行或冲抵) {
+      return false
+    }
+    if (row.是否已冲销记录) {
+      return false
+    }
+  }
   // 已发放的FAD/Reward不可撤回
   if (row.是否已发放) {
     return false
@@ -551,6 +560,15 @@ function getWithdrawDisabledReason(row) {
   }
   if (hasFADStatus(row) && row.fadStatus === '已累计FAD，已发放') {
     return '该记录累计产生的FAD已发放纸质通知单，无法撤回'
+  }
+  // FAD记录已执行或已冲销的不可撤回
+  if (row.记录类型 === 'FAD') {
+    if (row.是否已冲销记录) {
+      return 'FAD已冲销，无法撤回'
+    }
+    if (row.是否已执行或冲抵) {
+      return 'FAD已执行，无法撤回'
+    }
   }
   if (row.是否已发放) {
     return '已发放纸质通知单，无法撤回'
