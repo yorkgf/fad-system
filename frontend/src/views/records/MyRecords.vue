@@ -26,6 +26,22 @@
               <el-option label="Teaching Reward Ticket" value="Teaching_Reward_Ticket" />
             </el-select>
             <el-select
+              v-if="filters.collection === 'FAD_Records'"
+              v-model="filters.fadSourceType"
+              placeholder="FAD来源"
+              style="width: 150px"
+              clearable
+              @change="updatePagination"
+            >
+              <el-option label="寝室批评累计" value="寝室批评累计" />
+              <el-option label="早点名迟到累计" value="早点名迟到累计" />
+              <el-option label="寝室迟出累计" value="寝室迟出累计" />
+              <el-option label="未按规定返校累计" value="未按规定返校累计" />
+              <el-option label="擅自进入会议室累计" value="擅自进入会议室累计" />
+              <el-option label="Teaching FAD Ticket" value="Teaching FAD Ticket" />
+              <el-option label="其他" value="其他" />
+            </el-select>
+            <el-select
               v-model="filters.semester"
               placeholder="选择学期"
               style="width: 150px"
@@ -260,6 +276,7 @@ const teachers = ref([])
 
 const filters = reactive({
   collection: 'FAD_Records', // 默认显示 FAD 记录
+  fadSourceType: '', // FAD来源类型筛选
   semester: '',
   teacher: '',
   student: '',
@@ -276,6 +293,11 @@ const pagination = reactive({
 // 前端分页：根据筛选条件过滤后再分页
 const filteredRecords = computed(() => {
   let result = allRecords.value
+
+  // FAD来源类型筛选（仅FAD记录）
+  if (filters.collection === 'FAD_Records' && filters.fadSourceType) {
+    result = result.filter(r => r.FAD来源类型 === filters.fadSourceType)
+  }
 
   // 学生姓名筛选
   if (filters.student) {
@@ -334,6 +356,12 @@ onMounted(async () => {
 
 async function fetchData() {
   loading.value = true
+
+  // 切换记录类型时清空FAD来源筛选
+  if (filters.collection !== 'FAD_Records') {
+    filters.fadSourceType = ''
+  }
+
   try {
     const params = {
       collection: filters.collection,
