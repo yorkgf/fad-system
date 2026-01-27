@@ -86,7 +86,7 @@
         </el-form-item>
 
         <!-- 学生选择 -->
-        <el-form-item :label="isDormRelatedRecord && form.dorm ? '寝室学生' : '学生'" prop="students">
+        <el-form-item :label="isDormRelatedRecord && form.dorm ? '寝室学生' : '学生'" prop="selectedStudents">
           <el-select
             v-model="form.selectedStudents"
             :placeholder="isDormRelatedRecord && form.dorm ? '该寝室的学生' : '请输入学生姓名搜索（可多选）'"
