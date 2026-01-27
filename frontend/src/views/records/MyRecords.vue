@@ -29,17 +29,14 @@
               v-if="filters.collection === 'FAD_Records'"
               v-model="filters.fadSourceType"
               placeholder="FAD来源"
-              style="width: 150px"
+              style="width: 120px"
               clearable
               @change="updatePagination"
             >
-              <el-option label="寝室批评累计" value="寝室批评累计" />
-              <el-option label="早点名迟到累计" value="早点名迟到累计" />
-              <el-option label="寝室迟出累计" value="寝室迟出累计" />
-              <el-option label="未按规定返校累计" value="未按规定返校累计" />
-              <el-option label="擅自进入会议室累计" value="擅自进入会议室累计" />
-              <el-option label="Teaching FAD Ticket" value="Teaching FAD Ticket" />
-              <el-option label="其他" value="其他" />
+              <el-option label="教学类" value="teach" />
+              <el-option label="寝室类" value="dorm" />
+              <el-option label="其他类" value="other" />
+              <el-option label="未分类" value="_empty" />
             </el-select>
             <el-select
               v-model="filters.semester"
@@ -276,7 +273,7 @@ const teachers = ref([])
 
 const filters = reactive({
   collection: 'FAD_Records', // 默认显示 FAD 记录
-  fadSourceType: '', // FAD来源类型筛选
+  fadSourceType: null, // FAD来源类型筛选
   semester: '',
   teacher: '',
   student: '',
@@ -295,8 +292,13 @@ const filteredRecords = computed(() => {
   let result = allRecords.value
 
   // FAD来源类型筛选（仅FAD记录）
-  if (filters.collection === 'FAD_Records' && filters.fadSourceType) {
-    result = result.filter(r => r.FAD来源类型 === filters.fadSourceType)
+  if (filters.collection === 'FAD_Records' && filters.fadSourceType !== null) {
+    if (filters.fadSourceType === '_empty') {
+      // 未分类：FAD来源类型为空或不存在
+      result = result.filter(r => !r.FAD来源类型)
+    } else {
+      result = result.filter(r => r.FAD来源类型 === filters.fadSourceType)
+    }
   }
 
   // 学生姓名筛选
@@ -359,7 +361,7 @@ async function fetchData() {
 
   // 切换记录类型时清空FAD来源筛选
   if (filters.collection !== 'FAD_Records') {
-    filters.fadSourceType = ''
+    filters.fadSourceType = null
   }
 
   try {
