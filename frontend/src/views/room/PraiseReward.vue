@@ -64,6 +64,8 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCommonStore } from '@/stores/common'
 import { getRewardablePraise, praiseToReward } from '@/api/room'
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib'
+import dayjs from 'dayjs'
 
 const commonStore = useCommonStore()
 
@@ -92,6 +94,84 @@ async function fetchData() {
   }
 }
 
+// 生成Reward PDF
+async function generateRewardPDF(rewardData) {
+  try {
+    // 加载PDF模板
+    const templateUrl = '/reward-template.pdf'
+    const templateBytes = await fetch(templateUrl).then(res => res.arrayBuffer())
+    const pdfDoc = await PDFDocument.load(templateBytes)
+
+    // 获取第一页
+    const pages = pdfDoc.getPages()
+    const firstPage = pages[0]
+
+    // 嵌入字体
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+
+    // 获取页面尺寸
+    const { width, height } = firstPage.getSize()
+
+    // 在PDF上添加文字（根据模板位置调整坐标）
+    const fontSize = 12
+    const textColor = rgb(0, 0, 0)
+
+    // 学生姓名
+    firstPage.drawText(rewardData.student, {
+      x: 180,
+      y: height - 195,
+      size: fontSize,
+      font,
+      color: textColor
+    })
+
+    // 班级
+    firstPage.drawText(rewardData.studentClass, {
+      x: 180,
+      y: height - 220,
+      size: fontSize,
+      font,
+      color: textColor
+    })
+
+    // 日期
+    const dateStr = dayjs(rewardData.date).format('YYYY-MM-DD')
+    firstPage.drawText(dateStr, {
+      x: 180,
+      y: height - 245,
+      size: fontSize,
+      font,
+      color: textColor
+    })
+
+    // 事由
+    firstPage.drawText('累计10次寝室表扬兑换', {
+      x: 180,
+      y: height - 270,
+      size: fontSize,
+      font,
+      color: textColor
+    })
+
+    // 为每个Reward生成一份PDF并下载
+    for (let i = 0; i < rewardData.count; i++) {
+      const pdfBytes = await pdfDoc.save()
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `Reward_${rewardData.student}_${dateStr}_${i + 1}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    }
+
+    return true
+  } catch (error) {
+    console.error('生成PDF失败:', error)
+    return false
+  }
+}
+
 async function handleExchange(row) {
   const rewardCount = Math.floor(row.count / 10)
 
@@ -107,14 +187,19 @@ async function handleExchange(row) {
     )
 
     loading.value = true
-    await praiseToReward({
+    const res = await praiseToReward({
       student: row.学生,
       studentClass: row.班级,
       semester: filters.semester,
       count: rewardCount
     })
 
-    ElMessage.success(`成功为 ${row.学生} 兑换 ${rewardCount} 个Reward`)
+    // 生成并下载PDF
+    if (res.rewardData) {
+      await generateRewardPDF(res.rewardData)
+    }
+
+    ElMessage.success(`成功为 ${row.学生} 兑换 ${rewardCount} 个Reward，PDF已下载`)
     fetchData()
   } catch (error) {
     if (error !== 'cancel') {

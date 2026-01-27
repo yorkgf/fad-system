@@ -71,25 +71,8 @@ router.post('/to-reward', authMiddleware, async (req, res) => {
       return res.status(400).json({ success: false, error: '寝室表扬次数不足' })
     }
 
-    // 创建Reward记录
+    // 不再插入Reward记录，只标记寝室表扬已兑换
     for (let i = 0; i < count; i++) {
-      const rewardResult = await getCollection(Collections.RewardRecords).insertOne({
-        记录类型: 'Reward',
-        记录日期: new Date(),
-        学生: student,
-        班级: studentClass,
-        记录老师: `系统: 寝室表扬兑换`,
-        记录事由: `累计10次寝室表扬兑换`,
-        学期: semester,
-        是否优先冲抵执行: false,
-        是否已冲销记录: false,
-        冲销记录FAD_ID: null,
-        是否已发放: false,
-        发放日期: null,
-        发放老师: '',
-        是否已撤回: false
-      })
-
       // 标记对应的寝室表扬已兑换
       const praiseIds = praises.slice(i * 10, (i + 1) * 10).map(p => p._id)
       await getCollection(Collections.RoomPraiseRecords).updateMany(
@@ -97,13 +80,25 @@ router.post('/to-reward', authMiddleware, async (req, res) => {
         {
           $set: {
             是否已累计Reward: true,
-            '累计Reward ID': rewardResult.insertedId.toString()
+            '累计Reward日期': new Date()
           }
         }
       )
     }
 
-    res.json({ success: true, message: `成功兑换 ${count} 个Reward` })
+    // 返回兑换信息，供前端生成PDF
+    res.json({
+      success: true,
+      message: `成功兑换 ${count} 个Reward`,
+      rewardData: {
+        student,
+        studentClass,
+        semester,
+        count,
+        date: new Date().toISOString(),
+        teacher: req.user.name
+      }
+    })
   } catch (error) {
     console.error('Praise to reward error:', error)
     res.status(500).json({ success: false, error: '兑换失败' })
