@@ -500,7 +500,16 @@ async function handleSubmit() {
         accumulatedFAD,
         warningMessage: Array.from(warningMessages).join('\n') || null
       }
-      // 提交成功后不清空表单，保留已填内容方便继续录入
+      // 提交成功后清空表单
+      form.recordType = ''
+      form.semester = ''
+      form.selectedStudents = []
+      form.date = ''
+      form.description = ''
+      form.dorm = ''
+      form.ticketCount = 1
+      studentClassMap.value = {}
+      students.value = []
     } else {
       submitResult.value = {
         success: false,
