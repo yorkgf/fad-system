@@ -108,6 +108,11 @@
         <el-table-column prop="学生" label="学生" width="100" />
         <el-table-column prop="班级" label="班级" width="120" />
         <el-table-column prop="记录类型" label="记录类型" width="150" />
+        <el-table-column v-if="filters.collection === 'FAD_Records'" label="FAD来源" width="100">
+          <template #default="{ row }">
+            {{ getFadSourceLabel(row.FAD来源类型) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="记录日期" label="记录日期" width="120">
           <template #default="{ row }">
             {{ formatDate(row.记录日期) }}
@@ -497,6 +502,16 @@ function exportData() {
 function formatDate(date) {
   if (!date) return '-'
   return dayjs(date).format('YYYY-MM-DD')
+}
+
+// 获取FAD来源类型的显示标签
+function getFadSourceLabel(sourceType) {
+  const map = {
+    'teach': '教学类',
+    'dorm': '寝室类',
+    'other': '其他类'
+  }
+  return map[sourceType] || '未分类'
 }
 
 // 根据记录类型获取对应的 collection
