@@ -500,11 +500,10 @@ async function handleSubmit() {
         accumulatedFAD,
         warningMessage: Array.from(warningMessages).join('\n') || null
       }
-      // 提交成功后清空表单
+      // 提交成功后清空表单（保留日期）
       form.recordType = ''
       form.semester = ''
       form.selectedStudents = []
-      form.date = ''
       form.description = ''
       form.dorm = ''
       form.ticketCount = 1
