@@ -59,7 +59,7 @@
               placeholder="输入学生姓名"
               style="width: 120px"
               clearable
-              @keyup.enter="fetchData"
+              @input="updatePagination"
             />
             <el-select
               v-model="filters.studentClass"
@@ -67,7 +67,7 @@
               style="width: 150px"
               filterable
               clearable
-              @change="fetchData"
+              @change="updatePagination"
             >
               <el-option
                 v-for="item in commonStore.classes"
@@ -84,14 +84,14 @@
               end-placeholder="结束日期"
               value-format="YYYY-MM-DD"
               style="width: 240px"
-              @change="fetchData"
+              @change="updatePagination"
             />
             <el-button type="success" @click="exportData">导出</el-button>
           </div>
         </div>
       </template>
 
-      <el-table v-loading="loading" :data="records" stripe>
+      <el-table v-loading="loading" :data="paginatedRecords" stripe>
         <el-table-column prop="学生" label="学生" width="100" />
         <el-table-column prop="班级" label="班级" width="120" />
         <el-table-column prop="记录类型" label="记录类型" width="150" />
@@ -168,8 +168,8 @@
       <div class="table-footer">
         <el-button type="success" @click="exportData">导出 CSV</el-button>
         <el-pagination
-          :current-page="pagination.page"
-          :page-size="pagination.pageSize"
+          v-model:current-page="pagination.page"
+          v-model:page-size="pagination.pageSize"
           :total="pagination.total"
           :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next"
@@ -244,7 +244,7 @@
 
 
 <script setup>
-import { ref, reactive, onMounted, watch } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useCommonStore } from '@/stores/common'
@@ -255,7 +255,7 @@ const userStore = useUserStore()
 const commonStore = useCommonStore()
 
 const loading = ref(false)
-const records = ref([])
+const allRecords = ref([]) // 存储所有记录
 const teachers = ref([])
 
 const filters = reactive({
@@ -272,6 +272,47 @@ const pagination = reactive({
   pageSize: 20,
   total: 0
 })
+
+// 前端分页：根据筛选条件过滤后再分页
+const filteredRecords = computed(() => {
+  let result = allRecords.value
+
+  // 学生姓名筛选
+  if (filters.student) {
+    result = result.filter(r => r.学生 && r.学生.includes(filters.student))
+  }
+
+  // 班级筛选
+  if (filters.studentClass) {
+    result = result.filter(r => r.班级 === filters.studentClass)
+  }
+
+  // 日期范围筛选
+  if (filters.dateRange && filters.dateRange.length === 2) {
+    const [start, end] = filters.dateRange
+    const startDate = new Date(start)
+    const endDate = new Date(end + 'T23:59:59')
+    result = result.filter(r => {
+      const recordDate = new Date(r.记录日期)
+      return recordDate >= startDate && recordDate <= endDate
+    })
+  }
+
+  return result
+})
+
+// 计算当前页显示的记录
+const paginatedRecords = computed(() => {
+  const start = (pagination.page - 1) * pagination.pageSize
+  const end = start + pagination.pageSize
+  return filteredRecords.value.slice(start, end)
+})
+
+// 监听筛选条件变化，更新 total 并重置页码
+const updatePagination = () => {
+  pagination.total = filteredRecords.value.length
+  pagination.page = 1
+}
 
 const withdrawDialog = reactive({
   visible: false,
@@ -292,35 +333,11 @@ onMounted(async () => {
 })
 
 async function fetchData() {
-  // 计算最大页码，确保页码不超出范围
-  if (pagination.total > 0) {
-    const maxPage = Math.ceil(pagination.total / pagination.pageSize)
-    if (pagination.page > maxPage) {
-      console.log('Page out of range:', pagination.page, 'maxPage:', maxPage, ', resetting to:', maxPage)
-      pagination.page = maxPage
-    }
-  }
-
   loading.value = true
   try {
     const params = {
       collection: filters.collection,
-      semester: filters.semester,
-      page: pagination.page,
-      pageSize: pagination.pageSize
-    }
-
-    // 可选附加筛选条件
-    if (filters.student) {
-      params.student = filters.student
-    }
-    if (filters.studentClass) {
-      params.studentClass = filters.studentClass
-    }
-    if (filters.dateRange) {
-      const [start, end] = filters.dateRange
-      params.dateFrom = start
-      params.dateTo = end
+      semester: filters.semester
     }
 
     if (userStore.isAdmin && filters.teacher) {
@@ -328,36 +345,23 @@ async function fetchData() {
     }
 
     const res = await getMyRecords(params)
-    records.value = res.data || res
-    pagination.total = res.total || 0
+    allRecords.value = res.data || res
+
+    // 更新分页信息
+    updatePagination()
 
     // 提取教师列表（管理员用）
     if (userStore.isAdmin) {
-      const teacherSet = new Set(records.value.map(r => r.记录老师.replace('系统: ', '')))
+      const teacherSet = new Set(allRecords.value.map(r => r.记录老师.replace('系统: ', '')))
       teachers.value = Array.from(teacherSet)
     }
   } catch (error) {
     console.error('获取记录失败:', error)
-    records.value = []
+    allRecords.value = []
     pagination.total = 0
   } finally {
     loading.value = false
   }
-}
-
-// 处理页码变化
-function handlePageChange(page) {
-  pagination.page = page
-  fetchData()
-}
-
-// 处理每页显示条数变化
-function handleSizeChange(size) {
-  console.log('pageSize change:', size, 'current page:', pagination.page)
-  pagination.pageSize = size
-  pagination.page = 1 // 重置到第一页
-  console.log('reset to page 1, fetching...')
-  fetchData()
 }
 
 async function handleWithdraw(row) {
@@ -407,7 +411,7 @@ async function confirmWithdraw() {
 }
 
 function exportData() {
-  if (records.value.length === 0) {
+  if (filteredRecords.value.length === 0) {
     ElMessage.warning('没有数据可导出')
     return
   }
@@ -442,7 +446,7 @@ function exportData() {
     return [row.学生, row.班级, row.记录类型, formatDate(row.记录日期), row.记录事由 || '', row.记录老师, status]
   }
 
-  const csv = [headers.join(','), ...records.map(row => getField(row).map(c => `"${c}"`))].join('\n')
+  const csv = [headers.join(','), ...filteredRecords.value.map(row => getField(row).map(c => `"${c}"`).join(','))].join('\n')
   const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')

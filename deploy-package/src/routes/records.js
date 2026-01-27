@@ -317,20 +317,10 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 })
 
-// 获取我的记录
+// 获取我的记录（返回所有记录，前端分页）
 router.get('/my', authMiddleware, async (req, res) => {
   try {
-    const {
-      collection,
-      semester,
-      teacher,
-      page = 1,
-      pageSize = 20
-    } = req.query
-
-    console.log('=== /my API CALLED ===')
-    console.log('User:', req.user.name, 'Group:', req.user.group)
-    console.log('Request params:', { collection, semester, teacher, page, pageSize })
+    const { collection, semester, teacher } = req.query
 
     const collectionName = collection || 'FAD_Records'
     const filter = {}
@@ -340,33 +330,20 @@ router.get('/my', authMiddleware, async (req, res) => {
     // 管理员可以查看所有人的记录，普通用户只能看自己的
     if (req.user.group === 'S' && teacher) {
       filter.记录老师 = { $regex: teacher, $options: 'i' }
-      console.log('Filter by teacher (admin):', teacher)
     } else if (req.user.group !== 'S') {
       filter.记录老师 = { $regex: req.user.name, $options: 'i' }
-      console.log('Filter by teacher (user):', req.user.name)
-    } else {
-      console.log('No teacher filter for admin')
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(pageSize)
-    const limit = parseInt(pageSize)
-
-    console.log('Pagination: page =', page, ', pageSize =', pageSize)
-    console.log('Skip/Limit: skip =', skip, ', limit =', limit)
-    console.log('Final Query:', { collection: collectionName, filter, sort: { 记录日期: -1 }, skip, limit })
-
-    const [records, total] = await Promise.all([
-      getCollection(collectionName).find(filter).sort({ 记录日期: -1 }).skip(skip).limit(limit).toArray(),
-      getCollection(collectionName).countDocuments(filter)
-    ])
-
-    console.log('MongoDB Results:', { recordsFound: records.length, totalRecords: total })
+    // 返回所有记录，不分页
+    const records = await getCollection(collectionName)
+      .find(filter)
+      .sort({ 记录日期: -1 })
+      .toArray()
 
     // 为累计产生FAD的记录添加状态
     const recordsWithStatus = await addFADStatus(records, collectionName)
 
-    console.log('Final Response:', { success: true, data: recordsWithStatus.length, total })
-    res.json({ success: true, data: recordsWithStatus, total })
+    res.json({ success: true, data: recordsWithStatus, total: recordsWithStatus.length })
   } catch (error) {
     console.error('Get my records error:', error)
     res.status(500).json({ success: false, error: '获取记录失败' })
