@@ -500,9 +500,7 @@ async function handleSubmit() {
         accumulatedFAD,
         warningMessage: Array.from(warningMessages).join('\n') || null
       }
-      // 重置学生选择
-      form.selectedStudents = []
-      studentClassMap.value = {}
+      // 提交成功后不清空表单，保留已填内容方便继续录入
     } else {
       submitResult.value = {
         success: false,
