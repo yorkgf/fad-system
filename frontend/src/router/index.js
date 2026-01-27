@@ -12,12 +12,14 @@ const routes = [
     path: '/',
     component: () => import('@/layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
-    children: [
-      {
-        path: '',
-        redirect: '/records/insert'
-      },
-      // 记录模块
+      children: [
+        {
+          path: '',
+          name: 'Home',
+          component: () => import('@/views/Home.vue'),
+          meta: { title: '首页' }
+        },
+        // 记录模块
       {
         path: 'records/insert',
         name: 'InsertRecord',
@@ -68,6 +70,12 @@ const routes = [
         name: 'RoomClean',
         component: () => import('@/views/room/RoomClean.vue'),
         meta: { title: '寝室清扫' }
+      },
+      {
+        path: 'room/best-dorm',
+        name: 'BestDormRanking',
+        component: () => import('@/views/room/BestDormRanking.vue'),
+        meta: { title: '最佳寝室排名' }
       },
       // 其他模块
       {

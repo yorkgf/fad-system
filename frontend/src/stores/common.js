@@ -42,28 +42,20 @@ export const useCommonStore = defineStore('common', () => {
     }
   }
 
-  // 生成学期列表（当前年份前后）
+  // 生成学期列表（只有春季(Spring)和秋季(Fall)）
   function generateSemesters() {
-    const currentYear = new Date().getFullYear()
-    const result = []
-    for (let year = currentYear - 1; year <= currentYear + 1; year++) {
-      result.push(`${year}-${year + 1}-1`)
-      result.push(`${year}-${year + 1}-2`)
-    }
-    semesters.value = result.reverse()
+    semesters.value = ['春季(Spring)', '秋季(Fall)']
   }
 
   // 获取当前学期
   function getCurrentSemester() {
     const now = new Date()
-    const year = now.getFullYear()
     const month = now.getMonth() + 1
-    // 9月-次年1月为第一学期，2月-7月为第二学期
-    if (month >= 9 || month === 1) {
-      const startYear = month >= 9 ? year : year - 1
-      return `${startYear}-${startYear + 1}-1`
+    // 2月-7月为春季(Spring)，9月-次年1月为秋季(Fall)
+    if (month >= 2 && month <= 7) {
+      return '春季(Spring)'
     } else {
-      return `${year - 1}-${year}-2`
+      return '秋季(Fall)'
     }
   }
 

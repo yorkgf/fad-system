@@ -1,5 +1,7 @@
 # FAD 学生管理系统
 
+> 📘 **部署指南**: [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) | 📋 **检查清单**: [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)
+
 学生纪律与奖励管理系统，用于记录学生行为、自动累计违规/表扬、生成FAD通知单等。
 
 ## 项目结构
@@ -103,20 +105,54 @@ API 运行在 http://localhost:8080
 
 ## 部署
 
-### 前端部署到EdgeOne Pages
+📘 **完整部署指南**: 请查看 [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) 获取详细部署步骤和配置说明
+
+### 快速部署
+
+#### 前端部署到EdgeOne Pages
 
 ```bash
 cd frontend
-npm run build
+npm run build:prod
 # 将 dist 目录部署到 EdgeOne Pages
+# 部署包位置: D:\Qwen Code\FAD\frontend\dist
 ```
 
-### 后端部署到腾讯云函数
+**详细步骤**:
+1. 打开 [EdgeOne Pages 控制台](https://console.cloud.tencent.com/edgeone)
+2. 创建站点或选择现有站点
+3. 上传 `frontend/dist` 文件夹（1.8MB）
+4. 配置默认首页为 `index.html`
+5. 配置 API 地址（编辑 `frontend/.env.production` 后重新构建）
+
+#### 后端部署到腾讯云函数
 
 ```bash
 cd backend
 npm run deploy
 ```
+
+**手动部署（推荐）**:
+1. 打开 [腾讯云函数控制台](https://console.cloud.tencent.com/scf)
+2. 创建函数（Node.js 16.13.5 或更高）
+3. 上传 `deploy-package` 文件夹（13MB）
+4. 配置环境变量（MONGO_URI, DB_NAME, JWT_SECRET 等）
+5. **部署包位置**: `D:\Qwen Code\FAD\deploy-package`
+
+**环境变量配置**:
+- `MONGO_URI`: MongoDB 连接字符串
+- `DB_NAME`: 数据库名称（GHA）
+- `JWT_SECRET`: JWT 签名密钥
+- `BREVO_API_KEY`: Brevo 邮件服务 API Key
+- `SENDER_EMAIL`: 发件人邮箱
+- `SENDER_NAME`: 发件人名称（FAD系统）
+
+### 部署包位置
+
+| 项目 | 部署包路径 | 大小 |
+|-----|-----------|------|
+| 后端 | `D:\Qwen Code\FAD\deploy-package\` | 13 MB |
+| 前端 | `D:\Qwen Code\FAD\frontend\dist\` | 1.8 MB |
 
 ## License
 

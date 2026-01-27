@@ -59,6 +59,13 @@
             </el-tag>
           </template>
         </el-table-column>
+         <el-table-column label="状态" width="120">
+           <template #default="{ row }">
+             <el-tag v-if="row.是否已冲销记录" type="success" size="small">已冲销</el-tag>
+             <el-tag v-else-if="row.是否已执行或冲抵" type="warning" size="small">已执行未冲销</el-tag>
+             <el-tag v-else type="danger" size="small">未执行</el-tag>
+           </template>
+         </el-table-column>
         <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="handleDownload(row)">

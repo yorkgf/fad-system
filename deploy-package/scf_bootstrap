@@ -1,0 +1,8 @@
+#!/bin/bash
+# Web函数启动文件
+
+# 监听端口（云函数会自动设置 PORT 环境变量）
+export PORT=${PORT:-9000}
+
+# 启动服务器（index.js 在根目录）
+node index.js

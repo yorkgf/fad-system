@@ -8,16 +8,20 @@
             <el-select
               v-model="filters.collection"
               placeholder="记录类型"
-              style="width: 180px"
+              style="width: 200px"
               @change="fetchData"
             >
               <el-option label="FAD记录" value="FAD_Records" />
               <el-option label="Reward记录" value="Reward_Records" />
-              <el-option label="迟到记录" value="Late_Records" />
+              <el-option label="早点名迟到" value="Late_Records" />
               <el-option label="寝室迟出" value="Leave_Room_Late_Records" />
               <el-option label="未按规定返校" value="Back_School_Late_Records" />
+              <el-option label="擅自进入会议室" value="MeetingRoom_Violation_Records" />
+              <el-option label="寝室表扬" value="Room_Praise_Records" />
               <el-option label="寝室批评" value="Room_Warning_Records" />
               <el-option label="寝室垃圾未倒" value="Room_Trash_Records" />
+              <el-option label="电子产品违规" value="Elec_Products_Violation_Records" />
+              <el-option label="晚交手机" value="Phone_Late_Records" />
               <el-option label="Teaching FAD Ticket" value="Teaching_FAD_Ticket" />
               <el-option label="Teaching Reward Ticket" value="Teaching_Reward_Ticket" />
             </el-select>
@@ -50,12 +54,39 @@
                 :value="item"
               />
             </el-select>
-            <el-checkbox
-              v-model="filters.hideWithdrawn"
+            <el-input
+              v-model="filters.student"
+              placeholder="输入学生姓名"
+              style="width: 120px"
+              clearable
+              @keyup.enter="fetchData"
+            />
+            <el-select
+              v-model="filters.studentClass"
+              placeholder="选择班级"
+              style="width: 150px"
+              filterable
+              clearable
               @change="fetchData"
             >
-              隐藏已撤回
-            </el-checkbox>
+              <el-option
+                v-for="item in commonStore.classes"
+                :key="item.Class"
+                :label="item.Class"
+                :value="item.Class"
+              />
+            </el-select>
+            <el-date-picker
+              v-model="filters.dateRange"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              value-format="YYYY-MM-DD"
+              style="width: 240px"
+              @change="fetchData"
+            />
+            <el-button type="success" @click="exportData">导出</el-button>
           </div>
         </div>
       </template>
@@ -71,19 +102,58 @@
         </el-table-column>
         <el-table-column prop="记录事由" label="记录事由" min-width="180" show-overflow-tooltip />
         <el-table-column prop="记录老师" label="记录老师" width="120" />
-        <el-table-column label="状态" width="100">
+        <el-table-column label="状态" width="140">
           <template #default="{ row }">
-            <el-tag v-if="row.是否已撤回" type="info">已撤回</el-tag>
-            <el-tag v-else-if="row.是否已发放" type="success">已发放</el-tag>
-            <el-tag v-else-if="row.是否已执行或冲抵" type="warning">已执行</el-tag>
-            <el-tag v-else-if="row.是否已累计FAD" type="danger">已累计</el-tag>
-            <el-tag v-else type="primary">有效</el-tag>
+            <template v-if="row.记录类型 === '寝室批评'">
+              <el-tag v-if="row.fadStatus === '已累计FAD，已发放'" type="danger" size="small">已累计FAD</el-tag>
+              <el-tag v-else-if="row.fadStatus === '已累计FAD，未发放'" type="warning" size="small">已累计FAD</el-tag>
+              <el-tag v-else-if="row.fadStatus === '未累计FAD'" type="primary" size="small">未累计FAD</el-tag>
+              <el-tag v-else-if="row.是否已累计FAD" type="danger" size="small">已累计FAD</el-tag>
+              <el-tag v-else type="primary" size="small">未累计FAD</el-tag>
+            </template>
+            <template v-else-if="row.记录类型 === '寝室表扬'">
+              <el-tag v-if="row.是否已累计Reward" type="danger" size="small">已累计Reward</el-tag>
+              <el-tag v-else type="primary" size="small">未累计Reward</el-tag>
+            </template>
+            <template v-else-if="row.记录类型 === '寝室垃圾未倒'">
+              <el-tag v-if="row.是否已累计寝室批评" type="danger" size="small">已累计批评</el-tag>
+              <el-tag v-else type="primary" size="small">未累计批评</el-tag>
+            </template>
+            <template v-else-if="row.记录类型 === 'FAD'">
+              <el-tag v-if="row.是否已冲销记录" type="success" size="small">已冲销</el-tag>
+              <el-tag v-else-if="row.是否已执行或冲抵" type="warning" size="small">已执行未冲销</el-tag>
+              <el-tag v-else type="danger" size="small">未执行</el-tag>
+            </template>
+            <template v-else-if="hasFADStatus(row)">
+              <!-- 早点名迟到、Teaching FAD Ticket、寝室迟出、未按规定返校、擅自进入会议室 -->
+              <el-tag v-if="row.fadStatus === '已累计FAD，已发放'" type="danger" size="small">已累计FAD，已发放</el-tag>
+              <el-tag v-else-if="row.fadStatus === '已累计FAD，未发放'" type="warning" size="small">已累计FAD，未发放</el-tag>
+              <el-tag v-else type="primary" size="small">未累计FAD</el-tag>
+            </template>
+            <template v-else>
+              <!-- 其他记录类型（如电子产品违规、晚交手机等） -->
+              <el-tag type="primary" size="small">有效</el-tag>
+            </template>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="{ row }">
+            <el-tooltip
+              v-if="!isWithdrawable(row)"
+              :content="getWithdrawDisabledReason(row)"
+              placement="top"
+            >
+              <el-button
+                type="info"
+                size="small"
+                plain
+                disabled
+              >
+                撤回
+              </el-button>
+            </el-tooltip>
             <el-button
-              v-if="!row.是否已撤回"
+              v-else
               type="danger"
               size="small"
               plain
@@ -91,21 +161,18 @@
             >
               撤回
             </el-button>
-            <span v-else class="withdrawn-info">
-              {{ formatDate(row.撤回日期) }}
-            </span>
           </template>
         </el-table-column>
       </el-table>
 
       <div class="table-footer">
+        <el-button type="success" @click="exportData">导出 CSV</el-button>
         <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.pageSize"
+          :current-page="pagination.page"
+          :page-size="pagination.pageSize"
           :total="pagination.total"
           :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next"
-          @change="fetchData"
         />
       </div>
     </el-card>
@@ -175,8 +242,9 @@
   </div>
 </template>
 
+
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useCommonStore } from '@/stores/common'
@@ -191,10 +259,12 @@ const records = ref([])
 const teachers = ref([])
 
 const filters = reactive({
-  collection: 'FAD_Records',
+  collection: 'FAD_Records', // 默认显示 FAD 记录
   semester: '',
   teacher: '',
-  hideWithdrawn: true
+  student: '',
+  studentClass: '',
+  dateRange: null
 })
 
 const pagination = reactive({
@@ -214,21 +284,43 @@ const withdrawDialog = reactive({
   reason: ''
 })
 
-onMounted(() => {
+onMounted(async () => {
   commonStore.generateSemesters()
   filters.semester = commonStore.getCurrentSemester()
+  await commonStore.fetchClasses()
   fetchData()
 })
 
 async function fetchData() {
+  // 计算最大页码，确保页码不超出范围
+  if (pagination.total > 0) {
+    const maxPage = Math.ceil(pagination.total / pagination.pageSize)
+    if (pagination.page > maxPage) {
+      console.log('Page out of range:', pagination.page, 'maxPage:', maxPage, ', resetting to:', maxPage)
+      pagination.page = maxPage
+    }
+  }
+
   loading.value = true
   try {
     const params = {
       collection: filters.collection,
       semester: filters.semester,
-      withdrawn: filters.hideWithdrawn ? false : undefined,
       page: pagination.page,
       pageSize: pagination.pageSize
+    }
+
+    // 可选附加筛选条件
+    if (filters.student) {
+      params.student = filters.student
+    }
+    if (filters.studentClass) {
+      params.studentClass = filters.studentClass
+    }
+    if (filters.dateRange) {
+      const [start, end] = filters.dateRange
+      params.dateFrom = start
+      params.dateTo = end
     }
 
     if (userStore.isAdmin && filters.teacher) {
@@ -237,7 +329,7 @@ async function fetchData() {
 
     const res = await getMyRecords(params)
     records.value = res.data || res
-    pagination.total = res.total || records.value.length
+    pagination.total = res.total || 0
 
     // 提取教师列表（管理员用）
     if (userStore.isAdmin) {
@@ -245,10 +337,27 @@ async function fetchData() {
       teachers.value = Array.from(teacherSet)
     }
   } catch (error) {
+    console.error('获取记录失败:', error)
     records.value = []
+    pagination.total = 0
   } finally {
     loading.value = false
   }
+}
+
+// 处理页码变化
+function handlePageChange(page) {
+  pagination.page = page
+  fetchData()
+}
+
+// 处理每页显示条数变化
+function handleSizeChange(size) {
+  console.log('pageSize change:', size, 'current page:', pagination.page)
+  pagination.pageSize = size
+  pagination.page = 1 // 重置到第一页
+  console.log('reset to page 1, fetching...')
+  fetchData()
 }
 
 async function handleWithdraw(row) {
@@ -261,7 +370,9 @@ async function handleWithdraw(row) {
   withdrawDialog.reason = ''
 
   try {
-    const res = await checkWithdrawable(filters.collection, row._id)
+    // 根据记录类型确定 collection
+    const collection = row.collection || getCollectionFromRecordType(row.记录类型)
+    const res = await checkWithdrawable(collection, row._id)
     withdrawDialog.withdrawable = res.withdrawable
     if (res.withdrawable) {
       withdrawDialog.chainRecords = res.chainRecords || []
@@ -278,8 +389,10 @@ async function handleWithdraw(row) {
 async function confirmWithdraw() {
   withdrawDialog.submitting = true
   try {
+    // 根据记录类型确定 collection
+    const collection = withdrawDialog.record.collection || getCollectionFromRecordType(withdrawDialog.record.记录类型)
     await withdrawRecord(
-      filters.collection,
+      collection,
       withdrawDialog.record._id,
       withdrawDialog.reason
     )
@@ -293,26 +406,170 @@ async function confirmWithdraw() {
   }
 }
 
+function exportData() {
+  if (records.value.length === 0) {
+    ElMessage.warning('没有数据可导出')
+    return
+  }
+
+  // 确定CSV表的表头和字段映射
+  const headers = ['学生', '班级', '记录类型', '记录日期', '记录事由', '记录老师', '状态']
+  const getField = (row) => {
+    let status = ''
+
+    // 使用后端返回的 fadStatus（如果存在）
+    if (row.fadStatus) {
+      status = row.fadStatus
+    }
+    // 否则根据字段计算状态
+    else if (row.是否已发放) {
+      status = '已发放'
+    } else if (row.是否已冲销记录) {
+      status = '已冲销'
+    } else if (row.是否已执行或冲抵) {
+      status = '已执行未冲销'
+    } else if (row.是否已累计FAD) {
+      // 如果已累计FAD但没有 fadStatus（兼容旧数据）
+      status = '已累计FAD'
+    } else if (row.是否已累计寝室批评) {
+      status = '已累计寝室警告'
+    } else if (row.是否已累计Reward) {
+      status = '已累计Reward'
+    } else {
+      status = '有效'
+    }
+
+    return [row.学生, row.班级, row.记录类型, formatDate(row.记录日期), row.记录事由 || '', row.记录老师, status]
+  }
+
+  const csv = [headers.join(','), ...records.map(row => getField(row).map(c => `"${c}"`))].join('\n')
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `我的记录_${filters.collection}_${dayjs().format('YYYYMMDD_HHmmss')}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+
+  ElMessage.success('导出成功')
+}
+
 function formatDate(date) {
   if (!date) return '-'
   return dayjs(date).format('YYYY-MM-DD')
+}
+
+// 根据记录类型获取对应的 collection
+function getCollectionFromRecordType(recordType) {
+  const map = {
+    'FAD': 'FAD_Records',
+    'Reward': 'Reward_Records',
+    '早点名迟到': 'Late_Records',
+    '寝室迟出': 'Leave_Room_Late_Records',
+    '未按规定返校': 'Back_School_Late_Records',
+    '擅自进入会议室或接待室': 'MeetingRoom_Violation_Records',
+    '寝室表扬': 'Room_Praise_Records',
+    '寝室批评': 'Room_Warning_Records',
+    '寝室垃圾未倒': 'Room_Trash_Records',
+    '上网课违规使用电子产品': 'Elec_Products_Violation_Records',
+    '21:30后交还手机(22:00前)': 'Phone_Late_Records',
+    '22:00后交还手机': 'Phone_Late_Records',
+    'Teaching FAD Ticket': 'Teaching_FAD_Ticket',
+    'Teaching Reward Ticket': 'Teaching_Reward_Ticket'
+  }
+  return map[recordType] || 'FAD_Records'
 }
 
 function getCollectionLabel(collection) {
   const map = {
     FAD_Records: 'FAD记录',
     Reward_Records: 'Reward记录',
-    Late_Records: '迟到记录',
+    Late_Records: '早点名迟到',
     Leave_Room_Late_Records: '寝室迟出',
     Back_School_Late_Records: '未按规定返校',
+    MeetingRoom_Violation_Records: '擅自进入会议室',
+    Room_Praise_Records: '寝室表扬',
     Room_Warning_Records: '寝室批评',
     Room_Trash_Records: '寝室垃圾未倒',
+    Elec_Products_Violation_Records: '电子产品违规',
+    Phone_Late_Records: '晚交手机',
     Teaching_FAD_Ticket: 'Teaching FAD Ticket',
     Teaching_Reward_Ticket: 'Teaching Reward Ticket'
   }
   return map[collection] || collection
 }
+
+// 判断记录是否可撤回（前端预判断）
+function isWithdrawable(row) {
+  // Reward 记录不可撤回
+  if (row.记录类型 === 'Reward') {
+    return false
+  }
+  // 寝室表扬已生成Reward的不可撤回
+  if (row.记录类型 === '寝室表扬' && row.是否已累计Reward) {
+    return false
+  }
+  // 累计产生FAD的记录，检查 fadStatus
+  if (hasFADStatus(row) && row.fadStatus === '已累计FAD，已发放') {
+    return false
+  }
+  // 已发放的FAD/Reward不可撤回
+  if (row.是否已发放) {
+    return false
+  }
+  // FAD记录老师以"已发:"开头的不可撤回
+  if (row.记录类型 === 'FAD' && row.记录老师 && row.记录老师.startsWith('已发:')) {
+    return false
+  }
+  // 非管理员只能撤回自己的记录
+  if (!userStore.isAdmin) {
+    const teacherName = row.记录老师?.replace('系统: ', '').split(':')[0] || ''
+    if (!teacherName.includes(userStore.name)) {
+      return false
+    }
+  }
+  return true
+}
+
+// 获取不可撤回的原因
+function getWithdrawDisabledReason(row) {
+  if (row.记录类型 === 'Reward') {
+    return 'Reward记录不可撤回'
+  }
+  if (row.记录类型 === '寝室表扬' && row.是否已累计Reward) {
+    return '该寝室表扬已生成Reward，不可撤回'
+  }
+  if (hasFADStatus(row) && row.fadStatus === '已累计FAD，已发放') {
+    return '该记录累计产生的FAD已发放纸质通知单，无法撤回'
+  }
+  if (row.是否已发放) {
+    return '已发放纸质通知单，无法撤回'
+  }
+  if (row.记录类型 === 'FAD' && row.记录老师 && row.记录老师.startsWith('已发:')) {
+    return '已发放纸质通知单，无法撤回'
+  }
+  if (!userStore.isAdmin) {
+    const teacherName = row.记录老师?.replace('系统: ', '').split(':')[0] || ''
+    if (!teacherName.includes(userStore.name)) {
+      return '只能撤回自己发出的记录'
+    }
+  }
+  return '无法撤回'
+}
+
+// 判断记录类型是否有 FAD 状态显示
+function hasFADStatus(row) {
+  const fadRecordTypes = [
+    '早点名迟到',
+    'Teaching FAD Ticket',
+    '寝室迟出',
+    '未按规定返校',
+    '擅自进入会议室或接待室'
+  ]
+  return fadRecordTypes.includes(row.记录类型)
+}
 </script>
+
 
 <style scoped>
 .card-header {
@@ -333,7 +590,9 @@ function getCollectionLabel(collection) {
 .table-footer {
   display: flex;
   justify-content: flex-end;
+align-items: center;
   margin-top: 16px;
+  gap: 12px;
 }
 
 .withdrawn-info {

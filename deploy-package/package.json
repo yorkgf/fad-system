@@ -1,0 +1,25 @@
+{
+  "name": "fad-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "start": "node src/index.js",
+    "deploy": "serverless deploy",
+    "logs": "serverless logs -t",
+    "remove": "serverless remove"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "mongodb": "^6.3.0",
+    "jsonwebtoken": "^9.0.2",
+    "bcryptjs": "^2.4.3",
+    "dayjs": "^1.11.10",
+    "axios": "^1.6.0",
+    "serverless-http": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

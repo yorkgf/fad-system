@@ -19,3 +19,8 @@ export function getCleanableWarnings(params) {
 export function confirmClean(data) {
   return request.post('/room-warning/clean', data)
 }
+
+// 获取最佳寝室排名
+export function getBestDorm(params) {
+  return request.get('/room-praise/best-dorm', { params })
+}

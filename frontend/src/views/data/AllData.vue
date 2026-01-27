@@ -105,12 +105,6 @@
         </el-form-item>
 
         <el-form-item>
-          <el-checkbox v-model="filters.hideWithdrawn" @change="fetchData">
-            隐藏已撤回
-          </el-checkbox>
-        </el-form-item>
-
-        <el-form-item>
           <el-button type="primary" @click="fetchData">查询</el-button>
           <el-button @click="resetFilters">重置</el-button>
           <el-button type="success" @click="exportData">导出</el-button>
@@ -142,15 +136,21 @@
             <el-tag v-else type="info" size="small">未发放</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="执行状态" width="100" v-if="filters.collection === 'FAD_Records'">
+        <el-table-column label="状态" width="120" v-if="filters.collection === 'FAD_Records' || filters.collection === 'Room_Warning_Records' || filters.collection === 'Room_Trash_Records'">
           <template #default="{ row }">
-            <el-tag v-if="row.是否已执行或冲抵" type="warning" size="small">已执行</el-tag>
-            <el-tag v-else type="info" size="small">未执行</el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="撤回状态" width="100">
-          <template #default="{ row }">
-            <el-tag v-if="row.是否已撤回" type="danger" size="small">已撤回</el-tag>
+            <template v-if="filters.collection === 'FAD_Records'">
+              <el-tag v-if="row.是否已冲销记录" type="success" size="small">已冲销</el-tag>
+              <el-tag v-else-if="row.是否已执行或冲抵" type="warning" size="small">已执行未冲销</el-tag>
+              <el-tag v-else type="danger" size="small">未执行</el-tag>
+            </template>
+            <template v-else-if="filters.collection === 'Room_Warning_Records'">
+              <el-tag v-if="row.是否已累计FAD" type="danger" size="small">已累计FAD</el-tag>
+              <el-tag v-else type="primary" size="small">未累计FAD</el-tag>
+            </template>
+            <template v-else-if="filters.collection === 'Room_Trash_Records'">
+              <el-tag v-if="row.是否已累计寝室批评" type="danger" size="small">已累计批评</el-tag>
+              <el-tag v-else type="primary" size="small">未累计批评</el-tag>
+            </template>
           </template>
         </el-table-column>
       </el-table>
@@ -188,8 +188,7 @@ const filters = reactive({
   studentClass: '',
   student: '',
   dateRange: null,
-  sourceType: '',
-  hideWithdrawn: true
+  sourceType: ''
 })
 
 const pagination = reactive({
@@ -216,7 +215,6 @@ async function fetchData() {
       dateFrom: filters.dateRange?.[0] || undefined,
       dateTo: filters.dateRange?.[1] || undefined,
       sourceType: filters.sourceType || undefined,
-      withdrawn: filters.hideWithdrawn ? false : undefined,
       page: pagination.page,
       pageSize: pagination.pageSize
     }
@@ -237,7 +235,6 @@ function resetFilters() {
   filters.student = ''
   filters.dateRange = null
   filters.sourceType = ''
-  filters.hideWithdrawn = true
   pagination.page = 1
   fetchData()
 }
