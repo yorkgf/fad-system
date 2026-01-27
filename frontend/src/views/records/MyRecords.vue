@@ -358,8 +358,8 @@ async function fetchData() {
 
     // 提取教师列表（管理员用）
     if (userStore.isAdmin) {
-      const teacherSet = new Set(allRecords.value.map(r => r.记录老师.replace('系统: ', '')))
-      teachers.value = Array.from(teacherSet)
+      const teacherSet = new Set(allRecords.value.map(r => (r.记录老师 || '').replace('系统: ', '')))
+      teachers.value = Array.from(teacherSet).filter(t => t) // 过滤空值
     }
   } catch (error) {
     console.error('获取记录失败:', error)
