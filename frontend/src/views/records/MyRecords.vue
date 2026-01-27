@@ -344,11 +344,17 @@ async function fetchData() {
       params.teacher = filters.teacher
     }
 
+    console.log('Fetching records with params:', params)
     const res = await getMyRecords(params)
+    console.log('API response:', res)
+    console.log('res.data length:', res.data?.length)
+
     allRecords.value = res.data || res
+    console.log('allRecords.value length:', allRecords.value.length)
 
     // 更新分页信息
     updatePagination()
+    console.log('pagination:', pagination)
 
     // 提取教师列表（管理员用）
     if (userStore.isAdmin) {
