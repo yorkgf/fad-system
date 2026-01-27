@@ -122,7 +122,7 @@ router.post('/', authMiddleware, async (req, res) => {
         记录事由: description,
         是否优先冲抵执行: priorityOffset || false,
         是否已冲销记录: false,
-        冲销记录FAD_ID: null,
+        '冲销记录FAD ID': null,
         是否已发放: false,
         发放日期: null,
         发放老师: ''
