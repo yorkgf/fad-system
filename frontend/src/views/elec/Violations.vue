@@ -2,7 +2,7 @@
   <div class="elec-violations">
     <el-card>
       <template #header>
-        <span>电子产品违规 - 被取消上课资格学生</span>
+        <span>暂停网课资格名单</span>
       </template>
 
       <el-table v-loading="loading" :data="records" stripe>

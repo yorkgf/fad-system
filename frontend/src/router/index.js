@@ -82,7 +82,7 @@ const routes = [
         path: 'elec/violations',
         name: 'ElecViolations',
         component: () => import('@/views/elec/Violations.vue'),
-        meta: { title: '电子产品违规' }
+        meta: { title: '网课违规使用电子产品' }
       },
       {
         path: 'phone/no-phone-list',

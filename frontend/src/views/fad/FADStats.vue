@@ -6,7 +6,7 @@
         <el-card class="filter-card">
           <el-form :inline="false">
             <el-row :gutter="16">
-              <el-col :span="12">
+              <el-col :xs="24" :sm="12" :md="12">
                 <el-form-item label="学期（可多选）">
                   <el-select
                     v-model="filters.semesters"
@@ -24,7 +24,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="8">
+              <el-col :xs="24" :sm="12" :md="8">
                 <el-form-item label="班级">
                   <el-select
                     v-model="filters.studentClass"
@@ -43,7 +43,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :span="4">
+              <el-col :xs="24" :sm="12" :md="4">
                 <el-form-item label="来源">
                   <el-select
                     v-model="filters.sourceType"
@@ -55,6 +55,7 @@
                     <el-option label="全部" value="" />
                     <el-option label="寝室类" value="dorm" />
                     <el-option label="教学类" value="teach" />
+                    <el-option label="电子产品违规" value="elec" />
                     <el-option label="其他" value="other" />
                   </el-select>
                 </el-form-item>
@@ -65,25 +66,25 @@
       </el-col>
 
       <!-- 统计卡片 -->
-      <el-col :span="6">
+      <el-col :xs="12" :sm="6">
         <el-card class="stat-card">
           <div class="stat-value">{{ stats.total }}</div>
           <div class="stat-label">FAD总数</div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="6">
         <el-card class="stat-card">
           <div class="stat-value executed">{{ stats.executed }}</div>
           <div class="stat-label">已执行</div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="6">
         <el-card class="stat-card">
           <div class="stat-value delivered">{{ stats.delivered }}</div>
           <div class="stat-label">已发放</div>
         </el-card>
       </el-col>
-      <el-col :span="6">
+      <el-col :xs="12" :sm="6">
         <el-card class="stat-card">
           <div class="stat-value offset">{{ stats.offset }}</div>
           <div class="stat-label">已冲销</div>
@@ -91,40 +92,40 @@
       </el-col>
 
       <!-- 按来源类型统计 -->
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12">
         <el-card>
           <template #header>
             <span>按来源类型统计</span>
           </template>
-          <el-table :data="sourceTypeStats" stripe>
-            <el-table-column prop="type" label="来源类型" width="120">
+          <el-table :data="sourceTypeStats" stripe class="responsive-table">
+            <el-table-column prop="type" label="来源类型" min-width="90">
               <template #default="{ row }">
-                <el-tag :type="getSourceTypeTag(row.type)">
+                <el-tag :type="getSourceTypeTag(row.type)" size="small">
                   {{ getSourceTypeLabel(row.type) }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="count" label="数量" />
-            <el-table-column prop="executed" label="已执行" />
-            <el-table-column prop="delivered" label="已发放" />
-            <el-table-column prop="offset" label="已冲销" />
+            <el-table-column prop="count" label="数量" min-width="60" />
+            <el-table-column prop="executed" label="已执行" min-width="60" />
+            <el-table-column prop="delivered" label="已发放" min-width="60" class-name="hide-on-xs" />
+            <el-table-column prop="offset" label="已冲销" min-width="60" class-name="hide-on-xs" />
           </el-table>
         </el-card>
       </el-col>
 
       <!-- 按班级统计 -->
-      <el-col :span="12">
+      <el-col :xs="24" :sm="24" :md="12">
         <el-card>
           <template #header>
             <span>按班级FAD总量 Top 3</span>
           </template>
-          <el-table :data="classStats" stripe>
-            <el-table-column prop="class" label="班级" />
-            <el-table-column prop="count" label="FAD数量" sortable />
-            <el-table-column prop="executed" label="已执行" />
-            <el-table-column prop="unexecuted" label="未执行">
+          <el-table :data="classStats" stripe class="responsive-table">
+            <el-table-column prop="class" label="班级" min-width="80" />
+            <el-table-column prop="count" label="FAD数量" min-width="70" sortable />
+            <el-table-column prop="executed" label="已执行" min-width="60" />
+            <el-table-column prop="unexecuted" label="未执行" min-width="60">
               <template #default="{ row }">
-                <el-tag v-if="row.unexecuted > 0" type="danger">
+                <el-tag v-if="row.unexecuted > 0" type="danger" size="small">
                   {{ row.unexecuted }}
                 </el-tag>
                 <span v-else>0</span>
@@ -138,19 +139,21 @@
       <el-col :span="24">
         <el-card>
           <template #header>
-            <span>按班级人均FAD排名</span>
-            <el-tag style="margin-left: 10px" type="info">FAD总数 / 班级人数</el-tag>
+            <div class="card-header-flex">
+              <span>按班级人均FAD排名</span>
+              <el-tag class="header-tag" type="info" size="small">FAD总数 / 班级人数</el-tag>
+            </div>
           </template>
-          <el-table :data="perClassStats" stripe>
-            <el-table-column label="排名" width="80" align="center">
+          <el-table :data="perClassStats" stripe class="responsive-table">
+            <el-table-column label="排名" width="60" align="center">
               <template #default="{ $index }">
                 <span :class="getRankClass($index + 1)">{{ $index + 1 }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="class" label="班级" width="120" />
-            <el-table-column prop="fadCount" label="FAD总数" width="100" sortable />
-            <el-table-column prop="studentCount" label="班级人数" width="100" />
-            <el-table-column prop="avgFAD" label="人均FAD" width="120" sortable>
+            <el-table-column prop="class" label="班级" min-width="80" />
+            <el-table-column prop="fadCount" label="FAD总数" min-width="70" sortable />
+            <el-table-column prop="studentCount" label="班级人数" min-width="70" class-name="hide-on-xs" />
+            <el-table-column prop="avgFAD" label="人均FAD" min-width="80" sortable>
               <template #default="{ row }">
                 <el-tag
                   :type="getAvgFADTagType(row.avgFAD)"
@@ -170,31 +173,36 @@
           <template #header>
             <span>FAD较多的学生 Top 10</span>
           </template>
-          <el-table :data="studentStats" stripe>
-            <el-table-column prop="student" label="学生" width="120" />
-            <el-table-column prop="class" label="班级" width="150" />
-            <el-table-column prop="count" label="FAD总数" width="100" sortable />
-            <el-table-column prop="executed" label="已执行" width="100" />
-            <el-table-column prop="unexecuted" label="未执行" width="100">
+          <el-table :data="studentStats" stripe class="responsive-table">
+            <el-table-column prop="student" label="学生" min-width="70" />
+            <el-table-column prop="class" label="班级" min-width="80" class-name="hide-on-xs" />
+            <el-table-column prop="count" label="FAD总数" min-width="65" sortable />
+            <el-table-column prop="executed" label="已执行" min-width="60" class-name="hide-on-xs" />
+            <el-table-column prop="unexecuted" label="未执行" min-width="60">
               <template #default="{ row }">
-                <el-tag v-if="row.unexecuted > 0" type="danger">
+                <el-tag v-if="row.unexecuted > 0" type="danger" size="small">
                   {{ row.unexecuted }}
                 </el-tag>
                 <span v-else>0</span>
               </template>
             </el-table-column>
-            <el-table-column prop="offset" label="已冲销" width="100" />
-            <el-table-column label="来源分布" min-width="200">
+            <el-table-column prop="offset" label="已冲销" min-width="60" class-name="hide-on-sm" />
+            <el-table-column label="来源分布" min-width="150" class-name="hide-on-sm">
               <template #default="{ row }">
-                <el-tag v-if="row.dorm" type="warning" class="source-tag">
-                  寝室: {{ row.dorm }}
-                </el-tag>
-                <el-tag v-if="row.teach" type="danger" class="source-tag">
-                  教学: {{ row.teach }}
-                </el-tag>
-                <el-tag v-if="row.other" type="info" class="source-tag">
-                  其他: {{ row.other }}
-                </el-tag>
+                <div class="source-tags">
+                  <el-tag v-if="row.dorm" type="warning" size="small" class="source-tag">
+                    寝室: {{ row.dorm }}
+                  </el-tag>
+                  <el-tag v-if="row.teach" type="danger" size="small" class="source-tag">
+                    教学: {{ row.teach }}
+                  </el-tag>
+                  <el-tag v-if="row.elec" type="primary" size="small" class="source-tag">
+                    电子: {{ row.elec }}
+                  </el-tag>
+                  <el-tag v-if="row.other" type="info" size="small" class="source-tag">
+                    其他: {{ row.other }}
+                  </el-tag>
+                </div>
               </template>
             </el-table-column>
           </el-table>
@@ -291,12 +299,12 @@ async function fetchStats() {
 }
 
 function getSourceTypeLabel(type) {
-  const map = { dorm: '寝室类', teach: '教学类', other: '其他' }
+  const map = { dorm: '寝室类', teach: '教学类', elec: '电子产品违规', other: '其他' }
   return map[type] || type || '未分类'
 }
 
 function getSourceTypeTag(type) {
-  const map = { dorm: 'warning', teach: 'danger', other: 'info' }
+  const map = { dorm: 'warning', teach: 'danger', elec: 'primary', other: 'info' }
   return map[type] || 'info'
 }
 
@@ -351,51 +359,184 @@ function getAvgFADTagType(avg) {
   margin-top: 8px;
 }
 
+.source-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
 .source-tag {
-  margin-right: 6px;
+  margin: 2px 0;
 }
 
 .el-card {
   margin-bottom: 20px;
 }
 
+.card-header-flex {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.header-tag {
+  flex-shrink: 0;
+}
+
 /* 排名样式 */
 .rank-first {
   display: inline-block;
-  width: 28px;
-  height: 28px;
-  line-height: 28px;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
   text-align: center;
   background: linear-gradient(135deg, #ffd700, #ffed4e);
   color: #8B4513;
   border-radius: 4px;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .rank-second {
   display: inline-block;
-  width: 28px;
-  height: 28px;
-  line-height: 28px;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
   text-align: center;
   background: linear-gradient(135deg, #c0c0c0, #e8e8e8);
   color: #555;
   border-radius: 4px;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .rank-third {
   display: inline-block;
-  width: 28px;
-  height: 28px;
-  line-height: 28px;
+  width: 24px;
+  height: 24px;
+  line-height: 24px;
   text-align: center;
   background: linear-gradient(135deg, #cd7f32, #dda15e);
   color: #fff;
   border-radius: 4px;
   font-weight: bold;
-  font-size: 14px;
+  font-size: 12px;
+}
+
+/* 响应式表格 */
+.responsive-table {
+  width: 100%;
+}
+
+/* ========== 响应式优化 ========== */
+
+/* 平板及以下 */
+@media (max-width: 992px) {
+  .stat-value {
+    font-size: 28px;
+  }
+
+  .stat-label {
+    font-size: 13px;
+  }
+}
+
+/* 手机端 */
+@media (max-width: 768px) {
+  .stat-value {
+    font-size: 24px;
+  }
+
+  .stat-label {
+    font-size: 12px;
+  }
+
+  .stat-card {
+    margin-bottom: 12px;
+  }
+
+  .el-card {
+    margin-bottom: 12px;
+  }
+
+  /* 表单项间距 */
+  :deep(.el-form-item) {
+    margin-bottom: 12px;
+  }
+
+  /* 卡片头部 */
+  :deep(.el-card__header) {
+    padding: 12px 16px;
+  }
+
+  /* 卡片内容 */
+  :deep(.el-card__body) {
+    padding: 12px;
+  }
+
+  /* 表格紧凑 */
+  :deep(.el-table .el-table__cell) {
+    padding: 8px 4px;
+    font-size: 13px;
+  }
+
+  :deep(.el-table th.el-table__cell) {
+    padding: 10px 4px;
+    font-size: 13px;
+  }
+
+  /* 隐藏次要列 */
+  :deep(.hide-on-sm) {
+    display: none !important;
+  }
+}
+
+/* 超小屏幕 */
+@media (max-width: 480px) {
+  .stat-value {
+    font-size: 22px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+  }
+
+  :deep(.el-table .el-table__cell) {
+    padding: 6px 2px;
+    font-size: 12px;
+  }
+
+  :deep(.el-table th.el-table__cell) {
+    padding: 8px 2px;
+    font-size: 12px;
+  }
+
+  /* 隐藏更多次要列 */
+  :deep(.hide-on-xs) {
+    display: none !important;
+  }
+
+  /* 标签更小 */
+  :deep(.el-tag) {
+    font-size: 11px;
+    padding: 0 4px;
+    height: 20px;
+    line-height: 18px;
+  }
+
+  .rank-first,
+  .rank-second,
+  .rank-third {
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 11px;
+  }
+
+  .card-header-flex {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>

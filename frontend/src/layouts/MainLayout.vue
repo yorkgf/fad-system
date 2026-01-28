@@ -153,8 +153,8 @@ const functionCards = computed(() => {
       groups: ['S']
     },
     {
-      title: '电子产品违规',
-      subtitle: '电子产品违规记录',
+      title: '网课违规使用电子产品',
+      subtitle: '暂停网课资格名单',
       path: '/elec/violations',
       icon: 'Monitor',
       color: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
