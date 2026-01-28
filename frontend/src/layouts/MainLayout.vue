@@ -129,14 +129,6 @@ const functionCards = computed(() => {
       groups: ['S']
     },
     {
-      title: 'Reward发放',
-      subtitle: '发放奖励通知单',
-      path: '/reward/deliver',
-      icon: 'Trophy',
-      color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
-      groups: ['S']
-    },
-    {
       title: '寝室表扬兑奖',
       subtitle: '兑换寝室表扬奖励',
       path: '/room/praise-reward',
