@@ -9,7 +9,8 @@
         ref="formRef"
         :model="form"
         :rules="rules"
-        label-width="120px"
+        :label-width="isMobile ? 'auto' : '120px'"
+        :label-position="isMobile ? 'top' : 'right'"
         @submit.prevent="handleSubmit"
       >
         <!-- 记录类型 -->
@@ -18,6 +19,7 @@
             v-model="form.recordType"
             placeholder="请选择记录类型"
             style="width: 100%"
+            :teleported="false"
             @change="handleRecordTypeChange"
           >
             <el-option
@@ -35,7 +37,7 @@
           label="FAD来源类型"
           prop="sourceType"
         >
-          <el-radio-group v-model="form.sourceType">
+          <el-radio-group v-model="form.sourceType" class="radio-group-wrap">
             <el-radio
               v-for="item in commonStore.fadSourceTypes"
               :key="item.value"
@@ -52,6 +54,7 @@
             v-model="form.semester"
             placeholder="请选择学期"
             style="width: 100%"
+            :teleported="false"
           >
             <el-option
               v-for="item in commonStore.semesters"
@@ -74,6 +77,7 @@
             style="width: 100%"
             filterable
             clearable
+            :teleported="false"
             @change="handleDormChange"
           >
             <el-option
@@ -97,14 +101,20 @@
             reserve-keyword
             :remote-method="!isDormRelatedRecord || !form.dorm ? searchStudents : undefined"
             :loading="studentsLoading"
+            :teleported="false"
             @change="handleStudentsChange"
           >
             <el-option
               v-for="item in students"
               :key="item.学生姓名"
-              :label="`${item.学生姓名} (${item.班级})`"
+              :label="item.学生姓名"
               :value="item.学生姓名"
-            />
+            >
+              <div class="student-option">
+                <span class="student-name">{{ item.学生姓名 }}</span>
+                <span class="student-class">{{ item.班级 }}</span>
+              </div>
+            </el-option>
           </el-select>
         </el-form-item>
 
@@ -151,8 +161,10 @@
           v-if="form.recordType === 'Reward'"
           label="优先冲抵执行"
         >
-          <el-switch v-model="form.priorityOffset" />
-          <span class="tip">开启后优先冲抵未执行的FAD</span>
+          <div class="switch-with-tip">
+            <el-switch v-model="form.priorityOffset" />
+            <span class="tip">开启后优先冲抵未执行的FAD</span>
+          </div>
         </el-form-item>
 
         <!-- 票据数量（Reward/Teaching Reward Ticket/Teaching FAD Ticket） -->
@@ -160,19 +172,21 @@
           v-if="isTicketRecord"
           label="数量"
         >
-          <el-select
-            v-model="form.ticketCount"
-            placeholder="请选择数量"
-            style="width: 200px"
-          >
-            <el-option
-              v-for="n in 6"
-              :key="n"
-              :label="`${n}张`"
-              :value="n"
-            />
-          </el-select>
-          <span class="tip">一次录入多张相同记录</span>
+          <div class="select-with-tip">
+            <el-select
+              v-model="form.ticketCount"
+              placeholder="请选择数量"
+              class="ticket-count-select"
+            >
+              <el-option
+                v-for="n in 6"
+                :key="n"
+                :label="`${n}张`"
+                :value="n"
+              />
+            </el-select>
+            <span class="tip">一次录入多张相同记录</span>
+          </div>
         </el-form-item>
 
         <!-- 取消上课资格至（仅电子产品违规） -->
@@ -180,21 +194,24 @@
           v-if="form.recordType === '上网课违规使用电子产品'"
           label="取消资格至"
         >
-          <el-radio-group v-model="form.cancelUntil">
+          <el-radio-group v-model="form.cancelUntil" class="radio-group-wrap">
             <el-radio value="一个月">一个月后</el-radio>
             <el-radio value="学期结束">学期结束</el-radio>
           </el-radio-group>
         </el-form-item>
 
-        <el-form-item>
-          <el-button
-            type="primary"
-            :loading="submitting"
-            @click="handleSubmit"
-          >
-            提交记录
-          </el-button>
-          <el-button @click="resetForm">重置</el-button>
+        <el-form-item class="form-actions">
+          <div class="action-buttons">
+            <el-button
+              type="primary"
+              :loading="submitting"
+              @click="handleSubmit"
+              class="submit-btn"
+            >
+              提交记录
+            </el-button>
+            <el-button @click="resetForm" class="reset-btn">重置</el-button>
+          </div>
         </el-form-item>
       </el-form>
     </el-card>
@@ -202,7 +219,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useCommonStore } from '@/stores/common'
@@ -219,6 +236,15 @@ const studentsLoading = ref(false)
 const students = ref([])
 const dorms = ref([]) // 寝室列表
 const studentClassMap = ref({}) // 学生姓名 -> 班级 的映射
+const windowWidth = ref(window.innerWidth)
+
+// 响应式检测
+const isMobile = computed(() => windowWidth.value < 768)
+
+// 监听窗口大小变化
+const handleResize = () => {
+  windowWidth.value = window.innerWidth
+}
 
 const form = reactive({
   recordType: '',
@@ -277,6 +303,12 @@ onMounted(async () => {
   form.semester = commonStore.getCurrentSemester()
   // 初始化时加载所有寝室列表
   await fetchDormList()
+  // 监听窗口大小变化
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
 })
 
 // 获取寝室列表
@@ -518,45 +550,226 @@ function resetForm() {
 }
 
 .tip {
-  margin-left: 10px;
   color: #909399;
   font-size: 12px;
 }
 
-/* 响应式优化 */
+/* 带提示的组件布局 */
+.switch-with-tip,
+.select-with-tip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ticket-count-select {
+  width: 200px;
+}
+
+/* Radio 组换行支持 */
+.radio-group-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+/* 操作按钮区域 */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.submit-btn,
+.reset-btn {
+  min-width: 100px;
+}
+
+/* 下拉选项自定义样式 */
+.student-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 12px;
+}
+
+.student-name {
+  font-weight: 500;
+  color: #303133;
+  flex: 1;
+}
+
+.student-class {
+  font-size: 12px;
+  color: #909399;
+  flex-shrink: 0;
+}
+
+/* ========== 移动端响应式优化 ========== */
 @media (max-width: 768px) {
   .insert-record {
     max-width: 100%;
   }
 
-  /* 表单 label 顶部显示 */
-  :deep(.el-form-item__label) {
-    float: none !important;
-    display: block !important;
-    text-align: left !important;
-    padding-bottom: 8px !important;
-    width: 100% !important;
-  }
-
-  :deep(.el-form-item__content) {
-    margin-left: 0 !important;
-  }
-
+  /* 提示文字换行显示 */
   .tip {
     display: block;
-    margin-left: 0;
     margin-top: 8px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+
+  .switch-with-tip,
+  .select-with-tip {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .ticket-count-select {
+    width: 100%;
+  }
+
+  /* Radio 组垂直排列 */
+  .radio-group-wrap {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .radio-group-wrap :deep(.el-radio) {
+    margin-right: 0;
+    height: auto;
+    line-height: 1.5;
+  }
+
+  /* 操作按钮全宽 */
+  .form-actions {
+    margin-top: 8px;
+  }
+
+  .action-buttons {
+    width: 100%;
+    flex-direction: column;
+  }
+
+  .submit-btn,
+  .reset-btn {
+    width: 100%;
+    min-width: unset;
+    height: 44px;
+    font-size: 16px;
+  }
+
+  /* 下拉菜单样式 */
+  :deep(.el-select-dropdown) {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+  }
+
+  :deep(.el-select-dropdown__item) {
+    padding: 14px 16px !important;
+    height: auto !important;
+    min-height: 48px !important;
+    line-height: 1.5 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    font-size: 16px !important;
+  }
+
+  :deep(.el-select-dropdown__wrap) {
+    max-height: 50vh !important;
+  }
+
+  :deep(.el-scrollbar__view.el-select-dropdown__list) {
+    padding: 8px 0 !important;
   }
 
   /* 标签换行显示 */
   :deep(.el-tag) {
     margin-bottom: 8px;
+    max-width: 100%;
+  }
+
+  :deep(.el-tag .el-tag__content) {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* 学生选择下拉优化 - 移动端上下布局 */
+  .student-option {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .student-name {
+    font-size: 16px;
+  }
+
+  .student-class {
+    font-size: 14px;
+    color: #606266;
+  }
+
+  /* 多选标签优化 */
+  :deep(.el-select .el-select__tags) {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  :deep(.el-select .el-tag) {
+    margin: 2px !important;
+    max-width: calc(50% - 8px);
+  }
+
+  /* 日期选择器优化 */
+  :deep(.el-date-editor) {
+    width: 100% !important;
+  }
+
+  /* 输入框高度优化 */
+  :deep(.el-input__wrapper),
+  :deep(.el-textarea__inner) {
+    min-height: 44px;
+  }
+
+  :deep(.el-textarea__inner) {
+    min-height: 88px;
   }
 }
 
 @media (max-width: 480px) {
   .tip {
-    font-size: 11px;
+    font-size: 12px;
+  }
+
+  :deep(.el-select-dropdown__item) {
+    padding: 16px 12px !important;
+    min-height: 52px !important;
+    font-size: 17px !important;
+  }
+
+  .student-name {
+    font-size: 17px;
+  }
+
+  .student-class {
+    font-size: 15px;
+  }
+
+  /* 更小屏幕上标签单列显示 */
+  :deep(.el-select .el-tag) {
+    max-width: 100%;
+  }
+
+  .submit-btn,
+  .reset-btn {
+    height: 48px;
+    font-size: 17px;
   }
 }
 </style>

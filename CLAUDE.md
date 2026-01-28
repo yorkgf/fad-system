@@ -66,6 +66,8 @@ backend/src/
 - MongoDB connection via `MONGO_URI` env var, database: `GHA`
 - Collections follow `{Type}_Records` pattern (e.g., `FAD_Records`, `Late_Records`)
 - System collections: `Teachers`, `Students`, `All_Classes`
+- Special collections: `Teaching_FAD_Ticket`, `Teaching_Reward_Ticket` (no `_Records` suffix)
+- Note: Both phone late types (`21:30后` and `22:00后`) share `Phone_Late_Records` collection
 
 ## Authentication
 
@@ -76,23 +78,38 @@ backend/src/
 ## Core Business Rules
 
 **Accumulation Rules** (in `constants.js`):
-- 2 早点名迟到 → 1 FAD
-- 2 寝室迟出 → 1 FAD
-- 2 未按规定返校 → 1 FAD
-- 2 擅自进入会议室或接待室 → 1 FAD
-- 5 寝室批评 → 1 FAD
-- 2 寝室垃圾未倒 → 1 寝室批评
-- 3 Teaching FAD Tickets → 1 FAD
-- 10 寝室表扬 → Reward hint
-- 6 Teaching Reward Tickets → Reward hint
+- 2 早点名迟到 → 1 FAD (source: other)
+- 2 寝室迟出 → 1 FAD (source: dorm)
+- 2 未按规定返校 → 1 FAD (source: dorm)
+- 2 擅自进入会议室或接待室 → 1 FAD (source: other)
+- 5 寝室批评 → 1 FAD (source: dorm)
+- 2 寝室垃圾未倒 → 1 寝室批评 (chains to FAD via 寝室批评 rule)
+- 3 Teaching FAD Tickets → 1 FAD (source: teach)
+- 10 寝室表扬 → Reward hint (frontend notification only)
+- 6 Teaching Reward Tickets → Reward hint (frontend notification only)
 
-**Record Withdrawal**: Cascade deletes any generated FAD/warnings from accumulated records.
+**Reward Offset Rules** (in `records.js:handleRewardOffset`):
+- 2 Rewards → offset FAD execution (是否已执行或冲抵 = true)
+- 3 Rewards → offset FAD record (是否已冲销记录 = true)
+- `priorityOffset` flag controls whether to prioritize offsetting execution vs record
+
+**Direct FAD Triggers** (no accumulation):
+- 上网课违规使用电子产品 → immediate FAD (source: teach)
+- 22:00后交还手机 → immediate FAD (source: dorm)
+- 21:30后交还手机(22:00前) → no FAD (same collection, different behavior)
+
+**Record Withdrawal**:
+- Cascade deletes any generated FAD/warnings from accumulated records
+- Reward records cannot be withdrawn (enforced in API)
+- FAD/Reward with `是否已发放=true` or teacher starting with `已发:` cannot be withdrawn
 
 ## Critical Sync Points
 
 Changes to record types require updates in **both**:
-1. `backend/src/utils/constants.js` (RECORD_TYPE_TO_COLLECTION)
+1. `backend/src/utils/constants.js` (RECORD_TYPE_TO_COLLECTION, ACCUMULATE_RULES)
 2. `frontend/src/stores/common.js` (allRecordTypes)
+
+FAD source type mappings are defined in `backend/src/utils/constants.js` (RECORD_TO_FAD_SOURCE).
 
 ## Environment Variables (Backend)
 
