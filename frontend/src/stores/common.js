@@ -11,6 +11,7 @@ export const useCommonStore = defineStore('common', () => {
   const fadSourceTypes = [
     { label: '寝室类', value: 'dorm' },
     { label: '教学类', value: 'teach' },
+    { label: '电子产品违规', value: 'elec' },
     { label: '其他', value: 'other' }
   ]
 

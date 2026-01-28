@@ -165,7 +165,7 @@ router.post('/', authMiddleware, async (req, res) => {
         semester,
         teacher: '系统: 上网课违规触发',
         description: `上网课违规使用电子产品: ${description}`,
-        sourceType: FAD_SOURCE_TYPE.TEACH
+        sourceType: FAD_SOURCE_TYPE.ELEC
       })
       accumulatedFAD = 1
 

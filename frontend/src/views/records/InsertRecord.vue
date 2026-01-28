@@ -279,14 +279,26 @@ const needsDescription = computed(() => descriptionTypes.includes(form.recordTyp
 
 // 可用的记录类型（根据用户权限）
 const availableRecordTypes = computed(() => {
+  // C组用户只能录入寝室相关记录
+  if (userStore.isCleaner) {
+    return [
+      { value: '寝室表扬', label: '寝室表扬', group: 'C' },
+      { value: '寝室批评', label: '寝室批评', group: 'C' },
+      { value: '寝室垃圾未倒', label: '寝室垃圾未倒', group: 'C' }
+    ]
+  }
+  // F组用户只能录入Teaching Ticket
+  if (userStore.isFaculty) {
+    return [
+      { value: 'Teaching Reward Ticket', label: 'Teaching Reward Ticket', group: 'F' },
+      { value: 'Teaching FAD Ticket', label: 'Teaching FAD Ticket', group: 'F' }
+    ]
+  }
   if (userStore.recordTypes.length > 0) {
     return userStore.recordTypes
   }
-  // 默认根据用户组过滤
-  return commonStore.allRecordTypes.filter(item => {
-    if (userStore.isAdmin) return true
-    return item.group !== 'S'
-  })
+  // S组管理员可以看到所有记录类型
+  return commonStore.allRecordTypes
 })
 
 const rules = {

@@ -123,6 +123,9 @@ const router = createRouter({
   routes
 })
 
+// C组和F组用户可访问的路由
+const limitedAllowedRoutes = ['/', '/records/insert', '/records/my', '/settings/password', '/login']
+
 // 路由守卫
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
@@ -130,6 +133,9 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth !== false && !userStore.isLoggedIn) {
     next('/login')
   } else if (to.path === '/login' && userStore.isLoggedIn) {
+    next('/')
+  } else if ((userStore.userGroup === 'C' || userStore.userGroup === 'F') && !limitedAllowedRoutes.includes(to.path)) {
+    // C组和F组用户尝试访问未授权页面，重定向到首页
     next('/')
   } else {
     next()

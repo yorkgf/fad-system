@@ -2,6 +2,7 @@
 const FAD_SOURCE_TYPE = {
   DORM: 'dorm',
   TEACH: 'teach',
+  ELEC: 'elec',
   OTHER: 'other'
 }
 
@@ -12,7 +13,7 @@ const RECORD_TO_FAD_SOURCE = {
   '22:00后交还手机': FAD_SOURCE_TYPE.DORM,
   '未按规定返校': FAD_SOURCE_TYPE.DORM,
   'Teaching FAD Ticket': FAD_SOURCE_TYPE.TEACH,
-  '上网课违规使用电子产品': FAD_SOURCE_TYPE.TEACH,
+  '上网课违规使用电子产品': FAD_SOURCE_TYPE.ELEC,
   '早点名迟到': FAD_SOURCE_TYPE.OTHER,
   '擅自进入会议室或接待室': FAD_SOURCE_TYPE.OTHER
 }

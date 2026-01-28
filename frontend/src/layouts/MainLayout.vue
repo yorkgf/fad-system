@@ -93,102 +93,118 @@ const functionCards = computed(() => {
       subtitle: '添加学生行为记录',
       path: '/records/insert',
       icon: 'Edit',
-      color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      groups: ['S', 'F', 'C'] // 所有用户可见
     },
     {
       title: '我的记录',
       subtitle: '查看已录入的记录',
       path: '/records/my',
       icon: 'List',
-      color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
+      color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+      groups: ['S', 'F', 'C'] // 所有用户可见
     },
     {
       title: 'FAD执行',
       subtitle: '管理FAD执行状态',
       path: '/fad/execution',
       icon: 'Check',
-      color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
+      color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+      groups: ['S'] // 仅S组可见
     },
     {
       title: 'FAD通知单发放',
       subtitle: '发放纸质通知单',
       path: '/fad/deliver',
       icon: 'Promotion',
-      color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)'
+      color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+      groups: ['S']
     },
     {
       title: 'FAD统计',
       subtitle: '查看FAD数据统计',
       path: '/fad/stats',
       icon: 'DataLine',
-      color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'
+      color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+      groups: ['S']
     },
     {
       title: 'Reward发放',
       subtitle: '发放奖励通知单',
       path: '/reward/deliver',
       icon: 'Trophy',
-      color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)'
+      color: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+      groups: ['S']
     },
     {
       title: '寝室表扬兑奖',
       subtitle: '兑换寝室表扬奖励',
       path: '/room/praise-reward',
       icon: 'Star',
-      color: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)'
+      color: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
+      groups: ['S']
     },
     {
       title: '寝室清扫',
       subtitle: '记录寝室清扫情况',
       path: '/room/clean',
       icon: 'Brush',
-      color: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)'
+      color: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
+      groups: ['S']
     },
     {
       title: '最佳寝室排名',
       subtitle: '查看优秀寝室排行',
       path: '/room/best-dorm',
       icon: 'TrophyBase',
-      color: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)'
+      color: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
+      groups: ['S']
     },
     {
       title: '电子产品违规',
       subtitle: '电子产品违规记录',
       path: '/elec/violations',
       icon: 'Monitor',
-      color: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)'
+      color: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+      groups: ['S']
     },
     {
       title: '未交手机名单',
       subtitle: '查看未交手机学生',
       path: '/phone/no-phone-list',
       icon: 'Iphone',
-      color: 'linear-gradient(135deg, #96fbc4 0%, #f9f586 100%)'
+      color: 'linear-gradient(135deg, #96fbc4 0%, #f9f586 100%)',
+      groups: ['S']
     },
     {
       title: '停课名单',
       subtitle: '查看停课学生名单',
       path: '/stop-class',
       icon: 'CircleClose',
-      color: 'linear-gradient(135deg, #cd9cf2 0%, #f6f3ff 100%)'
+      color: 'linear-gradient(135deg, #cd9cf2 0%, #f6f3ff 100%)',
+      groups: ['S']
     },
     {
       title: '教学票兑奖',
       subtitle: '兑换教学奖励',
       path: '/teaching-tickets',
       icon: 'Ticket',
-      color: 'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)'
+      color: 'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
+      groups: ['S']
     },
     {
       title: '数据查询',
       subtitle: '查询所有数据',
       path: '/data/all',
       icon: 'Search',
-      color: 'linear-gradient(135deg, #5ee7df 0%, #b490ca 100%)'
+      color: 'linear-gradient(135deg, #5ee7df 0%, #b490ca 100%)',
+      groups: ['S']
     }
   ]
 
-  return baseCards
+  // 根据用户组过滤功能卡片
+  const currentGroup = userStore.userGroup || 'F'
+  return baseCards.filter(card => card.groups.includes(currentGroup))
 })
 
 // 导航到指定路径

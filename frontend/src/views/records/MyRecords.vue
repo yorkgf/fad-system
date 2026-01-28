@@ -11,30 +11,45 @@
               style="width: 200px"
               @change="fetchData"
             >
-              <el-option label="FAD记录" value="FAD_Records" />
-              <el-option label="Reward记录" value="Reward_Records" />
-              <el-option label="早点名迟到" value="Late_Records" />
-              <el-option label="寝室迟出" value="Leave_Room_Late_Records" />
-              <el-option label="未按规定返校" value="Back_School_Late_Records" />
-              <el-option label="擅自进入会议室" value="MeetingRoom_Violation_Records" />
-              <el-option label="寝室表扬" value="Room_Praise_Records" />
-              <el-option label="寝室批评" value="Room_Warning_Records" />
-              <el-option label="寝室垃圾未倒" value="Room_Trash_Records" />
-              <el-option label="电子产品违规" value="Elec_Products_Violation_Records" />
-              <el-option label="晚交手机" value="Phone_Late_Records" />
-              <el-option label="Teaching FAD Ticket" value="Teaching_FAD_Ticket" />
-              <el-option label="Teaching Reward Ticket" value="Teaching_Reward_Ticket" />
+              <!-- C组用户只能看到寝室相关记录 -->
+              <template v-if="userStore.isCleaner">
+                <el-option label="寝室表扬" value="Room_Praise_Records" />
+                <el-option label="寝室批评" value="Room_Warning_Records" />
+                <el-option label="寝室垃圾未倒" value="Room_Trash_Records" />
+              </template>
+              <!-- F组用户只能看到Teaching Ticket记录 -->
+              <template v-else-if="userStore.isFaculty">
+                <el-option label="Teaching Reward Ticket" value="Teaching_Reward_Ticket" />
+                <el-option label="Teaching FAD Ticket" value="Teaching_FAD_Ticket" />
+              </template>
+              <!-- S组管理员可以看到所有记录类型 -->
+              <template v-else>
+                <el-option label="FAD记录" value="FAD_Records" />
+                <el-option label="Reward记录" value="Reward_Records" />
+                <el-option label="早点名迟到" value="Late_Records" />
+                <el-option label="寝室迟出" value="Leave_Room_Late_Records" />
+                <el-option label="未按规定返校" value="Back_School_Late_Records" />
+                <el-option label="擅自进入会议室" value="MeetingRoom_Violation_Records" />
+                <el-option label="寝室表扬" value="Room_Praise_Records" />
+                <el-option label="寝室批评" value="Room_Warning_Records" />
+                <el-option label="寝室垃圾未倒" value="Room_Trash_Records" />
+                <el-option label="电子产品违规" value="Elec_Products_Violation_Records" />
+                <el-option label="晚交手机" value="Phone_Late_Records" />
+                <el-option label="Teaching FAD Ticket" value="Teaching_FAD_Ticket" />
+                <el-option label="Teaching Reward Ticket" value="Teaching_Reward_Ticket" />
+              </template>
             </el-select>
             <el-select
               v-if="filters.collection === 'FAD_Records'"
               v-model="filters.fadSourceType"
               placeholder="FAD来源"
-              style="width: 120px"
+              style="width: 140px"
               clearable
               @change="updatePagination"
             >
               <el-option label="教学类" value="teach" />
               <el-option label="寝室类" value="dorm" />
+              <el-option label="电子产品违规" value="elec" />
               <el-option label="其他类" value="other" />
               <el-option label="未分类" value="_empty" />
             </el-select>
@@ -357,6 +372,14 @@ const withdrawDialog = reactive({
 onMounted(async () => {
   commonStore.generateSemesters()
   filters.semester = commonStore.getCurrentSemester()
+  // C组用户默认显示寝室表扬记录
+  if (userStore.isCleaner) {
+    filters.collection = 'Room_Praise_Records'
+  }
+  // F组用户默认显示Teaching Reward Ticket记录
+  if (userStore.isFaculty) {
+    filters.collection = 'Teaching_Reward_Ticket'
+  }
   await commonStore.fetchClasses()
   fetchData()
 })
@@ -509,6 +532,7 @@ function getFadSourceLabel(sourceType) {
   const map = {
     'teach': '教学类',
     'dorm': '寝室类',
+    'elec': '电子产品违规',
     'other': '其他类'
   }
   return map[sourceType] || '未分类'

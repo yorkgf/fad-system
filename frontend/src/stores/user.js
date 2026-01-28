@@ -10,6 +10,8 @@ export const useUserStore = defineStore('user', () => {
 
   const isLoggedIn = computed(() => !!token.value)
   const isAdmin = computed(() => userGroup.value === 'S')
+  const isCleaner = computed(() => userGroup.value === 'C') // C组：清洁阿姨，只能录入寝室相关记录
+  const isFaculty = computed(() => userGroup.value === 'F') // F组：教师，只能录入Teaching Ticket
 
   async function login(email, password) {
     const res = await loginApi({ email, password })
@@ -56,6 +58,8 @@ export const useUserStore = defineStore('user', () => {
     recordTypes,
     isLoggedIn,
     isAdmin,
+    isCleaner,
+    isFaculty,
     login,
     logout,
     fetchUserInfo,
