@@ -7,20 +7,16 @@
           <el-form :inline="false">
             <el-row :gutter="16">
               <el-col :xs="24" :sm="12" :md="12">
-                <el-form-item label="学期（可多选）">
+                <el-form-item label="统计周期">
                   <el-select
-                    v-model="filters.semesters"
-                    placeholder="选择学期"
-                    multiple
+                    v-model="filters.timePeriod"
+                    placeholder="选择统计周期"
                     style="width: 100%"
                     @change="fetchStats"
                   >
-                    <el-option
-                      v-for="item in commonStore.semesters"
-                      :key="item"
-                      :label="item"
-                      :value="item"
-                    />
+                    <el-option label="春季" value="春季(Spring)" />
+                    <el-option label="秋季" value="秋季(Fall)" />
+                    <el-option label="学年" value="学年" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -222,7 +218,7 @@ const commonStore = useCommonStore()
 const loading = ref(false)
 
 const filters = reactive({
-  semesters: [],
+  timePeriod: '', // 统计周期：春季(Spring) / 秋季(Fall) / 学年
   studentClass: '',
   sourceType: ''
 })
@@ -241,7 +237,9 @@ const studentStats = ref([])
 
 onMounted(async () => {
   commonStore.generateSemesters()
-  filters.semesters = [commonStore.getCurrentSemester()]
+  // 默认选择当前学期
+  const currentSemester = commonStore.getCurrentSemester()
+  filters.timePeriod = currentSemester || '春季(Spring)'
   await commonStore.fetchClasses()
   fetchStats()
 })
@@ -253,9 +251,13 @@ async function fetchStats() {
       studentClass: filters.studentClass || undefined
     }
 
-    // 学期参数：如果选择了多个学期，传递数组
-    if (filters.semesters.length > 0) {
-      params.semesters = filters.semesters
+    // 根据统计周期设置学期参数
+    if (filters.timePeriod === '学年') {
+      // 学年包括春季和秋季
+      params.semesters = ['春季(Spring)', '秋季(Fall)']
+    } else if (filters.timePeriod) {
+      // 单个学期
+      params.semesters = [filters.timePeriod]
     }
 
     // 来源类型筛选
