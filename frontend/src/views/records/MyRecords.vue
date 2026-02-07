@@ -11,33 +11,12 @@
               style="width: 200px"
               @change="fetchData"
             >
-              <!-- C组用户只能看到寝室相关记录 -->
-              <template v-if="userStore.isCleaner">
-                <el-option label="寝室表扬" value="Room_Praise_Records" />
-                <el-option label="寝室批评" value="Room_Warning_Records" />
-                <el-option label="寝室垃圾未倒" value="Room_Trash_Records" />
-              </template>
-              <!-- F组用户只能看到Teaching Ticket记录 -->
-              <template v-else-if="userStore.isFaculty">
-                <el-option label="Teaching Reward Ticket" value="Teaching_Reward_Ticket" />
-                <el-option label="Teaching FAD Ticket" value="Teaching_FAD_Ticket" />
-              </template>
-              <!-- S组管理员可以看到所有记录类型 -->
-              <template v-else>
-                <el-option label="FAD记录" value="FAD_Records" />
-                <el-option label="Reward记录" value="Reward_Records" />
-                <el-option label="早点名迟到" value="Late_Records" />
-                <el-option label="寝室迟出" value="Leave_Room_Late_Records" />
-                <el-option label="未按规定返校" value="Back_School_Late_Records" />
-                <el-option label="擅自进入会议室" value="MeetingRoom_Violation_Records" />
-                <el-option label="寝室表扬" value="Room_Praise_Records" />
-                <el-option label="寝室批评" value="Room_Warning_Records" />
-                <el-option label="寝室垃圾未倒" value="Room_Trash_Records" />
-                <el-option label="电子产品违规" value="Elec_Products_Violation_Records" />
-                <el-option label="晚交手机" value="Phone_Late_Records" />
-                <el-option label="Teaching FAD Ticket" value="Teaching_FAD_Ticket" />
-                <el-option label="Teaching Reward Ticket" value="Teaching_Reward_Ticket" />
-              </template>
+              <el-option
+                v-for="item in availableFilterOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
             </el-select>
             <el-select
               v-if="filters.collection === 'FAD_Records'"
@@ -147,6 +126,10 @@
             <template v-else-if="row.记录类型 === '寝室表扬'">
               <el-tag v-if="row.是否已累计Reward" type="danger" size="small">已累计Reward</el-tag>
               <el-tag v-else type="primary" size="small">未累计Reward</el-tag>
+            </template>
+            <template v-else-if="row.记录类型 === 'Teaching Reward Ticket'">
+              <el-tag v-if="row.是否已累计Reward" type="success" size="small">已兑换Reward</el-tag>
+              <el-tag v-else type="primary" size="small">未兑换Reward</el-tag>
             </template>
             <template v-else-if="row.记录类型 === '寝室垃圾未倒'">
               <el-tag v-if="row.是否已累计寝室批评" type="danger" size="small">已累计批评</el-tag>
@@ -287,6 +270,72 @@ import dayjs from 'dayjs'
 const userStore = useUserStore()
 const commonStore = useCommonStore()
 
+// 记录类型到集合名的映射（与后端 constants.js 保持一致）
+const recordTypeToCollection = {
+  'FAD': 'FAD_Records',
+  'Reward': 'Reward_Records',
+  '早点名迟到': 'Late_Records',
+  '寝室迟出': 'Leave_Room_Late_Records',
+  '未按规定返校': 'Back_School_Late_Records',
+  '擅自进入会议室或接待室': 'MeetingRoom_Violation_Records',
+  '寝室表扬': 'Room_Praise_Records',
+  '寝室批评': 'Room_Warning_Records',
+  '寝室垃圾未倒': 'Room_Trash_Records',
+  '上网课违规使用电子产品': 'Elec_Products_Violation_Records',
+  '21:30后交还手机(22:00前)': 'Phone_Late_Records',
+  '22:00后交还手机': 'Phone_Late_Records',
+  'Teaching FAD Ticket': 'Teaching_FAD_Ticket',
+  'Teaching Reward Ticket': 'Teaching_Reward_Ticket'
+}
+
+// 集合名到标签的映射（用于筛选器显示）
+const collectionToLabel = {
+  'FAD_Records': 'FAD记录',
+  'Reward_Records': 'Reward记录',
+  'Late_Records': '早点名迟到',
+  'Leave_Room_Late_Records': '寝室迟出',
+  'Back_School_Late_Records': '未按规定返校',
+  'MeetingRoom_Violation_Records': '擅自进入会议室',
+  'Room_Praise_Records': '寝室表扬',
+  'Room_Warning_Records': '寝室批评',
+  'Room_Trash_Records': '寝室垃圾未倒',
+  'Elec_Products_Violation_Records': '电子产品违规',
+  'Phone_Late_Records': '晚交手机',
+  'Teaching_FAD_Ticket': 'Teaching FAD Ticket',
+  'Teaching_Reward_Ticket': 'Teaching Reward Ticket'
+}
+
+// 根据用户权限生成可用的筛选选项（与 InsertRecord.vue 中的 availableRecordTypes 逻辑一致）
+const availableFilterOptions = computed(() => {
+  // C组用户只能看到寝室相关记录
+  if (userStore.isCleaner) {
+    return [
+      { label: '寝室表扬', value: 'Room_Praise_Records' },
+      { label: '寝室批评', value: 'Room_Warning_Records' },
+      { label: '寝室垃圾未倒', value: 'Room_Trash_Records' }
+    ]
+  }
+  // F组用户只能看到Teaching Ticket记录
+  if (userStore.isFaculty) {
+    return [
+      { label: 'Teaching Reward Ticket', value: 'Teaching_Reward_Ticket' },
+      { label: 'Teaching FAD Ticket', value: 'Teaching_FAD_Ticket' }
+    ]
+  }
+  // 其他用户（包括B组）根据 userStore.recordTypes 生成选项
+  if (userStore.recordTypes.length > 0) {
+    return userStore.recordTypes.map(type => ({
+      label: type.label,
+      value: recordTypeToCollection[type.value] || type.value
+    }))
+  }
+  // 默认显示所有记录类型（S组管理员）
+  return Object.entries(collectionToLabel).map(([value, label]) => ({
+    label,
+    value
+  }))
+})
+
 const loading = ref(false)
 const allRecords = ref([]) // 存储所有记录
 const teachers = ref([])
@@ -372,13 +421,18 @@ const withdrawDialog = reactive({
 onMounted(async () => {
   commonStore.generateSemesters()
   filters.semester = commonStore.getCurrentSemester()
-  // C组用户默认显示寝室表扬记录
+  // 等待 recordTypes 加载完成（如果需要）
+  if (userStore.recordTypes.length === 0 && !userStore.isCleaner && !userStore.isFaculty) {
+    await userStore.fetchRecordTypes()
+  }
+  // 根据用户权限设置默认记录类型
   if (userStore.isCleaner) {
     filters.collection = 'Room_Praise_Records'
-  }
-  // F组用户默认显示Teaching Reward Ticket记录
-  if (userStore.isFaculty) {
+  } else if (userStore.isFaculty) {
     filters.collection = 'Teaching_Reward_Ticket'
+  } else if (availableFilterOptions.value.length > 0) {
+    // 使用第一个可用的记录类型作为默认值
+    filters.collection = availableFilterOptions.value[0].value
   }
   await commonStore.fetchClasses()
   fetchData()
@@ -485,8 +539,12 @@ function exportData() {
   const getField = (row) => {
     let status = ''
 
+    // Teaching Reward Ticket 特殊处理
+    if (row.记录类型 === 'Teaching Reward Ticket') {
+      status = row.是否已累计Reward ? '已兑换Reward' : '未兑换Reward'
+    }
     // 使用后端返回的 fadStatus（如果存在）
-    if (row.fadStatus) {
+    else if (row.fadStatus) {
       status = row.fadStatus
     }
     // 否则根据字段计算状态

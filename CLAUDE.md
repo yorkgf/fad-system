@@ -15,7 +15,7 @@ FAD (学生纪律与奖励管理系统) - Student discipline and reward manageme
 npm install        # Install dependencies
 npm run dev        # Dev server on http://localhost:3000
 npm run build      # Production build
-npm run build:prod # Optimized production build
+npm run build:prod # Optimized production build (minified, no source maps)
 npm run preview    # Preview production build locally
 ```
 
@@ -23,8 +23,8 @@ npm run preview    # Preview production build locally
 ```bash
 npm install        # Install dependencies
 npm run dev        # Dev server on http://localhost:8080 (with watch)
-npm run start      # Production start
-npm run deploy     # Deploy to Tencent SCF
+npm run start      # Production start (no watch)
+npm run deploy     # Deploy to Tencent SCF via serverless framework
 npm run logs       # View SCF logs (tail)
 npm run remove     # Remove SCF deployment
 ```
@@ -44,7 +44,7 @@ npm run remove     # Remove SCF deployment
    npm run dev
    ```
 
-Frontend proxies `/api` requests to backend automatically via vite.config.js.
+**Note**: Frontend dev server proxies `/api` requests to the production backend by default (configured in `vite.config.js`). To point to a local backend, edit the proxy target in `vite.config.js` to `http://localhost:8080`.
 
 ## Architecture
 
@@ -52,6 +52,16 @@ Frontend proxies `/api` requests to backend automatically via vite.config.js.
 - **Frontend**: Vue 3 (Composition API) + Element Plus + Pinia + Vue Router + Axios + Vite
 - **Backend**: Express + MongoDB (native driver) + JWT + serverless-http
 - **Deployment**: Tencent SCF (backend) + EdgeOne Pages (frontend)
+
+### User Groups & Permissions
+- **Group `S`** (System/Admin): Full access including FAD/Reward management, all record types, user management
+- **Group `F`** (Faculty): Limited access - can only create records marked with `group: 'F'` in `common.js` (e.g., 早点名迟到, 寝室迟出), cannot view class FAD statistics unless they are the class's 班主任
+
+### Key Architectural Patterns
+- **Record accumulation**: Records in collection-specific tables (e.g., `Late_Records`) accumulate based on `ACCUMULATE_RULES` in `constants.js`, triggering FAD/Reward creation when thresholds are met
+- **FAD source tracking**: Every FAD has a `FAD来源类型` field (dorm/teach/elec/other) used for analytics
+- **Reward offset logic**: 2 Rewards can offset FAD execution status; 3 Rewards can offset the entire FAD record
+- **Duplicate prevention**: Certain record types (寝室表扬, 寝室批评, 寝室垃圾未倒) cannot be duplicated for the same student on the same day
 
 ### Project Structure
 ```
@@ -131,10 +141,12 @@ backend/src/
 ## Critical Sync Points
 
 Changes to record types require updates in **both**:
-1. `backend/src/utils/constants.js` (RECORD_TYPE_TO_COLLECTION, ACCUMULATE_RULES)
-2. `frontend/src/stores/common.js` (allRecordTypes)
+1. `backend/src/utils/constants.js` (`RECORD_TYPE_TO_COLLECTION`, `ACCUMULATE_RULES`)
+2. `frontend/src/stores/common.js` (`allRecordTypes`)
 
-FAD source type mappings are defined in `backend/src/utils/constants.js` (RECORD_TO_FAD_SOURCE).
+FAD source type mappings are defined in `backend/src/utils/constants.js` (`RECORD_TO_FAD_SOURCE`).
+
+**Important**: The `group` field in `allRecordTypes` controls which user groups can create each record type. Group `F` (Faculty) users can only see record types with `group: 'F'`; Group `S` (System) users see all record types.
 
 ## Environment Variables (Backend)
 
@@ -149,9 +161,22 @@ SENDER_NAME=FAD系统
 
 ## Deployment
 
-- **Backend**: Pre-bundled in `deploy-package/` for manual SCF upload, or use `npm run deploy`
-- **Frontend**: Build with `npm run build:prod`, deploy `dist/` to EdgeOne Pages
-- Production API URL configured in `frontend/.env.production`
+### Backend (Tencent SCF)
+- **Manual upload**: Use `deploy-package/` folder (pre-bundled, ~13MB) for manual SCF upload
+- **Serverless Framework**: Use `npm run deploy` (requires `serverless.yml` configuration)
+- **Logs**: Use `npm run logs` to tail SCF logs
+
+### Frontend (EdgeOne Pages)
+```bash
+cd frontend
+npm run build:prod
+# Deploy `dist/` folder (~1.8MB) to EdgeOne Pages
+```
+
+**Build Configuration**:
+- Production API URL: Set in `frontend/.env.production` as `VITE_API_BASE_URL`
+- Base path: `/` (configured in `vite.config.js`)
+- Chunking: Vendor libs split into `vue-vendor`, `element-plus`, `utils` chunks
 
 ## API Routes
 
