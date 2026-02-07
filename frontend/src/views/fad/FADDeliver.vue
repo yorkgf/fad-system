@@ -112,6 +112,8 @@ import { useUserStore } from '@/stores/user'
 import { useCommonStore } from '@/stores/common'
 import { getUndeliveredFAD, deliverFAD } from '@/api/fad'
 import dayjs from 'dayjs'
+import { PDFDocument, rgb } from 'pdf-lib'
+import fontkit from '@pdf-lib/fontkit'
 
 const userStore = useUserStore()
 const commonStore = useCommonStore()
@@ -159,51 +161,113 @@ function handleSelectionChange(rows) {
   selectedRows.value = rows
 }
 
-function handleDownload(row) {
-  const htmlContent = generateNoticeHTML(row)
-  const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' })
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `${row.学生}FAD记录.html`
-  a.click()
-  URL.revokeObjectURL(url)
-}
+async function handleDownload(row) {
+  try {
+    // 加载PDF模板
+    const templateUrl = '/FAD Form.pdf'
+    const response = await fetch(templateUrl)
+    if (!response.ok) {
+      throw new Error(`加载PDF模板失败: ${response.status}`)
+    }
 
-function generateNoticeHTML(row) {
-  const sourceTypeLabel = getSourceTypeLabel(row.FAD来源类型)
-  return `
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <title>FAD 通知</title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 40px; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .logo { width: 200px; height: 200px; margin-bottom: 15px; }
-        h1 { font-size: 24px; margin: 0; }
-        .content { max-width: 600px; margin: 0 auto; }
-        .field { margin: 15px 0; font-size: 16px; }
-        .label { font-weight: bold; display: inline-block; width: 100px; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <img src="logo.png" alt="Logo" class="logo" />
-        <h1>FAD 通知</h1>
-    </div>
-    <div class="content">
-        <div class="field"><span class="label">姓名：</span>${row.学生}</div>
-        <div class="field"><span class="label">班级：</span>${row.班级}</div>
-        <div class="field"><span class="label">学期：</span>${row.学期}</div>
-        <div class="field"><span class="label">日期：</span>${formatDate(row.记录日期)}</div>
-        <div class="field"><span class="label">记录老师：</span>${row.记录老师}</div>
-        <div class="field"><span class="label">来源类型：</span>${sourceTypeLabel}</div>
-        <div class="field"><span class="label">事由：</span>${row.记录事由}</div>
-    </div>
-</body>
-</html>`
+    const templateBytes = await response.arrayBuffer()
+    const pdfDoc = await PDFDocument.load(templateBytes)
+
+    // 注册 fontkit 以支持自定义字体
+    pdfDoc.registerFontkit(fontkit)
+
+    // 加载中文字体
+    const fontUrl = '/SourceHanSansSC-Regular.ttf'
+    let font
+    try {
+      const fontResponse = await fetch(fontUrl)
+      if (fontResponse.ok) {
+        const fontBytes = await fontResponse.arrayBuffer()
+        font = await pdfDoc.embedFont(fontBytes)
+      } else {
+        throw new Error('字体文件不存在')
+      }
+    } catch (fontError) {
+      console.warn('加载中文字体失败，尝试使用备用方案:', fontError)
+      const { StandardFonts } = await import('pdf-lib')
+      font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+    }
+
+    // 获取第一页
+    const pages = pdfDoc.getPages()
+    const firstPage = pages[0]
+
+    // 获取页面尺寸
+    const { width, height } = firstPage.getSize()
+    const fontSize = 14
+    const textColor = rgb(0, 0, 0)
+
+    // 在PDF上添加文字
+    // PDF坐标系：原点在左下角，y轴向上
+    // 根据FAD Form.pdf的实际布局调整坐标
+
+    // 学生姓名 - Student's Name
+    firstPage.drawText(row.学生, {
+      x: 180,
+      y: 580,
+      size: fontSize,
+      font,
+      color: textColor
+    })
+
+    // 班级 - Class
+    firstPage.drawText(row.班级, {
+      x: 420,
+      y: 580,
+      size: fontSize,
+      font,
+      color: textColor
+    })
+
+    // 记录日期 - Date of Violation
+    firstPage.drawText(formatDate(row.记录日期), {
+      x: 180,
+      y: 520,
+      size: fontSize,
+      font,
+      color: textColor
+    })
+
+    // 记录老师 - Teacher's Name
+    firstPage.drawText(row.记录老师, {
+      x: 180,
+      y: 640,
+      size: fontSize,
+      font,
+      color: textColor
+    })
+
+    // 记录事由 - Reason for Disciplinary Action
+    firstPage.drawText(row.记录事由.replace(/,\n/g, ', '), {
+      x: 170,
+      y: 420,
+      size: fontSize - 4,
+      font,
+      color: textColor,
+      maxWidth: 350,
+      lineHeight: 16
+    })
+
+    // 保存PDF
+    const pdfBytes = await pdfDoc.save()
+    const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${row.学生}FAD记录.pdf`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    console.error('生成PDF失败:', error)
+    ElMessage.error('生成PDF失败: ' + error.message)
+  }
 }
 
 async function handleDeliver(rows) {

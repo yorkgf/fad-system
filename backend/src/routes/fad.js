@@ -78,7 +78,8 @@ router.get('/undelivered', authMiddleware, async (req, res) => {
 
     const filter = {
       是否已发放: { $ne: true },
-      是否已撤回: { $ne: true }
+      是否已撤回: { $ne: true },
+      记录老师: { $not: /^已发:/ }
     }
 
     if (semester) filter.学期 = semester
