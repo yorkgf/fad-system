@@ -158,12 +158,9 @@ router.beforeEach(async (to, from, next) => {
       next('/')
     }
   } else if (to.path === '/fad/class-stats') {
-    // 班级FAD统计页面：B组、T组、A组班主任和S组可以访问
-    if (userStore.userGroup === 'S') {
-      // S组可以直接访问
-      next()
-    } else if (userStore.userGroup === 'B' || userStore.userGroup === 'T' || userStore.userGroup === 'A') {
-      // B组、T组和A组需要检查是否为班主任
+    // 班级FAD统计页面：B组、T组、S组、A组班主任可以访问（都需要班主任权限）
+    if (['B', 'T', 'S', 'A'].includes(userStore.userGroup)) {
+      // B组、T组、S组、A组都需要检查是否为班主任
       try {
         const res = await getMyClassAsHomeTeacher()
         if (res.success && res.data) {

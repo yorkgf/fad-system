@@ -92,7 +92,7 @@ const myClass = ref(null)
 
 // 初始化函数，获取用户班级信息
 onMounted(async () => {
-  if (['B', 'T', 'A'].includes(userStore.userGroup)) {
+  if (['B', 'T', 'S', 'A'].includes(userStore.userGroup)) {
     try {
       const res = await getMyClassAsHomeTeacher()
       if (res.success) {
@@ -153,7 +153,7 @@ const functionCards = computed(() => {
       path: '/fad/class-stats',
       icon: 'DataLine',
       color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-      groups: ['B', 'T', 'S', 'A'] // B、T组班主任可见，S组也可见，A组班主任也可见
+      groups: ['B', 'T', 'S', 'A'] // B、T、S、A组班主任可见（需班主任权限）
     },
     {
       title: '寝室表扬兑奖',
@@ -227,8 +227,8 @@ const functionCards = computed(() => {
   // 首先根据用户组进行初步过滤
   let filteredCards = baseCards.filter(card => card.groups.includes(currentGroup))
 
-  // 对于 B、T 和 A 组的用户，需要进一步判断是否为班主任才能显示班级FAD统计功能
-  if (currentGroup === 'B' || currentGroup === 'T' || currentGroup === 'A') {
+  // 对于 B、T、S 和 A 组的用户，需要进一步判断是否为班主任才能显示班级FAD统计功能
+  if (currentGroup === 'B' || currentGroup === 'T' || currentGroup === 'S' || currentGroup === 'A') {
     filteredCards = filteredCards.filter(card => {
       if (card.path === '/fad/class-stats') {
         // 只有是班主任的用户才能看到班级FAD统计功能

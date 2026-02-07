@@ -137,7 +137,18 @@
           <template #header>
             <div class="card-header-flex">
               <span>按班级人均FAD排名</span>
-              <el-tag class="header-tag" type="info" size="small">FAD总数 / 班级人数</el-tag>
+              <div class="header-actions">
+                <el-tag class="header-tag" type="info" size="small">FAD总数 / 班级人数</el-tag>
+                <el-button
+                  type="primary"
+                  size="small"
+                  :icon="Download"
+                  @click="exportPerClassStatsToCSV"
+                  :disabled="perClassStats.length === 0"
+                >
+                  导出CSV
+                </el-button>
+              </div>
             </div>
           </template>
           <el-table :data="perClassStats" stripe class="responsive-table">
@@ -251,6 +262,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useCommonStore } from '@/stores/common'
 import { getFADStats } from '@/api/fad'
+import { Download } from '@element-plus/icons-vue'
 
 const commonStore = useCommonStore()
 
@@ -353,6 +365,54 @@ function getAvgFADTagType(avg) {
   if (avg >= 1) return 'primary'
   return 'success'
 }
+
+// 导出按班级人均FAD排名为CSV
+function exportPerClassStatsToCSV() {
+  if (perClassStats.value.length === 0) {
+    return
+  }
+
+  // CSV头部
+  const headers = ['排名', '班级', 'FAD总数', '班级人数', '人均FAD']
+
+  // CSV数据行
+  const rows = perClassStats.value.map((row, index) => [
+    index + 1,
+    row.class,
+    row.fadCount,
+    row.studentCount,
+    row.avgFAD
+  ])
+
+  // 构建CSV内容
+  const csvContent = [
+    headers.join(','),
+    ...rows.map(row => row.join(','))
+  ].join('\n')
+
+  // 创建Blob对象
+  const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' })
+
+  // 创建下载链接
+  const link = document.createElement('a')
+  const url = URL.createObjectURL(blob)
+
+  // 生成文件名（包含当前日期）
+  const date = new Date().toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).replace(/\//g, '-')
+  const fileName = `班级人均FAD排名_${date}.csv`
+
+  link.setAttribute('href', url)
+  link.setAttribute('download', fileName)
+  link.style.visibility = 'hidden'
+
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
 </script>
 
 <style scoped>
@@ -412,6 +472,13 @@ function getAvgFADTagType(avg) {
 
 .header-tag {
   flex-shrink: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .rank-first {
