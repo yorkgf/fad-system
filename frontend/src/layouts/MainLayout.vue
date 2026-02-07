@@ -169,8 +169,8 @@ const functionCards = computed(() => {
       groups: ['S']
     },
     {
-      title: '停课名单',
-      subtitle: '查看停课学生名单',
+      title: '约谈/停课管理',
+      subtitle: '管理约谈和停课记录',
       path: '/stop-class',
       icon: 'CircleClose',
       color: 'linear-gradient(135deg, #cd9cf2 0%, #f6f3ff 100%)',

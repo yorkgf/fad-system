@@ -219,6 +219,61 @@ body {
 
 /* ========== 移动端响应式优化 ========== */
 
+/* 下拉选择器全局优化 - 移动端 */
+@media (max-width: 768px) {
+  /* 下拉菜单容器 - 强制全宽并居中 */
+  .el-select-dropdown,
+  .el-popper.is-pure,
+  .el-popper[role="listbox"] {
+    width: calc(100vw - 32px) !important;
+    max-width: calc(100vw - 32px) !important;
+    min-width: calc(100vw - 32px) !important;
+    left: 16px !important;
+    right: 16px !important;
+  }
+
+  /* 下拉选项样式优化 - 支持长文本 */
+  .el-select-dropdown__item {
+    padding: 12px 16px !important;
+    height: auto !important;
+    min-height: 44px !important;
+    line-height: 1.5 !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    font-size: 15px !important;
+    display: flex !important;
+    align-items: center !important;
+  }
+
+  /* 下拉列表内容区域 */
+  .el-select-dropdown__wrap {
+    max-height: 50vh !important;
+  }
+
+  .el-scrollbar__view.el-select-dropdown__list {
+    padding: 8px 0 !important;
+  }
+}
+
+/* 超小屏幕进一步优化 */
+@media (max-width: 480px) {
+  .el-select-dropdown,
+  .el-popper.is-pure,
+  .el-popper[role="listbox"] {
+    width: calc(100vw - 24px) !important;
+    max-width: calc(100vw - 24px) !important;
+    min-width: calc(100vw - 24px) !important;
+    left: 12px !important;
+    right: 12px !important;
+  }
+
+  .el-select-dropdown__item {
+    padding: 14px 12px !important;
+    min-height: 48px !important;
+    font-size: 16px !important;
+  }
+}
+
 /* 表格响应式 - 移动端横向滚动 */
 @media (max-width: 768px) {
   /* 表格容器横向滚动 */

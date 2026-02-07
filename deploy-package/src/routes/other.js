@@ -49,7 +49,7 @@ router.get('/phone-late/today', authMiddleware, async (req, res) => {
   }
 })
 
-// 获取约谈学生名单（FAD >= 3）
+// 获取约谈学生名单（FAD 3-5次）
 router.get('/stop-class/warning', authMiddleware, async (req, res) => {
   try {
     const { semester } = req.query
@@ -59,7 +59,7 @@ router.get('/stop-class/warning', authMiddleware, async (req, res) => {
       是否已撤回: { $ne: true }
     }
 
-    if (semester) filter.学期 = semester
+    if (semester && semester !== '学年') filter.学期 = semester
 
     const result = await getCollection(Collections.FADRecords).aggregate([
       { $match: filter },
@@ -73,29 +73,83 @@ router.get('/stop-class/warning', authMiddleware, async (req, res) => {
       { $sort: { fadCount: -1 } }
     ]).toArray()
 
-    res.json({ success: true, data: result.map(r => ({
-      学生: r._id.student,
-      班级: r._id.class,
-      fadCount: r.fadCount,
-      level: r.fadCount >= 3 ? 'warning' : 'normal'
-    })) })
+    // 获取约谈记录
+    const studentsWithWarning = await Promise.all(
+      result.map(async (r) => {
+        const warningRecord = await getCollection(Collections.StopClassRecords).findOne({
+          学生: r._id.student,
+          类型: '约谈'
+        }, { sort: { 日期: -1 } })
+
+        // 获取历史记录（约谈和停课）
+        const historyRecords = await getCollection(Collections.StopClassRecords)
+          .find({ 学生: r._id.student })
+          .sort({ 日期: -1 })
+          .toArray()
+
+        // 获取FAD明细记录
+        const fadDetails = await getCollection(Collections.FADRecords)
+          .find({
+            学生: r._id.student,
+            是否已冲销记录: { $ne: true },
+            是否已撤回: { $ne: true }
+          })
+          .sort({ 记录日期: -1 })
+          .toArray()
+
+        return {
+          学生: r._id.student,
+          班级: r._id.class,
+          fadCount: r.fadCount,
+          level: 'warning',
+          约谈记录: warningRecord ? {
+            约谈日期: warningRecord.日期,
+            记录人: warningRecord.记录人
+          } : null,
+          历史记录: historyRecords.map(h => ({
+            类型: h.类型,
+            日期: h.日期,
+            记录人: h.记录人
+          })),
+          fadDetails: fadDetails.map(f => ({
+            _id: f._id,
+            记录日期: f.记录日期,
+            记录事由: f.记录事由,
+            记录老师: f.记录老师,
+            来源类型: f.来源类型
+          }))
+        }
+      })
+    )
+
+    res.json({ success: true, data: studentsWithWarning })
   } catch (error) {
     console.error('Get warning list error:', error)
     res.status(500).json({ success: false, error: '获取约谈名单失败' })
   }
 })
 
-// 获取停课学生名单（FAD >= 6）
+// 获取停课/劝退学生名单（FAD >= 6）
 router.get('/stop-class/list', authMiddleware, async (req, res) => {
   try {
-    const { semester } = req.query
+    const { semester, type } = req.query
 
     const filter = {
       是否已冲销记录: { $ne: true },
       是否已撤回: { $ne: true }
     }
 
-    if (semester) filter.学期 = semester
+    if (semester && semester !== '学年') filter.学期 = semester
+
+    // 根据type确定FAD次数范围
+    let fadMatch = { $gte: 6 }
+    if (type === 'stop') {
+      // 停课：6-8次
+      fadMatch = { $gte: 6, $lt: 9 }
+    } else if (type === 'dismiss') {
+      // 劝退：9次及以上
+      fadMatch = { $gte: 9 }
+    }
 
     const result = await getCollection(Collections.FADRecords).aggregate([
       { $match: filter },
@@ -105,33 +159,193 @@ router.get('/stop-class/list', authMiddleware, async (req, res) => {
           fadCount: { $sum: 1 }
         }
       },
-      { $match: { fadCount: { $gte: 6 } } },
+      { $match: { fadCount: fadMatch } },
       { $sort: { fadCount: -1 } }
     ]).toArray()
 
-    // 获取停课记录
-    const studentsWithStopClass = await Promise.all(
+    // 获取停课记录和历史
+    const studentsWithRecords = await Promise.all(
       result.map(async (r) => {
+        // 获取最新的停课记录
         const stopRecord = await getCollection(Collections.StopClassRecords).findOne({
-          学生: r._id.student
+          学生: r._id.student,
+          类型: '停课'
+        }, { sort: { 停课开始日期: -1 } })
+
+        // 获取历史记录（约谈和停课）
+        const historyRecords = await getCollection(Collections.StopClassRecords)
+          .find({ 学生: r._id.student })
+          .sort({ 日期: -1, 停课开始日期: -1 })
+          .toArray()
+
+        // 检查是否已劝退
+        const dismissRecord = await getCollection(Collections.StopClassRecords).findOne({
+          学生: r._id.student,
+          类型: '劝退'
         })
+
+        // 获取FAD明细记录
+        const fadDetails = await getCollection(Collections.FADRecords)
+          .find({
+            学生: r._id.student,
+            是否已冲销记录: { $ne: true },
+            是否已撤回: { $ne: true }
+          })
+          .sort({ 记录日期: -1 })
+          .toArray()
 
         return {
           学生: r._id.student,
           班级: r._id.class,
           fadCount: r.fadCount,
-          level: r.fadCount >= 9 ? 'danger' : 'warning', // 9次及以上为劝退级别
-          停课开始日期: stopRecord?.停课开始日期 || null,
-          停课结束日期: stopRecord?.停课结束日期 || null,
-          stopDays: stopRecord ? dayjs(stopRecord.停课结束日期).diff(dayjs(stopRecord.停课开始日期), 'day') : 0
+          level: r.fadCount >= 9 ? 'danger' : 'warning',
+          已劝退: !!dismissRecord,
+          停课记录: stopRecord ? {
+            停课开始日期: stopRecord.停课开始日期,
+            停课结束日期: stopRecord.停课结束日期,
+            停课天数: stopRecord.停课天数,
+            记录人: stopRecord.记录人
+          } : null,
+          历史记录: historyRecords.map(h => ({
+            类型: h.类型,
+            日期: h.日期 || h.停课开始日期,
+            记录人: h.记录人
+          })),
+          fadDetails: fadDetails.map(f => ({
+            _id: f._id,
+            记录日期: f.记录日期,
+            记录事由: f.记录事由,
+            记录老师: f.记录老师,
+            来源类型: f.来源类型
+          }))
         }
       })
     )
 
-    res.json({ success: true, data: studentsWithStopClass })
+    res.json({ success: true, data: studentsWithRecords })
   } catch (error) {
     console.error('Get stop class list error:', error)
     res.status(500).json({ success: false, error: '获取停课名单失败' })
+  }
+})
+
+// 获取约谈/停课历史记录
+router.get('/stop-class/history', authMiddleware, async (req, res) => {
+  try {
+    const { semester } = req.query
+
+    const filter = {}
+    if (semester && semester !== '学年') {
+      // 如果指定了学期，需要根据学期过滤关联的FAD记录
+      // 这里简化处理，返回所有历史记录
+    }
+
+    const records = await getCollection(Collections.StopClassRecords)
+      .find(filter)
+      .sort({ 日期: -1, 停课开始日期: -1 })
+      .toArray()
+
+    // 获取学生班级信息
+    const studentsWithClass = await Promise.all(
+      records.map(async (record) => {
+        // 从Students集合获取班级信息
+        const studentInfo = await getCollection(Collections.Students).findOne({
+          姓名: record.学生
+        })
+
+        return {
+          学生: record.学生,
+          班级: studentInfo?.班级 || record.班级 || '-',
+          类型: record.类型,
+          日期: record.日期 || record.停课开始日期,
+          停课天数: record.停课天数,
+          记录人: record.记录人
+        }
+      })
+    )
+
+    res.json({ success: true, data: studentsWithClass })
+  } catch (error) {
+    console.error('Get stop class history error:', error)
+    res.status(500).json({ success: false, error: '获取历史记录失败' })
+  }
+})
+
+// 记录约谈
+router.post('/stop-class/warning', authMiddleware, async (req, res) => {
+  try {
+    const { student, studentClass, date, teacher } = req.body
+
+    if (!student || !teacher) {
+      return res.status(400).json({ success: false, error: '参数错误' })
+    }
+
+    await getCollection(Collections.StopClassRecords).insertOne({
+      学生: student,
+      班级: studentClass,
+      类型: '约谈',
+      日期: new Date(date || Date.now()),
+      记录人: teacher,
+      创建时间: new Date()
+    })
+
+    res.json({ success: true, message: '约谈记录已保存' })
+  } catch (error) {
+    console.error('Record warning error:', error)
+    res.status(500).json({ success: false, error: '记录约谈失败' })
+  }
+})
+
+// 记录停课
+router.post('/stop-class/stop', authMiddleware, async (req, res) => {
+  try {
+    const { student, studentClass, startDate, endDate, days, teacher } = req.body
+
+    if (!student || !startDate || !endDate || !days || !teacher) {
+      return res.status(400).json({ success: false, error: '参数错误' })
+    }
+
+    await getCollection(Collections.StopClassRecords).insertOne({
+      学生: student,
+      班级: studentClass,
+      类型: '停课',
+      停课开始日期: new Date(startDate),
+      停课结束日期: new Date(endDate),
+      停课天数: parseInt(days),
+      日期: new Date(startDate),
+      记录人: teacher,
+      创建时间: new Date()
+    })
+
+    res.json({ success: true, message: '停课记录已保存' })
+  } catch (error) {
+    console.error('Record stop class error:', error)
+    res.status(500).json({ success: false, error: '记录停课失败' })
+  }
+})
+
+// 记录劝退
+router.post('/stop-class/dismiss', authMiddleware, async (req, res) => {
+  try {
+    const { student, studentClass, date, teacher } = req.body
+
+    if (!student || !teacher) {
+      return res.status(400).json({ success: false, error: '参数错误' })
+    }
+
+    await getCollection(Collections.StopClassRecords).insertOne({
+      学生: student,
+      班级: studentClass,
+      类型: '劝退',
+      日期: new Date(date || Date.now()),
+      记录人: teacher,
+      创建时间: new Date()
+    })
+
+    res.json({ success: true, message: '劝退记录已保存' })
+  } catch (error) {
+    console.error('Record dismiss error:', error)
+    res.status(500).json({ success: false, error: '记录劝退失败' })
   }
 })
 

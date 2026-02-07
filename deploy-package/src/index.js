@@ -14,7 +14,19 @@ const otherRoutes = require('./routes/other.js')
 
 const app = express()
 
-app.use(cors())
+// CORS 配置 - 允许所有来源，支持预检请求和凭证
+const corsOptions = {
+  origin: function (origin, callback) {
+    // 允许所有来源（包括 null）
+    callback(null, true)
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Range', 'X-Content-Range']
+}
+
+app.use(cors(corsOptions))
 app.use(express.json())
 
 // 健康检查
