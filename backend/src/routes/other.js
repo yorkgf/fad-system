@@ -49,12 +49,11 @@ router.get('/phone-late/today', authMiddleware, async (req, res) => {
   }
 })
 
-// 获取停课学生名单
-router.get('/stop-class/list', authMiddleware, async (req, res) => {
+// 获取约谈学生名单（FAD >= 3）
+router.get('/stop-class/warning', authMiddleware, async (req, res) => {
   try {
     const { semester } = req.query
 
-    // 查找FAD数量>=3且未冲销的学生
     const filter = {
       是否已冲销记录: { $ne: true },
       是否已撤回: { $ne: true }
@@ -70,7 +69,43 @@ router.get('/stop-class/list', authMiddleware, async (req, res) => {
           fadCount: { $sum: 1 }
         }
       },
-      { $match: { fadCount: { $gte: 3 } } },
+      { $match: { fadCount: { $gte: 3, $lt: 6 } } },
+      { $sort: { fadCount: -1 } }
+    ]).toArray()
+
+    res.json({ success: true, data: result.map(r => ({
+      学生: r._id.student,
+      班级: r._id.class,
+      fadCount: r.fadCount,
+      level: r.fadCount >= 3 ? 'warning' : 'normal'
+    })) })
+  } catch (error) {
+    console.error('Get warning list error:', error)
+    res.status(500).json({ success: false, error: '获取约谈名单失败' })
+  }
+})
+
+// 获取停课学生名单（FAD >= 6）
+router.get('/stop-class/list', authMiddleware, async (req, res) => {
+  try {
+    const { semester } = req.query
+
+    const filter = {
+      是否已冲销记录: { $ne: true },
+      是否已撤回: { $ne: true }
+    }
+
+    if (semester) filter.学期 = semester
+
+    const result = await getCollection(Collections.FADRecords).aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: { student: '$学生', class: '$班级' },
+          fadCount: { $sum: 1 }
+        }
+      },
+      { $match: { fadCount: { $gte: 6 } } },
       { $sort: { fadCount: -1 } }
     ]).toArray()
 
@@ -85,6 +120,7 @@ router.get('/stop-class/list', authMiddleware, async (req, res) => {
           学生: r._id.student,
           班级: r._id.class,
           fadCount: r.fadCount,
+          level: r.fadCount >= 9 ? 'danger' : 'warning', // 9次及以上为劝退级别
           停课开始日期: stopRecord?.停课开始日期 || null,
           停课结束日期: stopRecord?.停课结束日期 || null,
           stopDays: stopRecord ? dayjs(stopRecord.停课结束日期).diff(dayjs(stopRecord.停课开始日期), 'day') : 0
