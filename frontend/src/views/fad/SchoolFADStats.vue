@@ -20,7 +20,7 @@
                   </el-select>
                 </el-form-item>
               </el-col>
-              <el-col :xs="24" :sm="12" :md="8" v-if="canSelectClass">
+              <el-col :xs="24" :sm="12" :md="8">
                 <el-form-item label="班级">
                   <el-select
                     v-model="filters.studentClass"
@@ -109,37 +109,54 @@
         </el-card>
       </el-col>
 
-      <!-- 本班有未执行FAD学生名单 -->
-      <el-col :span="24" v-if="unexecutedStudentStats.length > 0">
+      <!-- 按班级FAD总量 Top 3 -->
+      <el-col :xs="24" :sm="24" :md="12">
+        <el-card>
+          <template #header>
+            <span>按班级FAD总量 Top 3</span>
+          </template>
+          <el-table :data="classStats" stripe class="responsive-table">
+            <el-table-column prop="class" label="班级" min-width="80" />
+            <el-table-column prop="count" label="FAD数量" min-width="70" sortable />
+            <el-table-column prop="executed" label="已执行" min-width="60" />
+            <el-table-column prop="unexecuted" label="未执行" min-width="60">
+              <template #default="{ row }">
+                <el-tag v-if="row.unexecuted > 0" type="danger" size="small">
+                  {{ row.unexecuted }}
+                </el-tag>
+                <span v-else>0</span>
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+
+      <!-- 按班级人均FAD统计 -->
+      <el-col :span="24">
         <el-card>
           <template #header>
             <div class="card-header-flex">
-              <span>本班有未执行FAD学生名单</span>
-              <el-tag class="header-tag" type="danger" size="small">共 {{ unexecutedStudentStats.length }} 人</el-tag>
+              <span>按班级人均FAD排名</span>
+              <el-tag class="header-tag" type="info" size="small">FAD总数 / 班级人数</el-tag>
             </div>
           </template>
-          <el-table :data="unexecutedStudentStats" stripe class="responsive-table">
-            <el-table-column prop="student" label="学生" min-width="70" />
-            <el-table-column prop="class" label="班级" min-width="80" class-name="hide-on-xs" />
-            <el-table-column prop="unexecutedCount" label="未执行FAD数" min-width="100" sortable>
-              <template #default="{ row }">
-                <el-tag type="danger" size="small">{{ row.unexecutedCount }}</el-tag>
+          <el-table :data="perClassStats" stripe class="responsive-table">
+            <el-table-column label="排名" width="60" align="center">
+              <template #default="{ $index }">
+                <span :class="getRankClass($index + 1)">{{ $index + 1 }}</span>
               </template>
             </el-table-column>
-            <el-table-column label="FAD明细" min-width="200">
+            <el-table-column prop="class" label="班级" min-width="80" />
+            <el-table-column prop="fadCount" label="FAD总数" min-width="70" sortable />
+            <el-table-column prop="studentCount" label="班级人数" min-width="70" class-name="hide-on-xs" />
+            <el-table-column prop="avgFAD" label="人均FAD" min-width="80" sortable>
               <template #default="{ row }">
-                <div class="fad-details-list">
-                  <el-tag
-                    v-for="(record, index) in row.records.slice(0, 3)"
-                    :key="index"
-                    type="warning"
-                    size="small"
-                    class="fad-detail-tag"
-                  >
-                    {{ formatDate(record.记录日期) }}: {{ record.记录事由?.substring(0, 10) || '无' }}
-                  </el-tag>
-                  <span v-if="row.records.length > 3" class="more-tag">+{{ row.records.length - 3 }} 更多</span>
-                </div>
+                <el-tag
+                  :type="getAvgFADTagType(row.avgFAD)"
+                  size="small"
+                >
+                  {{ row.avgFAD }}
+                </el-tag>
               </template>
             </el-table-column>
           </el-table>
@@ -231,26 +248,19 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useCommonStore } from '@/stores/common'
-import { useUserStore } from '@/stores/user'
 import { getFADStats } from '@/api/fad'
-import { getMyClassAsHomeTeacher } from '@/api/students'
 
 const commonStore = useCommonStore()
-const userStore = useUserStore()
 
 const loading = ref(false)
-const myClass = ref(null) // 存储当前用户作为班主任的班级信息
 
 const filters = reactive({
-  timePeriod: '', // 统计周期：春季(Spring) / 秋季(Fall) / 学年
+  timePeriod: '',
   studentClass: '',
   sourceType: ''
 })
-
-// 判断是否可以选择班级（只有S和A组用户可以选择）
-const canSelectClass = computed(() => ['S', 'A'].includes(userStore.userGroup))
 
 const stats = reactive({
   total: 0,
@@ -263,38 +273,12 @@ const sourceTypeStats = ref([])
 const classStats = ref([])
 const perClassStats = ref([])
 const studentStats = ref([])
-const expandedRows = ref([]) // 用于记录展开的行
-const unexecutedStudentStats = ref([]) // 本班有未执行FAD学生名单
-
-// 格式化日期
-function formatDate(dateString) {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  })
-}
+const expandedRows = ref([])
 
 onMounted(async () => {
   commonStore.generateSemesters()
-  // 默认选择当前学期
   const currentSemester = commonStore.getCurrentSemester()
   filters.timePeriod = currentSemester || '春季(Spring)'
-
-  // 对于 B 和 T 组的用户，获取其作为班主任的班级信息
-  if (['B', 'T'].includes(userStore.userGroup)) {
-    try {
-      const res = await getMyClassAsHomeTeacher()
-      if (res.success) {
-        myClass.value = res.data
-        filters.studentClass = res.data.Class // 自动设置班级筛选条件
-      }
-    } catch (error) {
-      console.error('获取班主任班级信息失败:', error)
-    }
-  }
 
   await commonStore.fetchClasses()
   fetchStats()
@@ -307,56 +291,43 @@ async function fetchStats() {
       studentClass: filters.studentClass || undefined
     }
 
-    // 根据统计周期设置学期参数
     if (filters.timePeriod === '学年') {
-      // 学年包括春季和秋季
       params.semesters = ['春季(Spring)', '秋季(Fall)']
     } else if (filters.timePeriod) {
-      // 单个学期
       params.semesters = [filters.timePeriod]
     }
 
-    // 来源类型筛选
     if (filters.sourceType) {
       params.sourceType = filters.sourceType
     }
 
     const res = await getFADStats(params)
-
     const data = res.data || res
 
-    // 总体统计
     stats.total = data.total || 0
     stats.executed = data.executed || 0
     stats.delivered = data.delivered || 0
     stats.offset = data.offset || 0
 
-    // 按来源类型统计
     sourceTypeStats.value = data.bySourceType || []
-
-    // 按班级统计
-    classStats.value = (data.byClass || []).slice(0, 10)
-
-    // 按班级人均FAD统计
+    classStats.value = (data.byClass || []).slice(0, 3)
     perClassStats.value = data.perClass || []
-
-    // 按学生统计
-    studentStats.value = (data.byStudent || []).slice(0, 20)
-
-    // 本班有未执行FAD学生名单
-    unexecutedStudentStats.value = data.unexecutedStudents || []
+    studentStats.value = (data.byStudent || []).slice(0, 10)
   } catch (error) {
-    // 使用模拟数据
-    stats.total = 0
-    stats.executed = 0
-    stats.delivered = 0
-    stats.offset = 0
-    sourceTypeStats.value = []
-    classStats.value = []
-    studentStats.value = []
+    console.error('获取FAD统计失败:', error)
   } finally {
     loading.value = false
   }
+}
+
+function formatDate(dateString) {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
 }
 
 function getSourceTypeLabel(type) {
@@ -369,7 +340,6 @@ function getSourceTypeTag(type) {
   return map[type] || 'info'
 }
 
-// 获取排名样式类
 function getRankClass(rank) {
   if (rank === 1) return 'rank-first'
   if (rank === 2) return 'rank-second'
@@ -377,12 +347,11 @@ function getRankClass(rank) {
   return ''
 }
 
-// 根据人均FAD值获取标签类型
 function getAvgFADTagType(avg) {
-  if (avg >= 3) return 'danger' // 红色：人均3个及以上
-  if (avg >= 2) return 'warning' // 橙色：人均2-3个
-  if (avg >= 1) return 'primary' // 蓝色：人均1-2个
-  return 'success' // 绿色：人均少于1个
+  if (avg >= 3) return 'danger'
+  if (avg >= 2) return 'warning'
+  if (avg >= 1) return 'primary'
+  return 'success'
 }
 </script>
 
@@ -445,7 +414,6 @@ function getAvgFADTagType(avg) {
   flex-shrink: 0;
 }
 
-/* 排名样式 */
 .rank-first {
   display: inline-block;
   width: 24px;
@@ -485,25 +453,18 @@ function getAvgFADTagType(avg) {
   font-size: 12px;
 }
 
-/* 响应式表格 */
 .responsive-table {
   width: 100%;
 }
 
-/* ========== 响应式优化 ========== */
-
-/* 平板及以下 */
-@media (max-width: 992px) {
-  .stat-value {
-    font-size: 28px;
-  }
-
-  .stat-label {
-    font-size: 13px;
-  }
+.expanded-card {
+  margin: 10px;
 }
 
-/* 手机端 */
+.details-table {
+  margin-top: 10px;
+}
+
 @media (max-width: 768px) {
   .stat-value {
     font-size: 24px;
@@ -519,85 +480,6 @@ function getAvgFADTagType(avg) {
 
   .el-card {
     margin-bottom: 12px;
-  }
-
-  /* 表单项间距 */
-  :deep(.el-form-item) {
-    margin-bottom: 12px;
-  }
-
-  /* 卡片头部 */
-  :deep(.el-card__header) {
-    padding: 12px 16px;
-  }
-
-  /* 卡片内容 */
-  :deep(.el-card__body) {
-    padding: 12px;
-  }
-
-  /* 表格紧凑 */
-  :deep(.el-table .el-table__cell) {
-    padding: 8px 4px;
-    font-size: 13px;
-  }
-
-  :deep(.el-table th.el-table__cell) {
-    padding: 10px 4px;
-    font-size: 13px;
-  }
-
-  /* 隐藏次要列 */
-  :deep(.hide-on-sm) {
-    display: none !important;
-  }
-}
-
-/* 超小屏幕 */
-@media (max-width: 480px) {
-  .stat-value {
-    font-size: 22px;
-  }
-
-  .stat-label {
-    font-size: 11px;
-  }
-
-  :deep(.el-table .el-table__cell) {
-    padding: 6px 2px;
-    font-size: 12px;
-  }
-
-  :deep(.el-table th.el-table__cell) {
-    padding: 8px 2px;
-    font-size: 12px;
-  }
-
-  /* 隐藏更多次要列 */
-  :deep(.hide-on-xs) {
-    display: none !important;
-  }
-
-  /* 标签更小 */
-  :deep(.el-tag) {
-    font-size: 11px;
-    padding: 0 4px;
-    height: 20px;
-    line-height: 18px;
-  }
-
-  .rank-first,
-  .rank-second,
-  .rank-third {
-    width: 20px;
-    height: 20px;
-    line-height: 20px;
-    font-size: 11px;
-  }
-
-  .card-header-flex {
-    flex-direction: column;
-    align-items: flex-start;
   }
 }
 </style>

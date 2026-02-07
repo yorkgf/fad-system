@@ -74,7 +74,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
@@ -85,6 +85,25 @@ const userStore = useUserStore()
 // 是否为首页
 const isHomePage = computed(() => route.path === '/')
 
+import { getMyClassAsHomeTeacher } from '@/api/students'
+
+// 存储当前用户作为班主任的班级信息
+const myClass = ref(null)
+
+// 初始化函数，获取用户班级信息
+onMounted(async () => {
+  if (['B', 'T', 'A'].includes(userStore.userGroup)) {
+    try {
+      const res = await getMyClassAsHomeTeacher()
+      if (res.success) {
+        myClass.value = res.data
+      }
+    } catch (error) {
+      console.error('获取班主任班级信息失败:', error)
+    }
+  }
+})
+
 // 功能卡片列表
 const functionCards = computed(() => {
   const baseCards = [
@@ -94,7 +113,7 @@ const functionCards = computed(() => {
       path: '/records/insert',
       icon: 'Edit',
       color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      groups: ['S', 'F', 'C'] // 所有用户可见
+      groups: ['S', 'F', 'C', 'T', 'B', 'A'] // 所有用户可见
     },
     {
       title: '我的记录',
@@ -102,7 +121,7 @@ const functionCards = computed(() => {
       path: '/records/my',
       icon: 'List',
       color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
-      groups: ['S', 'F', 'C'] // 所有用户可见
+      groups: ['S', 'F', 'C', 'T', 'B', 'A'] // 所有用户可见
     },
     {
       title: 'FAD执行',
@@ -110,7 +129,7 @@ const functionCards = computed(() => {
       path: '/fad/execution',
       icon: 'Check',
       color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
-      groups: ['S'] // 仅S组可见
+      groups: ['S', 'T', 'B', 'A'] // S组、T组、B组、A组可见
     },
     {
       title: 'FAD通知单发放',
@@ -121,12 +140,20 @@ const functionCards = computed(() => {
       groups: ['S']
     },
     {
-      title: 'FAD统计',
-      subtitle: '查看FAD数据统计',
-      path: '/fad/stats',
+      title: '学校FAD统计',
+      subtitle: '查看全校FAD数据统计',
+      path: '/fad/school-stats',
       icon: 'DataLine',
       color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
-      groups: ['S']
+      groups: ['S', 'A'] // S、A组可见
+    },
+    {
+      title: '班级FAD统计',
+      subtitle: '查看本班FAD数据统计',
+      path: '/fad/class-stats',
+      icon: 'DataLine',
+      color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+      groups: ['B', 'T', 'S', 'A'] // B、T组班主任可见，S组也可见，A组班主任也可见
     },
     {
       title: '寝室表扬兑奖',
@@ -142,7 +169,7 @@ const functionCards = computed(() => {
       path: '/room/clean',
       icon: 'Brush',
       color: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
-      groups: ['S']
+      groups: ['S', 'A']
     },
     {
       title: '最佳寝室排名',
@@ -150,7 +177,7 @@ const functionCards = computed(() => {
       path: '/room/best-dorm',
       icon: 'TrophyBase',
       color: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
-      groups: ['S']
+      groups: ['S', 'A']
     },
     {
       title: '网课违规使用电子产品',
@@ -158,7 +185,7 @@ const functionCards = computed(() => {
       path: '/elec/violations',
       icon: 'Monitor',
       color: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
-      groups: ['S']
+      groups: ['S', 'T', 'B', 'A'] // S组、T组、B组、A组可见
     },
     {
       title: '未交手机名单',
@@ -166,7 +193,7 @@ const functionCards = computed(() => {
       path: '/phone/no-phone-list',
       icon: 'Iphone',
       color: 'linear-gradient(135deg, #96fbc4 0%, #f9f586 100%)',
-      groups: ['S']
+      groups: ['S', 'T', 'B', 'A'] // S组、T组、B组、A组可见
     },
     {
       title: '约谈/停课管理',
@@ -174,7 +201,7 @@ const functionCards = computed(() => {
       path: '/stop-class',
       icon: 'CircleClose',
       color: 'linear-gradient(135deg, #cd9cf2 0%, #f6f3ff 100%)',
-      groups: ['S']
+      groups: ['S', 'A']
     },
     {
       title: '教学票兑奖',
@@ -190,13 +217,28 @@ const functionCards = computed(() => {
       path: '/data/all',
       icon: 'Search',
       color: 'linear-gradient(135deg, #5ee7df 0%, #b490ca 100%)',
-      groups: ['S']
+      groups: ['S', 'A']
     }
   ]
 
-  // 根据用户组过滤功能卡片
+  // 根据用户组和权限过滤功能卡片
   const currentGroup = userStore.userGroup || 'F'
-  return baseCards.filter(card => card.groups.includes(currentGroup))
+
+  // 首先根据用户组进行初步过滤
+  let filteredCards = baseCards.filter(card => card.groups.includes(currentGroup))
+
+  // 对于 B、T 和 A 组的用户，需要进一步判断是否为班主任才能显示班级FAD统计功能
+  if (currentGroup === 'B' || currentGroup === 'T' || currentGroup === 'A') {
+    filteredCards = filteredCards.filter(card => {
+      if (card.path === '/fad/class-stats') {
+        // 只有是班主任的用户才能看到班级FAD统计功能
+        return !!myClass.value
+      }
+      return true
+    })
+  }
+
+  return filteredCards
 })
 
 // 导航到指定路径

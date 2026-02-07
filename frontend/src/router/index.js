@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { getMyClassAsHomeTeacher } from '@/api/students'
 
 const routes = [
   {
@@ -44,6 +45,18 @@ const routes = [
         name: 'FADDeliver',
         component: () => import('@/views/fad/FADDeliver.vue'),
         meta: { title: 'FAD通知单发放' }
+      },
+      {
+        path: 'fad/school-stats',
+        name: 'SchoolFADStats',
+        component: () => import('@/views/fad/SchoolFADStats.vue'),
+        meta: { title: '学校FAD统计' }
+      },
+      {
+        path: 'fad/class-stats',
+        name: 'ClassFADStats',
+        component: () => import('@/views/fad/ClassFADStats.vue'),
+        meta: { title: '班级FAD统计' }
       },
       {
         path: 'fad/stats',
@@ -127,7 +140,7 @@ const router = createRouter({
 const limitedAllowedRoutes = ['/', '/records/insert', '/records/my', '/settings/password', '/login']
 
 // 路由守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const userStore = useUserStore()
 
   if (to.meta.requiresAuth !== false && !userStore.isLoggedIn) {
@@ -137,6 +150,62 @@ router.beforeEach((to, from, next) => {
   } else if ((userStore.userGroup === 'C' || userStore.userGroup === 'F') && !limitedAllowedRoutes.includes(to.path)) {
     // C组和F组用户尝试访问未授权页面，重定向到首页
     next('/')
+  } else if (to.path === '/fad/school-stats') {
+    // 学校FAD统计页面：S组、A组可以访问
+    if (userStore.userGroup === 'S' || userStore.userGroup === 'A') {
+      next()
+    } else {
+      next('/')
+    }
+  } else if (to.path === '/fad/class-stats') {
+    // 班级FAD统计页面：B组、T组、A组班主任和S组可以访问
+    if (userStore.userGroup === 'S') {
+      // S组可以直接访问
+      next()
+    } else if (userStore.userGroup === 'B' || userStore.userGroup === 'T' || userStore.userGroup === 'A') {
+      // B组、T组和A组需要检查是否为班主任
+      try {
+        const res = await getMyClassAsHomeTeacher()
+        if (res.success && res.data) {
+          next()
+        } else {
+          next('/')
+        }
+      } catch (error) {
+        console.error('获取班主任班级信息失败:', error)
+        next('/')
+      }
+    } else {
+      next('/')
+    }
+  } else if (to.path === '/fad/execution') {
+    // FAD执行页面：S组、T组、B组、A组可以访问
+    if (['S', 'T', 'B', 'A'].includes(userStore.userGroup)) {
+      next()
+    } else {
+      next('/')
+    }
+  } else if (to.path === '/room/clean' || to.path === '/room/best-dorm') {
+    // 寝室清扫、最佳寝室排名页面：S组、A组可以访问
+    if (['S', 'A'].includes(userStore.userGroup)) {
+      next()
+    } else {
+      next('/')
+    }
+  } else if (to.path === '/elec/violations' || to.path === '/phone/no-phone-list') {
+    // 网课违规使用电子产品、未交手机名单页面：S组、T组、B组、A组可以访问
+    if (['S', 'T', 'B', 'A'].includes(userStore.userGroup)) {
+      next()
+    } else {
+      next('/')
+    }
+  } else if (to.path === '/stop-class' || to.path === '/data/all') {
+    // 约谈/停课管理、数据查询页面：S组、A组可以访问
+    if (['S', 'A'].includes(userStore.userGroup)) {
+      next()
+    } else {
+      next('/')
+    }
   } else {
     next()
   }

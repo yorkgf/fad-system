@@ -19,3 +19,8 @@ export function getClasses() {
 export function getHomeTeacher(className) {
   return request.get(`/classes/${encodeURIComponent(className)}/home-teacher`)
 }
+
+// 获取当前用户作为班主任的班级信息
+export function getMyClassAsHomeTeacher() {
+  return request.get('/classes/my-home-class')
+}

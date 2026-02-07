@@ -107,6 +107,30 @@ router.get('/stats', authMiddleware, async (req, res) => {
 
     const baseFilter = { 是否已撤回: { $ne: true } }
 
+    // 权限过滤逻辑
+    // C和F组：完全不能访问
+    if (req.user.group === 'C' || req.user.group === 'F') {
+      return res.status(403).json({ success: false, error: '没有权限访问此功能' })
+    }
+
+    // B和T组：只能查看自己班级的统计
+    if (req.user.group === 'B' || req.user.group === 'T') {
+      // 获取用户作为班主任的班级
+      const homeTeacherClass = await getCollection(Collections.AllClasses).findOne({
+        HomeTeacherEmail: req.user.email
+      })
+
+      // 如果不是班主任，不能访问
+      if (!homeTeacherClass) {
+        return res.status(403).json({ success: false, error: '没有权限访问此功能' })
+      }
+
+      // 只能查看自己班级的统计
+      baseFilter.班级 = homeTeacherClass.Class
+    }
+
+    // A和S组：可以查看所有班级的统计
+
     // 学期过滤：支持单选和多选
     if (semesters) {
       // 处理不同格式的数组参数
@@ -230,11 +254,32 @@ router.get('/stats', authMiddleware, async (req, res) => {
           offset: { $sum: { $cond: ['$是否已冲销记录', 1, 0] } },
           dorm: { $sum: { $cond: [{ $eq: ['$FAD来源类型', 'dorm'] }, 1, 0] } },
           teach: { $sum: { $cond: [{ $eq: ['$FAD来源类型', 'teach'] }, 1, 0] } },
-          other: { $sum: { $cond: [{ $eq: ['$FAD来源类型', 'other'] }, 1, 0] } }
+          other: { $sum: { $cond: [{ $eq: ['$FAD来源类型', 'other'] }, 1, 0] } },
+          details: { $push: '$$ROOT' }
         }
       },
       { $sort: { count: -1 } },
-      { $limit: 10 }
+      { $limit: 20 }
+    ]).toArray()
+
+    // 获取有未执行FAD的学生名单（只包含未执行的FAD记录）
+    const unexecutedStudentFilter = {
+      ...baseFilter,
+      是否已执行或冲抵: false,
+      是否已冲销记录: { $ne: true },
+      是否已撤回: { $ne: true }
+    }
+
+    const unexecutedStudents = await getCollection(Collections.FADRecords).aggregate([
+      { $match: unexecutedStudentFilter },
+      {
+        $group: {
+          _id: { student: '$学生', class: '$班级' },
+          unexecutedCount: { $sum: 1 },
+          records: { $push: '$$ROOT' }
+        }
+      },
+      { $sort: { unexecutedCount: -1 } }
     ]).toArray()
 
     res.json({
@@ -267,7 +312,14 @@ router.get('/stats', authMiddleware, async (req, res) => {
           offset: s.offset,
           dorm: s.dorm,
           teach: s.teach,
-          other: s.other
+          other: s.other,
+          details: s.details || []
+        })),
+        unexecutedStudents: unexecutedStudents.map(s => ({
+          student: s._id.student,
+          class: s._id.class,
+          unexecutedCount: s.unexecutedCount,
+          records: s.records
         }))
       }
     })

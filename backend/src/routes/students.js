@@ -109,6 +109,25 @@ classesRouter.get('/', authMiddleware, async (req, res) => {
   }
 })
 
+// 获取当前用户作为班主任的班级信息
+classesRouter.get('/my-home-class', authMiddleware, async (req, res) => {
+  try {
+    const classInfo = await getCollection(Collections.AllClasses).findOne({
+      HomeTeacherEmail: req.user.email
+    })
+
+    if (!classInfo) {
+      // 非班主任用户返回isHomeTeacher: false，而不是404错误
+      return res.json({ success: true, data: null, isHomeTeacher: false })
+    }
+
+    res.json({ success: true, data: classInfo, isHomeTeacher: true })
+  } catch (error) {
+    console.error('Get home teacher class error:', error)
+    res.status(500).json({ success: false, error: '获取班主任班级信息失败' })
+  }
+})
+
 classesRouter.get('/:name/home-teacher', authMiddleware, async (req, res) => {
   try {
     const classInfo = await getCollection(Collections.AllClasses).findOne({
