@@ -646,6 +646,10 @@ function isWithdrawable(row) {
   if (row.记录类型 === '寝室表扬' && row.是否已累计Reward) {
     return false
   }
+  // Teaching Reward Ticket 已兑换Reward的不可撤回
+  if (row.记录类型 === 'Teaching Reward Ticket' && row.是否已累计Reward) {
+    return false
+  }
   // 累计产生FAD的记录，检查 fadStatus
   if (hasFADStatus(row) && row.fadStatus === '已累计FAD，已发放') {
     return false
@@ -670,7 +674,10 @@ function isWithdrawable(row) {
   // 非管理员只能撤回自己的记录
   if (!userStore.isAdmin) {
     const teacherName = row.记录老师?.replace('系统: ', '').split(':')[0] || ''
-    if (!teacherName.includes(userStore.name)) {
+    // 调试日志
+    console.log('[撤回调试] 记录老师:', teacherName, '| 当前用户:', userStore.username)
+    console.log('[撤回调试] 是否匹配:', teacherName === userStore.username)
+    if (teacherName !== userStore.username) {
       return false
     }
   }
@@ -684,6 +691,9 @@ function getWithdrawDisabledReason(row) {
   }
   if (row.记录类型 === '寝室表扬' && row.是否已累计Reward) {
     return '该寝室表扬已生成Reward，不可撤回'
+  }
+  if (row.记录类型 === 'Teaching Reward Ticket' && row.是否已累计Reward) {
+    return '该Teaching Reward Ticket已兑换Reward，不可撤回'
   }
   if (hasFADStatus(row) && row.fadStatus === '已累计FAD，已发放') {
     return '该记录累计产生的FAD已发放纸质通知单，无法撤回'
@@ -705,7 +715,7 @@ function getWithdrawDisabledReason(row) {
   }
   if (!userStore.isAdmin) {
     const teacherName = row.记录老师?.replace('系统: ', '').split(':')[0] || ''
-    if (!teacherName.includes(userStore.name)) {
+    if (teacherName !== userStore.username) {
       return '只能撤回自己发出的记录'
     }
   }
