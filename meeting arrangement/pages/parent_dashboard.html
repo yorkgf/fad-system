@@ -357,6 +357,119 @@
             margin: 5px 0;
         }
 
+        /* 学生搜索样式 - 类似FAD系统 */
+        .student-search-container {
+            position: relative;
+        }
+
+        .student-search-input-wrapper {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 5px;
+        }
+
+        .student-search-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .student-search-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-search {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .student-search-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            z-index: 1000;
+            display: none;
+        }
+
+        .student-search-dropdown.active {
+            display: block;
+        }
+
+        .student-search-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .student-search-item:last-child {
+            border-bottom: none;
+        }
+
+        .student-search-item:hover {
+            background: #f5f5f5;
+        }
+
+        .student-search-name {
+            font-weight: 500;
+            color: #333;
+        }
+
+        .student-search-class {
+            font-size: 13px;
+            color: #888;
+        }
+
+        .student-search-empty {
+            padding: 15px;
+            text-align: center;
+            color: #888;
+        }
+
+        .selected-student-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #e3f2fd;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #333;
+            margin-top: 8px;
+        }
+
+        .selected-student-tag .remove-btn {
+            cursor: pointer;
+            color: #e74c3c;
+            font-weight: bold;
+            font-size: 16px;
+            line-height: 1;
+        }
+
         /* 响应式设计 */
         @media (max-width: 768px) {
             .header-content {
@@ -596,7 +709,7 @@
             <div class="step-indicator">
                 <div class="step active" id="step1">
                     <div class="step-number">1</div>
-                    <span>选择年级</span>
+                    <span>选择班级学生</span>
                 </div>
                 <div class="step-arrow">→</div>
                 <div class="step" id="step2">
@@ -610,28 +723,25 @@
                 </div>
             </div>
 
-            <!-- 步骤1: 选择年级 -->
+            <!-- 步骤1: 选择学生 -->
             <div id="gradeSelection">
                 <div class="form-group">
-                    <label>学生姓名（中英文）</label>
-                    <input type="text" id="studentName" placeholder="请输入学生姓名(中英文)">
-                </div>
-                <div class="form-group">
-                    <label>选择年级</label>
-                    <select id="gradeSelect">
-                        <option value="">请选择年级</option>
-                        <option value="Pre">Pre</option>
-                        <option value="G10">G10</option>
-                        <option value="G11">G11</option>
-                        <option value="G12">G12</option>
-                    </select>
+                    <label>搜索学生姓名</label>
+                    <div class="student-search-container">
+                        <div class="student-search-input-wrapper">
+                            <input type="text" id="studentSearch" class="student-search-input" placeholder="输入学生姓名搜索..." autocomplete="off">
+                            <button type="button" class="btn-search" onclick="searchStudents()">搜索</button>
+                        </div>
+                        <div class="student-search-dropdown" id="studentSearchDropdown"></div>
+                    </div>
+                    <div class="selected-student" id="selectedStudent"></div>
                 </div>
                 <button class="btn btn-primary" onclick="showTeachers()">查看教师</button>
             </div>
 
             <!-- 步骤2: 选择教师 -->
             <div id="teacherSelection" style="display:none;">
-                <button class="back-btn" onclick="backToGradeSelection()">← 返回选择年级</button>
+                <button class="back-btn" onclick="backToClassSelection()">← 返回选择班级</button>
                 <h3 style="margin-bottom: 15px; color: #333;">该年级的教师列表</h3>
                 <div id="teacherList" class="teacher-grid"></div>
             </div>
@@ -691,7 +801,47 @@
         let currentGrade = '';
         let currentTeacher = null;
         let allTeachers = [];
-        let allSessions = [];
+        let allClasses = [];
+        let classStudents = [];
+        let myBookings = [];  // 家长的预约记录
+
+        async function loadClasses() {
+            try {
+                const response = await fetch(API_BASE_URL + '/api/classes');
+                const result = await response.json();
+                if (result.success) {
+                    allClasses = result.data;
+                    populateClassSelect();
+                } else {
+                    console.error('加载班级失败:', result.message);
+                }
+            } catch (error) {
+                console.error('加载班级数据失败:', error);
+            }
+        }
+
+        function populateClassSelect() {
+            const select = document.getElementById('classSelect');
+            select.innerHTML = '<option value="">请选择班级</option>';
+            allClasses.forEach(cls => {
+                select.innerHTML += `<option value="${cls}">${cls}</option>`;
+            });
+        }
+
+        async function loadStudentsByClass(className) {
+            try {
+                const response = await fetch(API_BASE_URL + `/api/students?class=${encodeURIComponent(className)}`);
+                const result = await response.json();
+                if (result.success) {
+                    classStudents = result.data;
+                    populateStudentSelect();
+                } else {
+                    console.error('加载学生失败:', result.message);
+                }
+            } catch (error) {
+                console.error('加载学生数据失败:', error);
+            }
+        }
 
         async function loadTeachers() {
             try {
@@ -708,31 +858,27 @@
             }
         }
 
-        async function loadSessions() {
+        // 加载家长的预约记录（用于检查是否已预约某老师）
+        async function loadMyBookingsForCheck() {
             try {
-                const response = await fetch(API_BASE_URL + '/api/sessions');
+                const response = await fetch(API_BASE_URL + `/api/bookings/parent/${encodeURIComponent(parentPhone)}`);
                 const result = await response.json();
                 if (result.success) {
-                    allSessions = result.data;
+                    myBookings = result.data || [];
                 }
             } catch (error) {
-                allSessions = [];
+                myBookings = [];
             }
         }
 
         function showTeachers() {
-            const studentName = document.getElementById('studentName').value.trim();
-            const grade = document.getElementById('gradeSelect').value;
-
-            if (!studentName) {
-                alert('请输入学生姓名');
+            if (!selectedStudent) {
+                alert('请先搜索并选择学生');
                 return;
             }
 
-            if (!grade) {
-                alert('请选择年级');
-                return;
-            }
+            const studentName = selectedStudent.name;
+            const className = selectedStudent.class;
 
             if (!allTeachers || allTeachers.length === 0) {
                 alert('教师数据加载中，请稍后再试');
@@ -740,10 +886,14 @@
                 return;
             }
 
-            currentGrade = grade;
-            sessionStorage.setItem('studentName', studentName);
+            // 从学生信息中提取年级（班级前3个字符如 G10, G11, Pre）
+            const gradeMatch = className.match(/^(Pre|G\d+)/i);
+            currentGrade = gradeMatch ? gradeMatch[1].toUpperCase() : className;
 
-            const filteredTeachers = allTeachers.filter(t => t.grades && Array.isArray(t.grades) && t.grades.includes(grade));
+            sessionStorage.setItem('studentName', studentName);
+            sessionStorage.setItem('studentClass', className);
+
+            const filteredTeachers = allTeachers.filter(t => t.grades && Array.isArray(t.grades) && t.grades.includes(currentGrade));
 
             if (filteredTeachers.length === 0) {
                 alert('该年级暂无教师');
@@ -783,9 +933,12 @@
             document.getElementById('selectedTeacherInfo').textContent =
                 `${teacher.name} 老师 - ${subjectsText}`;
 
+            // 先加载家长的预约记录
+            await loadMyBookingsForCheck();
+
             // 检查当前家长是否已经预约过该老师
-            const alreadyBooked = allSessions.some(s =>
-                s.teacherName === teacher.name && s.parentPhone === parentPhone
+            const alreadyBooked = myBookings.some(b =>
+                b.teacherName === teacher.name
             );
 
             if (alreadyBooked) {
@@ -846,7 +999,6 @@
 
                 if (result.success) {
                     alert('预约成功！');
-                    await loadSessions();
                     backToTeacherSelection();
                 } else {
                     alert('预约失败：' + result.message);
@@ -856,7 +1008,7 @@
             }
         }
 
-        function backToGradeSelection() {
+        function backToClassSelection() {
             document.getElementById('teacherSelection').style.display = 'none';
             document.getElementById('gradeSelection').style.display = 'block';
             updateStepIndicator(1);
@@ -963,8 +1115,209 @@
             window.location.href = 'index.html';
         }
 
+        // 学生搜索相关变量
+        let selectedStudent = null;  // 当前选中的学生
+        let searchDebounceTimer = null;
+
+        // 监听学生搜索输入（带防抖）
+        document.getElementById('studentSearch').addEventListener('input', function() {
+            const query = this.value.trim();
+
+            // 清除之前的定时器
+            if (searchDebounceTimer) {
+                clearTimeout(searchDebounceTimer);
+            }
+
+            // 隐藏下拉列表如果输入为空
+            if (!query) {
+                hideStudentSearchDropdown();
+                return;
+            }
+
+            // 防抖延迟300ms
+            searchDebounceTimer = setTimeout(() => {
+                searchStudents(query);
+            }, 300);
+        });
+
+        // 点击外部关闭下拉列表
+        document.addEventListener('click', function(e) {
+            const container = document.querySelector('.student-search-container');
+            if (container && !container.contains(e.target)) {
+                hideStudentSearchDropdown();
+            }
+        });
+
+        // 搜索学生
+        async function searchStudents(query) {
+            if (!query || query.length < 1) {
+                hideStudentSearchDropdown();
+                return;
+            }
+
+            try {
+                const response = await fetch(API_BASE_URL + `/api/students?search=${encodeURIComponent(query)}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    displayStudentSearchResults(result.data);
+                } else {
+                    hideStudentSearchDropdown();
+                }
+            } catch (error) {
+                console.error('搜索学生失败:', error);
+                hideStudentSearchDropdown();
+            }
+        }
+
+        // 显示搜索结果
+        function displayStudentSearchResults(students) {
+            const dropdown = document.getElementById('studentSearchDropdown');
+
+            if (!students || students.length === 0) {
+                dropdown.innerHTML = '<div class="student-search-empty">未找到匹配的学生</div>';
+                dropdown.classList.add('active');
+                return;
+            }
+
+            let html = '';
+            students.forEach(student => {
+                html += `
+                    <div class="student-search-item" onclick="selectStudentFromSearch('${student.name}', '${student.class}')">
+                        <span class="student-search-name">${student.name}</span>
+                        <span class="student-search-class">${student.class}</span>
+                    </div>
+                `;
+            });
+
+            dropdown.innerHTML = html;
+            dropdown.classList.add('active');
+        }
+
+        // 从搜索结果中选择学生
+        function selectStudentFromSearch(name, className) {
+            selectedStudent = { name, class: className };
+
+            // 清空搜索框
+            document.getElementById('studentSearch').value = '';
+            hideStudentSearchDropdown();
+
+            // 显示选中的学生
+            displaySelectedStudent();
+        }
+
+        // 隐藏搜索下拉列表
+        function hideStudentSearchDropdown() {
+            const dropdown = document.getElementById('studentSearchDropdown');
+            dropdown.classList.remove('active');
+        }
+
+        // 显示选中的学生
+        function displaySelectedStudent() {
+            const container = document.getElementById('selectedStudent');
+
+            if (!selectedStudent) {
+                container.innerHTML = '';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="selected-student-tag">
+                    <span>${selectedStudent.name} (${selectedStudent.class})</span>
+                    <span class="remove-btn" onclick="removeSelectedStudent()">×</span>
+                </div>
+            `;
+        }
+
+        // 移除选中的学生
+        function removeSelectedStudent() {
+            selectedStudent = null;
+            displaySelectedStudent();
+        }
+
+        // 修改 showTeachers 函数以使用新的学生选择方式
+        function showTeachers() {
+            if (!selectedStudent) {
+                alert('请先搜索并选择学生');
+                return;
+            }
+
+            if (!allTeachers || allTeachers.length === 0) {
+                alert('教师数据加载中，请稍后再试');
+                loadTeachers();
+                return;
+            }
+
+            // 从学生信息中提取年级（班级前3个字符如 G10, G11, Pre）
+            const gradeMatch = selectedStudent.class.match(/^(Pre|G\d+)/i);
+            currentGrade = gradeMatch ? gradeMatch[1].toUpperCase() : selectedStudent.class;
+
+            sessionStorage.setItem('studentName', selectedStudent.name);
+            sessionStorage.setItem('studentClass', selectedStudent.class);
+
+            const filteredTeachers = allTeachers.filter(t => t.grades && Array.isArray(t.grades) && t.grades.includes(currentGrade));
+
+            if (filteredTeachers.length === 0) {
+                alert('该年级暂无教师');
+                return;
+            }
+
+            const teacherList = document.getElementById('teacherList');
+            let html = '';
+
+            filteredTeachers.forEach(teacher => {
+                const gradesText = teacher.grades && Array.isArray(teacher.grades) ? teacher.grades.join('、') : '';
+                const subjectsHtml = teacher.subjects && Array.isArray(teacher.subjects)
+                    ? teacher.subjects.map(s => `<span class="subject-badge">${s}</span>`).join('')
+                    : '';
+
+                html += `
+                    <div class="teacher-card" onclick='selectTeacher(${JSON.stringify(teacher)})'>
+                        <h3>${teacher.name} 老师</h3>
+                        <p>教授年级：${gradesText}</p>
+                        <p>教授科目：</p>
+                        <div>${subjectsHtml}</div>
+                    </div>
+                `;
+            });
+
+            teacherList.innerHTML = html;
+
+            document.getElementById('gradeSelection').style.display = 'none';
+            document.getElementById('teacherSelection').style.display = 'block';
+
+            updateStepIndicator(2);
+        }
+
+        // 页面加载时初始化数据
         loadTeachers();
-        loadSessions();
+        loadMyBookingsForCheck();
+
+        // 学生搜索输入框防抖
+        document.getElementById('studentSearch').addEventListener('input', function() {
+            const query = this.value.trim();
+
+            if (searchDebounceTimer) {
+                clearTimeout(searchDebounceTimer);
+            }
+
+            if (!query) {
+                hideStudentSearchDropdown();
+                return;
+            }
+
+            searchDebounceTimer = setTimeout(() => {
+                searchStudents(query);
+            }, 300);
+        });
+
+        // 点击外部关闭下拉列表
+        document.addEventListener('click', function(e) {
+            const container = document.querySelector('.student-search-container');
+            if (container && !container.contains(e.target)) {
+                hideStudentSearchDropdown();
+            }
+        });
     </script>
 </body>
 </html>

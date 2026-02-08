@@ -8,6 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 FAD (学生纪律与奖励管理系统) - Student discipline and reward management system built with Vue 3 + Express + MongoDB, deployed on Tencent Cloud SCF (Serverless) + EdgeOne Pages.
 
+**Integrated Systems:**
+- **FAD Core**: Student discipline/reward management (GHA database)
+- **Meeting Arrangement (日程管理)**: Parent-teacher conference booking system (GHS database) - Teacher portal integrated into FAD; standalone parent portal remains in `meeting arrangement/` folder
+
 ## Development Commands
 
 ### Frontend (in `frontend/`)
@@ -62,6 +66,8 @@ npm run remove     # Remove SCF deployment
 - **FAD source tracking**: Every FAD has a `FAD来源类型` field (dorm/teach/elec/other) used for analytics
 - **Reward offset logic**: 2 Rewards can offset FAD execution status; 3 Rewards can offset the entire FAD record
 - **Duplicate prevention**: Certain record types (寝室表扬, 寝室批评, 寝室垃圾未倒) cannot be duplicated for the same student on the same day
+- **Dual database**: FAD connects to both GHA (main) and GHS (meeting arrangement) databases; see `db.js` for connection logic
+- **Teacher profile sync**: GHS teacher profiles are auto-created from GHA teacher data when accessing schedule features
 
 ### Project Structure
 ```
@@ -75,17 +81,18 @@ frontend/src/
 └── App.vue           # Root component
 
 backend/src/
-├── routes/           # Express routers (7 modules)
+├── routes/           # Express routers (8 modules)
 │   ├── auth.js       # Login/teachers endpoints
 │   ├── students.js   # Students/classes endpoints
 │   ├── records.js    # Core record management with accumulation
 │   ├── fad.js        # FAD record management
 │   ├── reward.js     # Reward record management
 │   ├── room.js       # Room praise/warning endpoints
+│   ├── schedule.js   # Meeting arrangement integration (GHS database)
 │   └── other.js      # Other endpoints (electronics,停课, etc.)
 ├── utils/
 │   ├── constants.js  # Business rules, accumulation rules, record type mappings
-│   ├── db.js         # MongoDB singleton connection
+│   ├── db.js         # MongoDB dual connection (GHA + GHS)
 │   ├── auth.js       # JWT middleware, bcrypt helpers
 │   └── email.js      # Brevo API for notifications
 └── index.js          # Express app entry + serverless handler export
@@ -103,6 +110,7 @@ backend/src/
 - System collections: `Teachers`, `Students`, `All_Classes`
 - Special collections: `Teaching_FAD_Ticket`, `Teaching_Reward_Ticket` (no `_Records` suffix)
 - Note: Both phone late types (`21:30后` and `22:00后`) share `Phone_Late_Records` collection
+- Secondary database: `GHS` (Meeting Arrangement Schedule) connected via `GHS_MONGO_URI` for meeting room violations
 
 ## Authentication
 
@@ -133,10 +141,51 @@ backend/src/
 - 22:00后交还手机 → immediate FAD (source: dorm)
 - 21:30后交还手机(22:00前) → no FAD (same collection, different behavior)
 
+### Semester System
+- Only two semesters: `春季(Spring)` (Feb-Jul) and `秋季(Fall)` (Sep-Jan)
+- Current semester auto-detected by `getCurrentSemester()` in `common.js` based on month
+- All records tagged with semester for filtering and analysis
+
 ### Record Withdrawal
 - Cascade deletes any generated FAD/warnings from accumulated records
 - Reward records cannot be withdrawn (enforced in API)
 - FAD/Reward with `是否已发放=true` or teacher starting with `已发:` cannot be withdrawn
+
+### Duplicate Prevention
+- `寝室表扬`, `寝室批评`, `寝室垃圾未倒` cannot be duplicated for the same student on the same day (enforced in `records.js:DUPLICATE_CHECK_TYPES`)
+
+## Meeting Arrangement Integration
+
+The meeting arrangement system (会议预约系统) is a dual-database integration:
+
+### Architecture
+```
+FAD Frontend (Vue 3)
+        ↓
+FAD Backend (Express)
+   ↓            ↓
+GHA DB      GHS DB
+(FAD)     (Schedule)
+```
+
+### Database Separation
+- **GHA database**: FAD core data (students, records, FAD, rewards)
+- **GHS database**: Meeting arrangement data (teachers, sessions, bookings)
+- Connection managed in `db.js` with `getCollection()` (GHA) and `getGHSCollection()` (GHS)
+
+### Teacher Profile Sync
+- When a teacher accesses schedule features, their profile is auto-synced from GHA to GHS
+- GHS stores additional fields: `meetingId`, `meetingPassword`, `grades`, `subjects`
+- Teachers excluded from schedule: Group `C` (cleaning staff)
+
+### Permission Groups for Schedule
+Schedule access is restricted to groups: `S`, `A`, `B`, `T`, `F` (excludes `C`)
+
+### Standalone Parent Portal
+The original meeting arrangement system remains in `meeting arrangement/` folder:
+- `meeting arrangement/CFunction/` - Standalone backend (SCF)
+- `meeting arrangement/pages/` - Parent portal (static HTML)
+- These serve parents booking conferences independently of FAD
 
 ## Critical Sync Points
 
@@ -150,14 +199,19 @@ FAD source type mappings are defined in `backend/src/utils/constants.js` (`RECOR
 
 ## Environment Variables (Backend)
 
-```
-MONGO_URI=mongodb://...
-DB_NAME=GHA
-JWT_SECRET=your-secret
-BREVO_API_KEY=your-key (for email notifications)
-SENDER_EMAIL=sender@example.com
-SENDER_NAME=FAD系统
-```
+| Variable | Description |
+|----------|-------------|
+| `MONGO_URI` | MongoDB connection string (GHA database) |
+| `DB_NAME` | Main database name (default: `GHA`) |
+| `GHS_MONGO_URI` | MongoDB connection for meeting schedule DB (optional) |
+| `GHS_DB_NAME` | Meeting schedule database name (default: `GHS`) |
+| `JWT_SECRET` | JWT signing key |
+| `JWT_EXPIRES_IN` | Token expiry (default: `7d`) |
+| `BREVO_API_KEY` | Brevo email API key |
+| `SENDER_EMAIL` | Notification sender email |
+| `SENDER_NAME` | Notification sender name |
+| `PORT` | Server port (default: `8080`) |
+| `NODE_ENV` | Environment (`development` or `production`)
 
 ## Deployment
 
@@ -217,6 +271,22 @@ npm run build:prod
 - `PUT /api/room-praise/:id` - Update room praise record
 - `GET /api/room-warning` - Get room warning records
 - `PUT /api/room-warning/:id` - Update room warning record
+
+### Schedule Management (Meeting Arrangement)
+- `GET /api/schedule/me/ghs-profile` - Get current teacher's GHS profile (auto-creates if missing)
+- `PUT /api/schedule/me/meeting` - Update Tencent Meeting credentials
+- `PUT /api/schedule/me/profile` - Update teacher grades/subjects
+- `GET /api/schedule/teachers` - List teachers with schedule enabled
+- `GET /api/schedule/sessions` - Get available time slots
+- `POST /api/schedule/sessions` - Create time slot
+- `POST /api/schedule/sessions/batch` - Batch create time slots
+- `PUT /api/schedule/sessions/:id` - Update time slot
+- `DELETE /api/schedule/sessions/:id` - Delete time slot
+- `GET /api/schedule/bookings` - Get bookings list
+- `POST /api/schedule/bookings` - Create booking
+- `PUT /api/schedule/bookings/:id` - Update booking status
+- `GET /api/schedule/my-sessions` - Get my schedule (as teacher)
+- `GET /api/schedule/my-bookings` - Get my bookings (as booker)
 
 ### Other Endpoints
 - `GET /api/health` - Health check
