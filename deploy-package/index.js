@@ -10,6 +10,7 @@ const fadRoutes = require('./src/routes/fad.js')
 const rewardRoutes = require('./src/routes/reward.js')
 const roomRoutes = require('./src/routes/room.js')
 const otherRoutes = require('./src/routes/other.js')
+const scheduleRoutes = require('./src/routes/schedule.js')
 
 const app = express()
 
@@ -37,6 +38,7 @@ app.use('/api/reward-records', rewardRoutes)
 app.use('/api/room-praise', roomRoutes)
 app.use('/api/room-warning', roomRoutes)
 app.use('/api', otherRoutes)
+app.use('/api/schedule', scheduleRoutes)
 
 // 错误处理
 app.use((err, req, res, next) => {

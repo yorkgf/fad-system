@@ -126,6 +126,34 @@ const routes = [
         name: 'ChangePassword',
         component: () => import('@/views/settings/ChangePassword.vue'),
         meta: { title: '修改密码' }
+      },
+      // 日程管理模块
+      {
+        path: 'schedule',
+        name: 'ScheduleManage',
+        component: () => import('@/views/schedule/ScheduleManage.vue'),
+        meta: {
+          title: '日程管理',
+          allowedGroups: ['S', 'A', 'B', 'T', 'F']
+        }
+      },
+      {
+        path: 'schedule/my',
+        name: 'MySchedule',
+        component: () => import('@/views/schedule/MySchedule.vue'),
+        meta: {
+          title: '我的日程',
+          allowedGroups: ['S', 'A', 'B', 'T', 'F']
+        }
+      },
+      {
+        path: 'schedule/bookings',
+        name: 'MyBookings',
+        component: () => import('@/views/schedule/MyBookings.vue'),
+        meta: {
+          title: '我的预约',
+          allowedGroups: ['S', 'A', 'B', 'T', 'F']
+        }
       }
     ]
   }
@@ -199,6 +227,14 @@ router.beforeEach(async (to, from, next) => {
   } else if (to.path === '/stop-class' || to.path === '/data/all') {
     // 约谈/停课管理、数据查询页面：S组、A组可以访问
     if (['S', 'A'].includes(userStore.userGroup)) {
+      next()
+    } else {
+      next('/')
+    }
+  } else if (to.path.startsWith('/schedule')) {
+    // 日程管理页面：S组、A组、B组、T组、F组可以访问（排除C组）
+    const allowedGroups = ['S', 'A', 'B', 'T', 'F']
+    if (allowedGroups.includes(userStore.userGroup)) {
       next()
     } else {
       next('/')

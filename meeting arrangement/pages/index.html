@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHA线上会议预约</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #667eea;
+            font-size: 24px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .logo img {
+            height: 80px;
+            width: auto;
+        }
+
+        .logo p {
+            color: #888;
+            font-size: 14px;
+        }
+
+        .role-tabs {
+            display: flex;
+            margin-bottom: 30px;
+            background: #f5f5f5;
+            border-radius: 10px;
+            padding: 5px;
+        }
+
+        .role-tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s;
+            font-size: 16px;
+        }
+
+        .role-tab.active {
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .error-msg {
+            color: #e74c3c;
+            font-size: 13px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .teacher-fields {
+            display: none;
+        }
+
+        .teacher-fields.active {
+            display: block;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 30px 20px;
+                border-radius: 15px;
+                margin: 20px;
+            }
+
+            .logo img {
+                height: 60px;
+            }
+
+            .logo p {
+                font-size: 13px;
+            }
+
+            .role-tab {
+                padding: 10px 8px;
+                font-size: 14px;
+            }
+
+            .form-group label {
+                font-size: 13px;
+            }
+
+            .form-group input,
+            .form-group select {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+
+            .btn {
+                padding: 12px;
+                font-size: 15px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 25px 15px;
+                margin: 10px;
+            }
+
+            .logo img {
+                height: 50px;
+            }
+
+            .logo p {
+                font-size: 12px;
+            }
+
+            .role-tabs {
+                margin-bottom: 20px;
+            }
+
+            .role-tab {
+                padding: 8px 6px;
+                font-size: 13px;
+            }
+
+            .btn {
+                padding: 10px;
+                font-size: 14px;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .container {
+                max-width: 500px;
+                padding: 50px;
+            }
+
+            .logo img {
+                height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1><img src="logo.png" alt="GHA Logo"></h1>
+            <p>家长-教师在线预约平台</p>
+        </div>
+
+        <div class="role-tabs">
+            <div class="role-tab active" data-role="parent">家长登录</div>
+            <div class="role-tab" data-role="teacher">教师登录</div>
+        </div>
+
+        <form id="loginForm">
+            <!-- 家长登录表单 -->
+            <div id="parentForm">
+                <div class="form-group">
+                    <label for="parentPhone">手机号</label>
+                    <input type="tel" id="parentPhone" placeholder="请输入手机号" pattern="[0-9]{11}">
+                    <div class="error-msg" id="phoneError">请输入有效的11位手机号</div>
+                </div>
+            </div>
+
+            <!-- 教师登录表单 -->
+            <div id="teacherForm" class="teacher-fields">
+                <div class="form-group">
+                    <label for="teacherEmail">邮箱</label>
+                    <input type="email" id="teacherEmail" placeholder="请输入邮箱">
+                    <div class="error-msg" id="emailError">请输入有效的邮箱地址</div>
+                </div>
+                <div class="form-group">
+                    <label for="teacherPassword">密码</label>
+                    <input type="password" id="teacherPassword" placeholder="请输入密码">
+                    <div class="error-msg" id="passwordError">密码不能为空</div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn" id="loginBtn">家长登录</button>
+        </form>
+    </div>
+
+    <script>
+        // ==================== API配置 ====================
+        // 部署到云函数后，请修改下面的API_BASE_URL为你的API网关访问地址
+        // 本地开发: 'http://localhost:3000'
+        // 云函数部署后: 'https://your-api-gateway-url'
+        const API_BASE_URL = 'https://1300190563-2hqncjnt8w.ap-shanghai.tencentscf.com';
+        // =================================================
+
+        let currentRole = 'parent';
+        const roleTabs = document.querySelectorAll('.role-tab');
+        const parentForm = document.getElementById('parentForm');
+        const teacherForm = document.getElementById('teacherForm');
+        const loginBtn = document.getElementById('loginBtn');
+        const loginForm = document.getElementById('loginForm');
+
+        roleTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                roleTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentRole = tab.dataset.role;
+
+                if (currentRole === 'parent') {
+                    parentForm.classList.remove('hidden');
+                    teacherForm.classList.remove('active');
+                    loginBtn.textContent = '家长登录';
+                } else {
+                    parentForm.classList.add('hidden');
+                    teacherForm.classList.add('active');
+                    loginBtn.textContent = '教师登录';
+                }
+
+                document.querySelectorAll('.error-msg').forEach(msg => msg.style.display = 'none');
+            });
+        });
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            document.querySelectorAll('.error-msg').forEach(msg => msg.style.display = 'none');
+
+            if (currentRole === 'parent') {
+                const phone = document.getElementById('parentPhone').value.trim();
+                if (!/^1[3-9]\d{9}$/.test(phone)) {
+                    document.getElementById('phoneError').style.display = 'block';
+                    return;
+                }
+                sessionStorage.setItem('userPhone', phone);
+                sessionStorage.setItem('userRole', 'parent');
+                window.location.href = 'parent_dashboard.html';
+            } else {
+                const email = document.getElementById('teacherEmail').value.trim();
+                const password = document.getElementById('teacherPassword').value;
+
+                if (!email || !email.includes('@')) {
+                    document.getElementById('emailError').style.display = 'block';
+                    return;
+                }
+                if (!password) {
+                    document.getElementById('passwordError').style.display = 'block';
+                    return;
+                }
+
+                const success = await authenticateTeacher(email, password);
+                if (success) {
+                    sessionStorage.setItem('userEmail', email);
+                    sessionStorage.setItem('userRole', 'teacher');
+                    window.location.href = 'teacher_dashboard.html';
+                } else {
+                    alert('邮箱或密码错误，请重试');
+                }
+            }
+        });
+
+        async function authenticateTeacher(email, password) {
+            try {
+                console.log('正在登录...', email);
+                const response = await fetch(API_BASE_URL + '/api/teacher/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                console.log('响应状态:', response.status);
+                const result = await response.json();
+                console.log('响应结果:', result);
+
+                if (result.success) {
+                    const data = result.data;
+                    sessionStorage.setItem('teacherName', data.name);
+                    sessionStorage.setItem('teacherGrades', data.grades.join(','));
+                    sessionStorage.setItem('teacherSubjects', data.subjects.join(','));
+                    sessionStorage.setItem('meetingId', data.meetingId || '');
+                    sessionStorage.setItem('meetingPassword', data.meetingPassword || '');
+                    return true;
+                } else {
+                    console.error('登录失败:', result.message);
+                }
+                return false;
+            } catch (error) {
+                console.error('认证失败:', error);
+                alert('连接服务器失败，请确保服务器已启动');
+                return false;
+            }
+        }
+    </script>
+</body>
+</html>

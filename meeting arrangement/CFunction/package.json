@@ -1,0 +1,15 @@
+{
+  "name": "meeting-booking-system",
+  "version": "1.0.0",
+  "description": "Parent-Teacher Meeting Booking System",
+  "main": "scf_index.js",
+  "scripts": {
+    "start": "node scf_index.js",
+    "local": "node scf_index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongodb": "^6.3.0",
+    "cors": "^2.8.5"
+  }
+}

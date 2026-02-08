@@ -1,20 +1,40 @@
 const { MongoClient } = require('mongodb')
 
+// GHA 数据库配置（FAD系统主数据库）
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://49.235.189.246:27017'
 const DB_NAME = process.env.DB_NAME || 'GHA'
 
-let db = null
+// GHS 数据库配置（Meeting Arrangement日程系统数据库）
+const GHS_MONGO_URI = process.env.GHS_MONGO_URI || MONGO_URI
+const GHS_DB_NAME = process.env.GHS_DB_NAME || 'GHS'
+
+let db = null      // GHA 数据库实例
+let ghsDB = null   // GHS 数据库实例
 let client = null
 
 async function connectDB() {
-  if (db) return db
+  if (db && ghsDB) return { db, ghsDB }
 
   try {
     client = new MongoClient(MONGO_URI)
     await client.connect()
+
+    // 连接 GHA（FAD主数据库）
     db = client.db(DB_NAME)
-    console.log('MongoDB connected successfully')
-    return db
+
+    // 连接 GHS（Meeting Arrangement数据库）
+    // 如果 GHS 在同一服务器，复用连接
+    if (GHS_MONGO_URI === MONGO_URI) {
+      ghsDB = client.db(GHS_DB_NAME)
+    } else {
+      // 如果 GHS 在不同服务器，需要额外连接
+      const ghsClient = new MongoClient(GHS_MONGO_URI)
+      await ghsClient.connect()
+      ghsDB = ghsClient.db(GHS_DB_NAME)
+    }
+
+    console.log('MongoDB connected: GHA and GHS')
+    return { db, ghsDB }
   } catch (error) {
     console.error('MongoDB connection error:', error)
     throw error
@@ -23,16 +43,27 @@ async function connectDB() {
 
 function getDB() {
   if (!db) {
-    throw new Error('Database not connected')
+    throw new Error('GHA Database not connected')
   }
   return db
+}
+
+function getGHSDB() {
+  if (!ghsDB) {
+    throw new Error('GHS Database not connected')
+  }
+  return ghsDB
 }
 
 function getCollection(name) {
   return getDB().collection(name)
 }
 
-// 集合名称常量
+function getGHSCollection(name) {
+  return getGHSDB().collection(name)
+}
+
+// GHA 集合名称常量（FAD系统）
 const Collections = {
   Teachers: 'Teachers',
   Students: 'Students',
@@ -54,9 +85,19 @@ const Collections = {
   StopClassRecords: 'Stop_Class_Records'
 }
 
+// GHS 集合名称常量（日程管理系统）
+const GHSCollections = {
+  Teachers: 'teachers',           // GHS教师信息（使用小写，与现有系统保持一致）
+  Sessions: 'sessions',           // 日程时段（使用小写，与现有系统保持一致）
+  Bookings: 'bookings'            // 预约记录（使用小写，与现有系统保持一致）
+}
+
 module.exports = {
   connectDB,
   getDB,
+  getGHSDB,
   getCollection,
-  Collections
+  getGHSCollection,
+  Collections,
+  GHSCollections
 }

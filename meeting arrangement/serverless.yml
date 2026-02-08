@@ -1,0 +1,44 @@
+component: scf
+name: meeting-booking-system
+
+inputs:
+  name: meeting-booking-api
+  description: 家长-老师腾讯会议预约系统API
+  runtime: Nodejs16.13
+  handler: scf_index.handler
+  memorySize: 256
+  timeout: 30
+  codeUri: ./
+
+  # 环境变量（可选，也可以在云函数控制台配置）
+  environment:
+    variables: {}
+
+  # VPC配置（如果MongoDB在内网）
+  vpcConfig:
+    vpcId: ""
+    subnetId: ""
+
+  # 公网访问配置
+  publicAccess: true
+
+  # 函数URL配置（替代API网关）
+  functionUrl:
+    # 启用函数URL
+    enable: true
+    # 认证类型：NONE（无需认证）/ JWT（需要JWT认证）
+    authType: NONE
+    # 允许的请求方法
+    allowMethods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - OPTIONS
+    # 创建自定义域名（可选）
+    createCustomDomain: false
+
+  # 依赖包
+  layers:
+    - name: mongodb-layer
+      version: 1

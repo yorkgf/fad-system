@@ -218,6 +218,14 @@ const functionCards = computed(() => {
       icon: 'Search',
       color: 'linear-gradient(135deg, #5ee7df 0%, #b490ca 100%)',
       groups: ['S', 'A']
+    },
+    {
+      title: '日程管理',
+      subtitle: '预约教师面谈时间',
+      path: '/schedule',
+      icon: 'Calendar',
+      color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      groups: ['S', 'A', 'B', 'T', 'F']
     }
   ]
 
