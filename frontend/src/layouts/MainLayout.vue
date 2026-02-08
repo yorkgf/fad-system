@@ -15,6 +15,10 @@
           </span>
           <template #dropdown>
             <el-dropdown-menu>
+              <el-dropdown-item command="profile">
+                <el-icon><UserFilled /></el-icon>
+                教师信息
+              </el-dropdown-item>
               <el-dropdown-item command="password">
                 <el-icon><Key /></el-icon>
                 修改密码
@@ -266,6 +270,8 @@ const handleCommand = (command) => {
     router.push('/login')
   } else if (command === 'password') {
     router.push('/settings/password')
+  } else if (command === 'profile') {
+    router.push('/settings/profile')
   }
 }
 </script>

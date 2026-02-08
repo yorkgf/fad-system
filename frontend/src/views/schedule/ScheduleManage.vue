@@ -26,51 +26,6 @@
       </template>
     </el-card>
 
-    <!-- 腾讯会议信息卡片 -->
-    <el-card class="meeting-card">
-      <template #header>
-        <div class="section-header">
-          <el-icon class="section-icon"><VideoCamera /></el-icon>
-          <span>腾讯会议信息</span>
-          <el-button
-            v-if="!editingMeeting"
-            type="primary"
-            link
-            size="small"
-            @click="startEditMeeting"
-          >
-            修改
-          </el-button>
-        </div>
-      </template>
-
-      <div v-if="!editingMeeting" class="meeting-info">
-        <div class="info-row">
-          <span class="info-label">会议号:</span>
-          <span class="info-value">{{ teacherMeeting.meetingId || '未设置' }}</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">会议密码:</span>
-          <span class="info-value">{{ teacherMeeting.meetingPassword || '未设置' }}</span>
-        </div>
-      </div>
-
-      <div v-else class="meeting-edit">
-        <el-form label-position="top" class="mobile-form">
-          <el-form-item label="会议号">
-            <el-input v-model="meetingForm.meetingId" placeholder="请输入腾讯会议号" />
-          </el-form-item>
-          <el-form-item label="会议密码">
-            <el-input v-model="meetingForm.meetingPassword" placeholder="请输入会议密码" />
-          </el-form-item>
-          <div class="form-actions">
-            <el-button type="primary" @click="saveMeetingInfo">保存</el-button>
-            <el-button @click="cancelEditMeeting">取消</el-button>
-          </div>
-        </el-form>
-      </div>
-    </el-card>
-
     <!-- 创建时段表单 -->
     <el-card id="create-form" class="create-card">
       <template #header>
@@ -318,13 +273,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import {
   createSessionsBatch,
   deleteSession as deleteSessionAPI,
-  getMySessions,
-  getMyGHSProfile,
-  updateMeetingInfo
+  getMySessions
 } from '@/api/schedule'
 import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
-import { Calendar, Plus, List, Location, Delete, UserFilled, VideoCamera } from '@element-plus/icons-vue'
+import { Calendar, Plus, List, Location, Delete, UserFilled } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -351,17 +304,6 @@ const creating = ref(false)
 // 我的时段列表
 const mySessions = ref([])
 const mySessionsLoading = ref(false)
-
-// 腾讯会议信息
-const teacherMeeting = ref({
-  meetingId: '',
-  meetingPassword: ''
-})
-const editingMeeting = ref(false)
-const meetingForm = ref({
-  meetingId: '',
-  meetingPassword: ''
-})
 
 // 判断当前用户是否为教师
 const isTeacher = computed(() => {
@@ -558,53 +500,6 @@ async function loadMySessions() {
   }
 }
 
-async function loadMeetingInfo() {
-  try {
-    const res = await getMyGHSProfile()
-    if (res.data?.ghsProfile) {
-      teacherMeeting.value = {
-        meetingId: res.data.ghsProfile.meetingId || '',
-        meetingPassword: res.data.ghsProfile.meetingPassword || ''
-      }
-    }
-  } catch (error) {
-    console.error('获取会议信息失败:', error)
-  }
-}
-
-function startEditMeeting() {
-  meetingForm.value = {
-    meetingId: teacherMeeting.value.meetingId,
-    meetingPassword: teacherMeeting.value.meetingPassword
-  }
-  editingMeeting.value = true
-}
-
-function cancelEditMeeting() {
-  editingMeeting.value = false
-  meetingForm.value = {
-    meetingId: teacherMeeting.value.meetingId,
-    meetingPassword: teacherMeeting.value.meetingPassword
-  }
-}
-
-async function saveMeetingInfo() {
-  try {
-    await updateMeetingInfo({
-      meetingId: meetingForm.value.meetingId,
-      meetingPassword: meetingForm.value.meetingPassword
-    })
-    teacherMeeting.value = {
-      meetingId: meetingForm.value.meetingId,
-      meetingPassword: meetingForm.value.meetingPassword
-    }
-    editingMeeting.value = false
-    ElMessage.success('会议信息保存成功')
-  } catch (error) {
-    ElMessage.error(error.response?.data?.error || '保存失败')
-  }
-}
-
 async function handleDeleteSession(id) {
   try {
     await ElMessageBox.confirm('确定要删除这个时段吗？', '提示', {
@@ -670,7 +565,6 @@ function formatDate(date) {
 onMounted(() => {
   if (isTeacher.value) {
     loadMySessions()
-    loadMeetingInfo()
   }
 })
 </script>
@@ -705,45 +599,6 @@ onMounted(() => {
 /* 桌面端头部 */
 .desktop-header {
   margin-bottom: 20px;
-}
-
-/* 腾讯会议信息卡片 */
-.meeting-card {
-  margin-bottom: 20px;
-}
-
-.meeting-card :deep(.el-card__header) {
-  padding: 16px 20px;
-  border-bottom: 1px solid #e4e7ed;
-}
-
-.meeting-info {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.info-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 14px;
-}
-
-.info-label {
-  color: #909399;
-  min-width: 70px;
-}
-
-.info-value {
-  color: #303133;
-  font-weight: 500;
-  font-family: monospace;
-  font-size: 15px;
-}
-
-.meeting-edit {
-  padding: 8px 0;
 }
 
 .desktop-header :deep(.el-card__header) {
@@ -996,8 +851,7 @@ onMounted(() => {
   }
 
   .create-card,
-  .sessions-card,
-  .meeting-card {
+  .sessions-card {
     margin: 0 0 12px 0;
     border-radius: 0;
     box-shadow: none;
@@ -1006,23 +860,13 @@ onMounted(() => {
   }
 
   .create-card :deep(.el-card__header),
-  .sessions-card :deep(.el-card__header),
-  .meeting-card :deep(.el-card__header) {
+  .sessions-card :deep(.el-card__header) {
     padding: 16px;
   }
 
   .create-card :deep(.el-card__body),
-  .sessions-card :deep(.el-card__body),
-  .meeting-card :deep(.el-card__body) {
+  .sessions-card :deep(.el-card__body) {
     padding: 16px;
-  }
-
-  .meeting-card .info-label {
-    min-width: 60px;
-  }
-
-  .meeting-card .info-value {
-    font-size: 14px;
   }
 
   .mobile-form :deep(.el-form-item) {

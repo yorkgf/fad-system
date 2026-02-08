@@ -127,6 +127,15 @@ const routes = [
         component: () => import('@/views/settings/ChangePassword.vue'),
         meta: { title: '修改密码' }
       },
+      {
+        path: 'settings/profile',
+        name: 'TeacherProfile',
+        component: () => import('@/views/settings/TeacherProfile.vue'),
+        meta: {
+          title: '教师信息',
+          allowedGroups: ['S', 'A', 'B', 'T', 'F']
+        }
+      },
       // 日程管理模块
       {
         path: 'schedule',
@@ -165,7 +174,7 @@ const router = createRouter({
 })
 
 // C组和F组用户可访问的路由
-const limitedAllowedRoutes = ['/', '/records/insert', '/records/my', '/settings/password', '/login']
+const limitedAllowedRoutes = ['/', '/records/insert', '/records/my', '/settings/password', '/settings/profile', '/login']
 
 // 路由守卫
 router.beforeEach(async (to, from, next) => {

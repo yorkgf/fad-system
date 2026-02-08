@@ -15,6 +15,11 @@ export function updateMeetingInfo(data) {
   return request.put('/schedule/me/meeting', data)
 }
 
+// 更新教师个人信息（年级和科目）
+export function updateTeacherProfile(data) {
+  return request.put('/schedule/me/profile', data)
+}
+
 // 获取可预约教师列表
 export function getScheduleTeachers(params) {
   return request.get('/schedule/teachers', { params })

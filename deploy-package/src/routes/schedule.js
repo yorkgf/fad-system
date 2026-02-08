@@ -52,12 +52,16 @@ router.get('/me/ghs-profile', authMiddleware, scheduleAccessMiddleware, async (r
         ghaProfile: {
           email: ghaTeacher.email,
           name: ghaTeacher.Name,
-          group: ghaTeacher.Group
+          group: ghaTeacher.Group,
+          grades: ghaTeacher.Grades || [],
+          subjects: ghaTeacher.Subjects || []
         },
         ghsProfile: {
           ...ghsTeacher,
           meetingId: ghsTeacher.meetingId || '',
-          meetingPassword: ghsTeacher.meetingPassword || ''
+          meetingPassword: ghsTeacher.meetingPassword || '',
+          grades: ghsTeacher.grades || ghaTeacher.Grades || [],
+          subjects: ghsTeacher.subjects || ghaTeacher.Subjects || []
         },
         isScheduleEnabled: true
       }
@@ -89,6 +93,30 @@ router.put('/me/meeting', authMiddleware, scheduleAccessMiddleware, async (req, 
   } catch (error) {
     console.error('Update meeting info error:', error)
     res.status(500).json({ success: false, error: '更新会议信息失败' })
+  }
+})
+
+// 更新教师个人信息（年级和科目）
+router.put('/me/profile', authMiddleware, scheduleAccessMiddleware, async (req, res) => {
+  try {
+    const { grades, subjects } = req.body
+
+    const ghsTeachers = getGHSCollection(GHSCollections.Teachers)
+    await ghsTeachers.updateOne(
+      { email: req.user.email },
+      {
+        $set: {
+          grades: grades || [],
+          subjects: subjects || [],
+          updatedAt: new Date()
+        }
+      }
+    )
+
+    res.json({ success: true, message: '个人信息更新成功' })
+  } catch (error) {
+    console.error('Update profile error:', error)
+    res.status(500).json({ success: false, error: '更新个人信息失败' })
   }
 })
 
