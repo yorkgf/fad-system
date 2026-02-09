@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GHA线上会议预约</title>
     <style>
+        /* ==================== Modern Light Theme Design System ==================== */
         * {
             margin: 0;
             padding: 0;
@@ -12,35 +13,92 @@
         }
 
         body {
-            font-family: 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 50%, #F5F3FF 100%);
+            background-attachment: fixed;
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative;
+        }
+
+        /* Animated background elements */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 30% 20%, rgba(99, 102, 241, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 70% 80%, rgba(139, 92, 246, 0.02) 0%, transparent 50%);
+            animation: bgFloat 30s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes bgFloat {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.05); }
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle, #E2E8F0 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+            z-index: 0;
         }
 
         .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 25px 80px rgba(0, 0, 0, 0.1), 0 0 1px rgba(0, 0, 0, 0.05);
+            padding: 48px;
             width: 100%;
-            max-width: 450px;
+            max-width: 480px;
+            position: relative;
+            z-index: 1;
+            animation: scaleIn 0.5s var(--ease-smooth);
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
         }
 
         .logo {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 32px;
         }
 
         .logo h1 {
-            color: #667eea;
-            font-size: 24px;
-            margin-bottom: 5px;
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
             justify-content: center;
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.02em;
         }
 
         .logo img {
@@ -49,16 +107,17 @@
         }
 
         .logo p {
-            color: #888;
-            font-size: 14px;
+            color: #64748B;
+            font-size: 15px;
+            font-weight: 400;
         }
 
         .role-tabs {
             display: flex;
-            margin-bottom: 30px;
-            background: #f5f5f5;
-            border-radius: 10px;
-            padding: 5px;
+            margin-bottom: 32px;
+            background: #F1F5F9;
+            border-radius: 12px;
+            padding: 6px;
         }
 
         .role-tab {
@@ -67,58 +126,93 @@
             text-align: center;
             cursor: pointer;
             border-radius: 8px;
-            transition: all 0.3s;
-            font-size: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 15px;
+            font-weight: 500;
+            color: #64748B;
         }
 
         .role-tab.active {
-            background: #667eea;
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
             color: white;
-            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 8px;
-            color: #333;
+            margin-bottom: 10px;
+            color: #374151;
             font-size: 14px;
+            font-weight: 500;
         }
 
         .form-group input,
         .form-group select {
-            width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            width: calc(100% - 48px);
+            margin-left: 24px;
+            margin-right: 24px;
+            padding: 14px 18px;
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
             font-size: 15px;
-            transition: border-color 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: white;
+            color: #1E293B;
         }
 
         .form-group input:focus,
         .form-group select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #6366F1;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+            transform: translateY(-1px);
         }
 
         .btn {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: calc(100% - 48px);
+            margin-left: 24px;
+            margin-right: 24px;
+            padding: 14px 40px;
+            background: linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%);
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            min-height: 48px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn:hover {
             transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
         }
 
         .btn:active {
@@ -130,10 +224,14 @@
         }
 
         .error-msg {
-            color: #e74c3c;
+            color: #EF4444;
             font-size: 13px;
-            margin-top: 5px;
+            margin-top: 6px;
             display: none;
+            background: #FEF2F2;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border-left: 3px solid #EF4444;
         }
 
         .teacher-fields {
@@ -144,7 +242,158 @@
             display: block;
         }
 
-        /* 响应式设计 */
+        /* ==================== 响应式设计优化 ==================== */
+
+        /* 小屏手机 (< 375px) */
+        @media (max-width: 374px) {
+            .container {
+                padding: 20px 12px;
+                margin: 8px;
+                border-radius: 12px;
+            }
+
+            .logo img {
+                height: 40px;
+            }
+
+            .logo h1 {
+                font-size: 18px;
+            }
+
+            .logo p {
+                font-size: 11px;
+            }
+
+            .role-tabs {
+                margin-bottom: 16px;
+                padding: 4px;
+            }
+
+            .role-tab {
+                padding: 8px 6px;
+                font-size: 12px;
+            }
+
+            .form-group {
+                margin-bottom: 16px;
+            }
+
+            .form-group label {
+                font-size: 12px;
+                margin-bottom: 6px;
+            }
+
+            .form-group input,
+            .form-group select {
+                width: calc(100% - 32px);
+                margin-left: 16px;
+                margin-right: 16px;
+                padding: 12px 14px;
+                font-size: 16px;
+                min-height: 44px;
+                border-radius: 8px;
+            }
+
+            .btn {
+                width: calc(100% - 32px);
+                margin-left: 16px;
+                margin-right: 16px;
+                padding: 12px 32px;
+                font-size: 14px;
+                min-height: 44px;
+                border-radius: 8px;
+            }
+        }
+
+        /* 标准手机 (375px - 480px) */
+        @media (min-width: 375px) and (max-width: 480px) {
+            .container {
+                padding: 28px 20px;
+                margin: 16px;
+                border-radius: 16px;
+            }
+
+            .logo img {
+                height: 56px;
+            }
+
+            .logo h1 {
+                font-size: 20px;
+            }
+
+            .logo p {
+                font-size: 13px;
+            }
+
+            .role-tabs {
+                margin-bottom: 24px;
+            }
+
+            .role-tab {
+                padding: 10px 12px;
+                font-size: 14px;
+            }
+
+            .form-group input,
+            .form-group select {
+                width: calc(100% - 40px);
+                margin-left: 20px;
+                margin-right: 20px;
+                padding: 14px 16px;
+                font-size: 16px;
+                min-height: 48px;
+            }
+
+            .btn {
+                width: calc(100% - 40px);
+                margin-left: 20px;
+                margin-right: 20px;
+                padding: 14px 32px;
+                font-size: 15px;
+                min-height: 48px;
+            }
+        }
+
+        /* 平板设备 (481px - 768px) */
+        @media (min-width: 481px) and (max-width: 768px) {
+            .container {
+                padding: 40px 32px;
+                margin: 24px;
+                max-width: 480px;
+            }
+
+            .logo img {
+                height: 72px;
+            }
+
+            .logo h1 {
+                font-size: 24px;
+            }
+
+            .role-tab {
+                padding: 12px 16px;
+                font-size: 15px;
+            }
+
+            .form-group input,
+            .form-group select {
+                width: calc(100% - 48px);
+                margin-left: 24px;
+                margin-right: 24px;
+                padding: 14px 18px;
+                font-size: 15px;
+            }
+
+            .btn {
+                width: calc(100% - 48px);
+                margin-left: 24px;
+                margin-right: 24px;
+                padding: 14px 40px;
+                font-size: 15px;
+            }
+        }
+
+        /* 原有响应式设计保留 */
         @media (max-width: 768px) {
             .container {
                 padding: 30px 20px;
@@ -171,12 +420,18 @@
 
             .form-group input,
             .form-group select {
+                width: calc(100% - 36px);
+                margin-left: 18px;
+                margin-right: 18px;
                 padding: 10px 12px;
                 font-size: 14px;
             }
 
             .btn {
-                padding: 12px;
+                width: calc(100% - 36px);
+                margin-left: 18px;
+                margin-right: 18px;
+                padding: 12px 28px;
                 font-size: 15px;
             }
         }
@@ -205,7 +460,10 @@
             }
 
             .btn {
-                padding: 10px;
+                width: calc(100% - 30px);
+                margin-left: 15px;
+                margin-right: 15px;
+                padding: 10px 24px;
                 font-size: 14px;
             }
         }
@@ -218,6 +476,137 @@
 
             .logo img {
                 height: 100px;
+            }
+        }
+
+        /* ==================== 大屏幕优化 (1400px+) ==================== */
+        @media (min-width: 1400px) {
+            .container {
+                max-width: 560px;
+                padding: 60px;
+            }
+
+            .logo img {
+                height: 120px;
+            }
+
+            .logo h1 {
+                font-size: 28px;
+            }
+
+            .role-tab {
+                padding: 14px 20px;
+                font-size: 17px;
+            }
+        }
+
+        /* ==================== 触摸设备优化 ==================== */
+        @media (hover: none) and (pointer: coarse) {
+            .btn,
+            .role-tab {
+                min-height: 44px;
+                min-width: 44px;
+            }
+
+            .btn:active {
+                transform: scale(0.97);
+                transition: transform 0.1s;
+            }
+
+            .role-tab:active {
+                transform: scale(0.98);
+            }
+        }
+
+        /* ==================== iPhone安全区域适配 ==================== */
+        @supports (padding: env(safe-area-inset-bottom)) {
+            .container {
+                padding-left: env(safe-area-inset-left);
+                padding-right: env(safe-area-inset-right);
+            }
+
+            @media (max-width: 768px) {
+                .container {
+                    margin-bottom: calc(20px + env(safe-area-inset-bottom));
+                }
+            }
+        }
+
+        /* ==================== 横屏模式优化 ==================== */
+        @media (orientation: landscape) and (max-height: 600px) {
+            .container {
+                padding: 20px 30px;
+                margin: 10px;
+            }
+
+            .logo img {
+                height: 36px;
+            }
+
+            .logo h1 {
+                font-size: 18px;
+            }
+
+            .logo p {
+                font-size: 11px;
+                margin-bottom: 4px;
+            }
+
+            .role-tabs {
+                margin-bottom: 16px;
+            }
+
+            .form-group {
+                margin-bottom: 12px;
+            }
+
+            .form-group label {
+                font-size: 12px;
+                margin-bottom: 4px;
+            }
+
+            .form-group input,
+            .form-group select {
+                width: calc(100% - 40px);
+                margin-left: 20px;
+                margin-right: 20px;
+                padding: 10px 14px;
+                font-size: 14px;
+            }
+
+            .btn {
+                width: calc(100% - 40px);
+                margin-left: 20px;
+                margin-right: 20px;
+                padding: 10px 24px;
+                font-size: 14px;
+            }
+        }
+
+        /* ==================== 高对比度模式支持 ==================== */
+        @media (prefers-contrast: high) {
+            .container {
+                border-width: 3px;
+            }
+
+            .btn {
+                border: 2px solid currentColor;
+            }
+
+            .form-group input,
+            .form-group select {
+                border-width: 2px;
+            }
+        }
+
+        /* ==================== 减少动画模式支持 ==================== */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
             }
         }
     </style>

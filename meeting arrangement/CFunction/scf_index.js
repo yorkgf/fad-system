@@ -417,8 +417,16 @@ app.delete('/api/bookings/:sessionId', async (req, res) => {
 });
 
 // 启动服务器
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
     console.log(`服务器运行在端口 ${PORT}`);
 });
 
+// 云函数导出（兼容腾讯云 SCF）
 module.exports = app;
+
+// 如果在云函数环境中运行，导出 handler
+if (process.env.SCF_ENVIRONMENT) {
+    // 使用 serverless-http 包装 app
+    const serverless = require('serverless-http');
+    exports.handler = serverless(app);
+}
