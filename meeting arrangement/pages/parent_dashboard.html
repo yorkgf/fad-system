@@ -450,6 +450,220 @@
             color: #888;
         }
 
+        /* 日历视图样式 - 参照FAD系统"我的日程" */
+        .calendar-container {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .month-navigation {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .nav-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid #e0e0e0;
+            background: #fff;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .current-month {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            min-width: 120px;
+            text-align: center;
+        }
+
+        .week-header {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .week-day {
+            text-align: center;
+            padding: 12px 8px;
+            font-weight: 600;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 8px;
+        }
+
+        .day-cell {
+            aspect-ratio: 1;
+            min-height: 80px;
+            border: 1px solid #e8e8e8;
+            border-radius: 8px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #fff;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .day-cell:hover {
+            background: #f5f7ff;
+            border-color: #667eea;
+        }
+
+        .day-cell.other-month {
+            color: #bbb;
+            background: #f9f9f9;
+        }
+
+        .day-cell.today {
+            border: 2px solid #667eea;
+            background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
+        }
+
+        .day-number {
+            font-weight: 500;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .day-cell.today .day-number {
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .session-indicator {
+            position: absolute;
+            bottom: 8px;
+            left: 8px;
+            right: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .indicator-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #667eea;
+        }
+
+        .indicator-dot.booked {
+            background: #f56c6c;
+        }
+
+        .indicator-count {
+            font-size: 11px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        /* 选中日期的时段列表 */
+        .selected-date-sessions {
+            margin-top: 25px;
+            padding-top: 25px;
+            border-top: 1px solid #eee;
+        }
+
+        .selected-date-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .selected-date-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .close-date-view {
+            font-size: 13px;
+            color: #667eea;
+            cursor: pointer;
+            background: none;
+            border: none;
+        }
+
+        .time-slots-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 12px;
+        }
+
+        .time-slot-card {
+            background: #fff;
+            border: 2px solid #e8e8e8;
+            border-radius: 10px;
+            padding: 12px 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .time-slot-card:hover {
+            border-color: #667eea;
+            background: #f5f7ff;
+        }
+
+        .time-slot-card.booked {
+            border-color: #ffd4d4;
+            background: #fff5f5;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .slot-time {
+            font-size: 15px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .slot-status {
+            font-size: 12px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .slot-status.booked {
+            color: #f56c6c;
+        }
+
         .selected-student-tag {
             display: inline-flex;
             align-items: center;
@@ -746,16 +960,52 @@
                 <div id="teacherList" class="teacher-grid"></div>
             </div>
 
-            <!-- 步骤3: 选择时段 -->
+            <!-- 步骤3: 选择时段（日历视图） -->
             <div id="sessionSelection" style="display:none;">
                 <button class="back-btn" onclick="backToTeacherSelection()">← 返回选择教师</button>
                 <h3 id="selectedTeacherInfo" style="margin-bottom: 15px; color: #333;"></h3>
                 <div class="info-message">
                     <p><strong>预约提示：</strong></p>
                     <p>每位家长对每位老师只能预约一个时段</p>
-                    <p>点击可选时段进行预约</p>
+                    <p>点击日历上有标记的日期查看可预约时段</p>
                 </div>
-                <div id="sessionList" class="session-grid"></div>
+
+                <!-- 日历视图容器 -->
+                <div class="calendar-container">
+                    <!-- 日历头部 -->
+                    <div class="calendar-header">
+                        <div class="month-navigation">
+                            <button class="nav-btn" onclick="changeCalendarMonth(-1)">←</button>
+                            <span id="currentMonthYear" class="current-month">2024年1月</span>
+                            <button class="nav-btn" onclick="changeCalendarMonth(1)">→</button>
+                        </div>
+                    </div>
+
+                    <!-- 星期标题 -->
+                    <div class="week-header">
+                        <div class="week-day">日</div>
+                        <div class="week-day">一</div>
+                        <div class="week-day">二</div>
+                        <div class="week-day">三</div>
+                        <div class="week-day">四</div>
+                        <div class="week-day">五</div>
+                        <div class="week-day">六</div>
+                    </div>
+
+                    <!-- 日期格子 -->
+                    <div id="calendarGrid" class="days-grid">
+                        <!-- 动态生成 -->
+                    </div>
+                </div>
+
+                <!-- 选中日期的时段列表 -->
+                <div id="selectedDateSessions" style="display:none; margin-top:20px;">
+                    <h4 id="selectedDateTitle" style="margin-bottom:15px; color:#333;"></h4>
+                    <div id="timeSlotsList" class="time-slots-grid"></div>
+                </div>
+
+                <!-- 旧的时段列表（保留兼容） -->
+                <div id="sessionList" class="session-grid" style="display:none;"></div>
             </div>
         </div>
 
@@ -954,27 +1204,30 @@
             try {
                 const response = await fetch(API_BASE_URL + `/api/sessions/teacher/${encodeURIComponent(teacher.name)}`);
                 const result = await response.json();
-                const availableSessions = result.data ? result.data.filter(s => !s.bookedBy) : [];
+                // 存储到全局变量供日历使用，并标准化日期格式
+                teacherSessions = result.data ? result.data.filter(s => !s.bookedBy).map(s => ({
+                    ...s,
+                    // 确保日期格式为 YYYY-MM-DD（补零）
+                    date: s.date ? normalizeDateFormat(s.date) : s.date
+                })) : [];
 
-                if (availableSessions.length === 0) {
-                    document.getElementById('sessionList').innerHTML =
-                        '<div class="empty-state"><p>该老师暂无可预约时段</p></div>';
+                if (teacherSessions.length === 0) {
+                    document.getElementById('calendarGrid').innerHTML =
+                        '<div class="empty-state" style="grid-column: span 7;"><p>该老师暂无可预约时段</p></div>';
                 } else {
-                    let html = '';
-                    availableSessions.forEach(session => {
-                        html += `
-                            <div class="session-card" onclick="bookSession('${session._id}', '${session.date}', '${session.startTime}', '${session.endTime}')">
-                                <div class="session-date">${session.date}</div>
-                                <div class="session-time">${session.startTime} - ${session.endTime}</div>
-                            </div>
-                        `;
-                    });
-                    document.getElementById('sessionList').innerHTML = html;
+                    // 重置日历到当前月份
+                    currentCalendarDate = new Date();
+                    // 渲染日历
+                    renderCalendar();
                 }
             } catch (error) {
-                document.getElementById('sessionList').innerHTML =
-                    '<div class="empty-state"><p>加载时段失败</p></div>';
+                document.getElementById('calendarGrid').innerHTML =
+                    '<div class="empty-state" style="grid-column: span 7;"><p>加载时段失败</p></div>';
             }
+
+            // 隐藏选中日期的时段列表
+            document.getElementById('selectedDateSessions').style.display = 'none';
+            selectedCalendarDate = null;
 
             document.getElementById('teacherSelection').style.display = 'none';
             document.getElementById('sessionSelection').style.display = 'block';
@@ -1302,9 +1555,188 @@
             updateStepIndicator(2);
         }
 
+        // 日历视图相关变量
+        let currentCalendarDate = new Date();
+        let teacherSessions = []; // 存储当前教师的可预约时段
+        let selectedCalendarDate = null; // 当前选中的日期
+
+        // 标准化日期格式（将各种日期格式统一为 YYYY-MM-DD）
+        function normalizeDateFormat(dateStr) {
+            if (!dateStr) return '';
+            // 移除所有空格
+            dateStr = dateStr.trim();
+            // 处理 YYYY-M-D 或 YYYY-MM-DD 格式
+            const parts = dateStr.split('-');
+            if (parts.length === 3) {
+                const year = parts[0];
+                const month = parts[1].padStart(2, '0');
+                const day = parts[2].padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            }
+            return dateStr;
+        }
+
         // 页面加载时初始化数据
         loadTeachers();
         loadMyBookingsForCheck();
+
+        // ==================== 日历视图功能 ====================
+
+        // 切换日历月份
+        function changeCalendarMonth(direction) {
+            currentCalendarDate.setMonth(currentCalendarDate.getMonth() + direction);
+            renderCalendar();
+        }
+
+        // 渲染日历
+        function renderCalendar() {
+            const year = currentCalendarDate.getFullYear();
+            const month = currentCalendarDate.getMonth();
+
+            // 更新月份标题
+            document.getElementById('currentMonthYear').textContent = `${year}年${month + 1}月`;
+
+            // 获取该月第一天和最后一天
+            const firstDay = new Date(year, month, 1);
+            const lastDay = new Date(year, month + 1, 0);
+            const firstDayOfWeek = firstDay.getDay(); // 0=周日
+
+            // 清空日历格子
+            const calendarGrid = document.getElementById('calendarGrid');
+            calendarGrid.innerHTML = '';
+
+            // 添加上月的日期（灰色显示）
+            for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+                const prevDate = new Date(year, month, -i);
+                const cell = createDayCell(prevDate, true);
+                calendarGrid.appendChild(cell);
+            }
+
+            // 添加当月的日期
+            const today = new Date();
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const date = new Date(year, month, day);
+                const isToday = date.toDateString() === today.toDateString();
+                const cell = createDayCell(date, false, isToday);
+                calendarGrid.appendChild(cell);
+            }
+
+            // 添加下月的日期（填满最后一行）
+            const totalCells = calendarGrid.children.length;
+            const remainingCells = 42 - totalCells; // 6行 x 7列 = 42
+            for (let day = 1; day <= remainingCells; day++) {
+                const nextDate = new Date(year, month + 1, day);
+                const cell = createDayCell(nextDate, true);
+                calendarGrid.appendChild(cell);
+            }
+        }
+
+        // 创建日期格子
+        function createDayCell(date, isOtherMonth, isToday = false) {
+            const cell = document.createElement('div');
+            cell.className = 'day-cell';
+            if (isOtherMonth) cell.classList.add('other-month');
+            if (isToday) cell.classList.add('today');
+
+            // 格式化日期字符串 YYYY-MM-DD
+            const dateStr = formatDate(date);
+
+            // 检查该日期是否有可预约时段
+            const daySessions = teacherSessions.filter(s => s.date === dateStr);
+            const hasAvailableSlots = daySessions.some(s => !s.bookedBy);
+
+            if (hasAvailableSlots) {
+                cell.classList.add('has-sessions');
+            }
+
+            cell.innerHTML = `
+                <div class="day-number">${date.getDate()}</div>
+            `;
+
+            // 如果有时段，显示指示器
+            if (daySessions.length > 0) {
+                const availableCount = daySessions.filter(s => !s.bookedBy).length;
+                const totalCount = daySessions.length;
+                cell.innerHTML += `
+                    <div class="session-indicator">
+                        <span class="indicator-count">${availableCount}/${totalCount}</span>
+                    </div>
+                `;
+            }
+
+            // 点击事件
+            cell.onclick = () => selectCalendarDay(date);
+
+            return cell;
+        }
+
+        // 格式化日期为 YYYY-MM-DD
+        function formatDate(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 选中日历日期
+        function selectCalendarDay(date) {
+            selectedCalendarDate = date;
+            showDateSessions(date);
+        }
+
+        // 显示选中日期的不同时段
+        function showDateSessions(date) {
+            const dateStr = formatDate(date);
+            const daySessions = teacherSessions.filter(s => s.date === dateStr);
+
+            // 显示选中日期的容器
+            const container = document.getElementById('selectedDateSessions');
+            container.style.display = 'block';
+
+            // 更新标题
+            const title = document.getElementById('selectedDateTitle');
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+            const weekDay = weekDays[date.getDay()];
+            title.textContent = `${month}月${day}日 周${weekDay} 的可预约时段`;
+
+            // 生成时段列表
+            const slotsList = document.getElementById('timeSlotsList');
+            if (daySessions.length === 0) {
+                slotsList.innerHTML = '<div class="empty-state"><p>该日期没有可预约时段</p></div>';
+                return;
+            }
+
+            let html = '';
+            // 按开始时间排序
+            const sortedSessions = daySessions.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+            sortedSessions.forEach(session => {
+                const isBooked = session.bookedBy;
+                const statusClass = isBooked ? 'booked' : '';
+                const statusText = isBooked ? '已预约' : '可预约';
+
+                html += `
+                    <div class="time-slot-card ${statusClass}"
+                         ${!isBooked ? `onclick="bookSession('${session._id}', '${session.date}', '${session.startTime}', '${session.endTime}')"` : ''}>
+                        <div class="slot-time">${session.startTime} - ${session.endTime}</div>
+                        <div class="slot-status ${statusClass}">${statusText}</div>
+                    </div>
+                `;
+            });
+
+            slotsList.innerHTML = html;
+
+            // 滚动到时段列表
+            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // 关闭选中日期的时段列表
+        function closeDateSessions() {
+            document.getElementById('selectedDateSessions').style.display = 'none';
+            selectedCalendarDate = null;
+        }
 
         // 学生搜索输入框防抖
         document.getElementById('studentSearch').addEventListener('input', function() {
