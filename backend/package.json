@@ -10,16 +10,19 @@
     "remove": "serverless remove"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "mongodb": "^6.3.0",
-    "jsonwebtoken": "^9.0.2",
-    "bcryptjs": "^2.4.3",
-    "dayjs": "^1.11.10",
     "axios": "^1.6.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dayjs": "^1.11.10",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.3.0",
     "serverless-http": "^3.0.1"
   },
   "engines": {
     "node": ">=16.0.0"
+  },
+  "devDependencies": {
+    "serverless-tencent": "^3.21.8"
   }
 }

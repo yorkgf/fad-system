@@ -399,6 +399,27 @@ app.delete('/api/bookings/:sessionId', async (req, res) => {
         // 转换字符串ID为ObjectId
         const objId = new ObjectId(sessionId);
 
+        // 获取时段信息
+        const session = await db.collection('sessions').findOne({ _id: objId });
+        if (!session) {
+            return error(res, '预约记录不存在', 404);
+        }
+
+        // 验证时段是否已过期
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const currentTime = now.getHours().toString().padStart(2, '0') + ':' +
+                           now.getMinutes().toString().padStart(2, '0');
+
+        // 如果日期早于今天
+        if (session.date < today) {
+            return error(res, '已过期的预约无法取消', 400);
+        }
+        // 如果是今天且结束时间早于当前时间
+        if (session.date === today && session.endTime < currentTime) {
+            return error(res, '已过期的预约无法取消', 400);
+        }
+
         // 清空预约信息，保留session记录
         const result = await db.collection('sessions').updateOne(
             { _id: objId },

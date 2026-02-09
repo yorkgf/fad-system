@@ -9,7 +9,10 @@ provider:
   environment:
     MONGO_URI: mongodb://49.235.189.246:27017
     DB_NAME: GHA
-    JWT_SECRET: ${env:JWT_SECRET}
+    GHS_MONGO_URI: mongodb://49.235.189.246:27017
+    GHS_DB_NAME: GHS
+    JWT_SECRET: fad-secret-key-2024-production
+    JWT_EXPIRES_IN: 7d
     SENDER_NAME: FAD管理系统
 
 plugins:

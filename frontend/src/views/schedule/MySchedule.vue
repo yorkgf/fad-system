@@ -90,7 +90,9 @@
             :class="{
               'other-month': !day.isCurrentMonth,
               'today': day.isToday,
-              'has-sessions': day.sessions.length > 0
+              'has-sessions': day.sessions.length > 0,
+              'past-no-sessions': day.isPast && day.sessions.length === 0,
+              'past-with-sessions': day.isPast && day.sessions.length > 0
             }"
             @click="selectDay(day)"
           >
@@ -101,6 +103,18 @@
 
             <!-- 桌面端显示时段详情 -->
             <div class="day-sessions desktop-sessions" v-if="day.sessions.length > 0">
+              <!-- 时段统计 -->
+              <div class="day-session-stats">
+                <span class="stat-badge active">
+                  <span class="stat-dot"></span>
+                  {{ day.activeCount }}开放
+                </span>
+                <span class="stat-badge booked" v-if="day.bookedCount > 0">
+                  <span class="stat-dot"></span>
+                  {{ day.bookedCount }}已约
+                </span>
+              </div>
+
               <div
                 v-for="session in day.sessions.slice(0, 3)"
                 :key="session._id"
@@ -123,15 +137,10 @@
 
             <!-- 移动端显示简化指示器 -->
             <div class="day-indicators mobile-only" v-if="day.sessions.length > 0">
-              <div class="indicator-row">
-                <span
-                  v-for="n in Math.min(day.sessions.length, 3)"
-                  :key="n"
-                  class="indicator-dot"
-                  :class="getSessionStatusClass(day.sessions[n-1])"
-                ></span>
+              <div class="indicator-stats">
+                <span class="indicator-stat active">{{ day.activeCount }}</span>
+                <span class="indicator-stat booked" v-if="day.bookedCount > 0">{{ day.bookedCount }}</span>
               </div>
-              <span v-if="day.sessions.length > 3" class="indicator-more">+</span>
             </div>
           </div>
         </div>
@@ -160,7 +169,7 @@
             v-for="session in selectedDaySessions"
             :key="session._id"
             class="session-card"
-            :class="getSessionCardClass(session)"
+            :class="getSessionCardClass(session, isSessionExpired(session))"
           >
             <!-- 学生姓名横幅 - 已预约时显示 -->
             <div v-if="getFirstStudentName(session)" class="student-banner">
@@ -185,15 +194,16 @@
 
               <div class="session-actions">
                 <el-tag
-                  :type="getSessionTagType(session)"
+                  :type="getSessionTagType(session, isSessionExpired(session))"
                   size="small"
                   effect="light"
                   class="status-tag"
                 >
-                  {{ getSessionStatusText(session) }}
+                  {{ getSessionStatusText(session, isSessionExpired(session)) }}
                 </el-tag>
                 <el-switch
                   v-model="session.isActive"
+                  :disabled="isSessionExpired(session) || hasBooking(session)"
                   @change="(val) => handleToggleSession(session, val)"
                 />
               </div>
@@ -228,9 +238,20 @@
                       <el-icon><User /></el-icon>
                       <span class="student-name">{{ booking.studentName || '未填写姓名' }}</span>
                     </div>
-                    <el-tag :type="getStatusType(booking.status)" size="small" effect="light">
-                      {{ getStatusLabel(booking.status) }}
-                    </el-tag>
+                    <div class="booking-actions">
+                      <el-tag :type="getStatusType(booking.status)" size="small" effect="light">
+                        {{ getStatusLabel(booking.status) }}
+                      </el-tag>
+                      <el-button
+                        v-if="!isSessionExpired(session)"
+                        type="danger"
+                        size="small"
+                        :icon="CircleClose"
+                        @click="handleCancelBooking(session, booking)"
+                      >
+                        取消预约
+                      </el-button>
+                    </div>
                   </div>
                   <div class="booking-info">
                     <div v-if="booking.studentClass" class="info-item">
@@ -273,7 +294,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getMySessions, updateSession } from '@/api/schedule'
+import { getMySessions, updateSession, updateBooking } from '@/api/schedule'
 import dayjs from 'dayjs'
 import {
   ArrowLeft,
@@ -334,6 +355,35 @@ const selectedDaySessions = computed(() => {
     .sort((a, b) => a.startTime.localeCompare(b.startTime))
 })
 
+const isSelectedDatePast = computed(() => {
+  if (!selectedDate.value) return false
+  return dayjs(selectedDate.value).isBefore(dayjs(), 'day')
+})
+
+// 检查时段是否已过期（判断日期是否已过去，或如果是今天则判断时间是否已过）
+function isSessionExpired(session) {
+  const sessionDate = dayjs(session.date)
+  const now = dayjs()
+
+  // 如果是过去的日期，已过期
+  if (sessionDate.isBefore(now, 'day')) {
+    return true
+  }
+
+  // 如果是今天，检查结束时间是否已过
+  if (sessionDate.isSame(now, 'day')) {
+    const sessionEndTime = dayjs(`${session.date} ${session.endTime}`)
+    return sessionEndTime.isBefore(now)
+  }
+
+  return false
+}
+
+// 检查时段是否有预约
+function hasBooking(session) {
+  return session.currentBookings > 0 || (session.bookings && session.bookings.length > 0)
+}
+
 // 日历天数计算
 const calendarDays = computed(() => {
   const year = currentYear.value
@@ -375,12 +425,27 @@ function createDayObject(date, isCurrentMonth) {
 
   const daySessions = sessions.value.filter(s => s.date === dateStr)
 
+  // 计算开放时段数（isActive=true）
+  const activeCount = daySessions.filter(s => s.isActive).length
+
+  // 计算已预约时段数（有预约的时段，不管是否开放）
+  const bookedCount = daySessions.filter(s =>
+    s.currentBookings > 0 || (s.bookings && s.bookings.length > 0)
+  ).length
+
+  // 判断是否是过去的日期
+  const isPast = dayjs(dateStr).isBefore(dayjs(), 'day')
+
   return {
     date: date.getDate(),
     fullDate: dateStr,
     isCurrentMonth,
     isToday: dateStr === today,
-    sessions: daySessions
+    sessions: daySessions,
+    activeCount,
+    bookedCount,
+    isPast,
+    isClickable: !isPast || (isPast && daySessions.length > 0)
   }
 }
 
@@ -404,23 +469,26 @@ function getSessionDisplayClass(session) {
   }
 }
 
-function getSessionCardClass(session) {
+function getSessionCardClass(session, isPast = false) {
   const hasBooking = session.currentBookings > 0 || (session.bookings && session.bookings.length > 0)
   return {
     'booked': hasBooking,      // 已预约卡片样式
-    'closed': !session.isActive && !hasBooking   // 已关闭卡片样式
+    'closed': !session.isActive && !hasBooking,   // 已关闭卡片样式
+    'expired': isPast && !hasBooking  // 过期样式
   }
 }
 
-function getSessionTagType(session) {
+function getSessionTagType(session, isPast = false) {
   const hasBooking = session.currentBookings > 0 || (session.bookings && session.bookings.length > 0)
+  if (isPast && !hasBooking) return 'info'  // 过期无预约 - 灰色
   if (hasBooking) return 'danger'      // 已预约 - 红色
   if (!session.isActive) return 'info' // 已关闭 - 灰色
   return 'success'                     // 开放中 - 绿色
 }
 
-function getSessionStatusText(session) {
+function getSessionStatusText(session, isPast = false) {
   const hasBooking = session.currentBookings > 0 || (session.bookings && session.bookings.length > 0)
+  if (isPast && !hasBooking) return '已过期'
   if (hasBooking) return '已预约'
   if (!session.isActive) return '已关闭'
   return '开放中'
@@ -472,12 +540,21 @@ function changeMonth(delta) {
 }
 
 function selectDay(day) {
+  if (!day.isClickable) {
+    return
+  }
   selectedDate.value = day.fullDate
   drawerVisible.value = true
   expandedSessionId.value = null
 }
 
 async function handleToggleSession(session, isActive) {
+  if (isSessionExpired(session)) {
+    ElMessage.warning('已过期的时段不能修改状态')
+    session.isActive = !isActive
+    return
+  }
+
   if (!isActive && session.currentBookings > 0) {
     try {
       await ElMessageBox.confirm(
@@ -506,6 +583,37 @@ async function handleToggleSession(session, isActive) {
   } catch (error) {
     ElMessage.error('操作失败')
     session.isActive = !isActive
+  }
+}
+
+async function handleCancelBooking(session, booking) {
+  try {
+    await ElMessageBox.confirm(
+      `确定要取消 ${booking.studentName || booking.parentName || '该家长'} 的预约吗？`,
+      '取消预约',
+      {
+        confirmButtonText: '确定取消',
+        cancelButtonText: '保留预约',
+        type: 'warning'
+      }
+    )
+
+    await updateBooking(booking._id, { status: 'cancelled' })
+
+    // 更新本地数据
+    if (session.bookings) {
+      const bookingIndex = session.bookings.findIndex(b => b._id === booking._id)
+      if (bookingIndex !== -1) {
+        session.bookings[bookingIndex].status = 'cancelled'
+      }
+    }
+    session.currentBookings = Math.max(0, session.currentBookings - 1)
+
+    ElMessage.success('预约已取消')
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('取消预约失败')
+    }
   }
 }
 
@@ -732,6 +840,33 @@ onMounted(() => {
 
 .other-month .day-number { color: #c0c4cc; }
 
+/* 过去且无时段的日期 - 完全禁用 */
+.day-cell.past-no-sessions {
+  background: #f5f5f5;
+  color: #c0c4cc;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.day-cell.past-no-sessions .day-number {
+  color: #c0c4cc;
+}
+
+/* 过去但有时段的日期 - 可点击查看 */
+.day-cell.past-with-sessions {
+  background: #fafbfc;
+  color: #909399;
+}
+
+.day-cell.past-with-sessions:hover {
+  background: #f0f0f0;
+}
+
+/* 过去日期的统计徽章样式调整 */
+.past-with-sessions .stat-badge {
+  opacity: 0.6;
+}
+
 .today-badge {
   font-size: 11px;
   color: #409eff;
@@ -744,6 +879,47 @@ onMounted(() => {
   flex-direction: column;
   gap: 4px;
   flex: 1;
+}
+
+/* 时段统计徽章 */
+.day-session-stats {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.stat-badge .stat-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+}
+
+.stat-badge.active {
+  background: #f0f9eb;
+  color: #67c23a;
+}
+
+.stat-badge.active .stat-dot {
+  background: #67c23a;
+}
+
+.stat-badge.booked {
+  background: #fef0f0;
+  color: #f56c6c;
+}
+
+.stat-badge.booked .stat-dot {
+  background: #f56c6c;
 }
 
 .session-item {
@@ -817,6 +993,16 @@ onMounted(() => {
 .session-card.closed {
   background: #f4f4f5;
   border-color: #e4e7ed;
+  opacity: 0.8;
+}
+
+/* 过期时段卡片样式 */
+.session-card.expired {
+  opacity: 0.7;
+  border-style: dashed;
+}
+
+.session-card.expired .status-tag {
   opacity: 0.8;
 }
 
@@ -964,6 +1150,12 @@ onMounted(() => {
   margin-bottom: 10px;
   padding-bottom: 8px;
   border-bottom: 1px dashed #e4e7ed;
+}
+
+.booking-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .booking-student {
@@ -1183,9 +1375,37 @@ onMounted(() => {
   /* 移动端指示器 */
   .day-indicators {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 2px;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .indicator-stats {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+  }
+
+  .indicator-stat {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .indicator-stat.active {
+    background: #67c23a;
+    color: white;
+  }
+
+  .indicator-stat.booked {
+    background: #f56c6c;
+    color: white;
   }
 
   .indicator-row {
@@ -1270,6 +1490,15 @@ onMounted(() => {
     padding-bottom: 6px;
   }
 
+  .booking-actions {
+    gap: 8px;
+  }
+
+  .booking-actions .el-button {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
   .booking-student .student-name {
     font-size: 14px;
   }
@@ -1281,6 +1510,23 @@ onMounted(() => {
 
   .info-label {
     min-width: 36px;
+  }
+
+  /* 移动端过去日期样式 */
+  .day-cell.past-no-sessions {
+    background: #f0f0f0;
+  }
+
+  .day-cell.past-with-sessions {
+    background: #f5f7fa;
+  }
+
+  .day-cell.past-with-sessions .day-number {
+    color: #909399;
+  }
+
+  .day-cell.past-with-sessions .indicator-stat {
+    background: #c0c4cc !important;
   }
 }
 
@@ -1294,6 +1540,14 @@ onMounted(() => {
     width: 24px;
     height: 24px;
     font-size: 12px;
+  }
+
+  .indicator-stat {
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    padding: 0 4px;
+    border-radius: 8px;
   }
 
   .indicator-dot {

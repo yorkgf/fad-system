@@ -1267,6 +1267,15 @@
             color: var(--danger-primary);
         }
 
+        .sidebar-slot-status.expired {
+            color: var(--text-muted);
+        }
+
+        .sidebar-slot-card.expired {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .sidebar-slot-type {
             font-size: 11px;
             padding: 3px 10px;
@@ -1500,6 +1509,45 @@
             background: var(--danger-secondary);
             transform: translateY(-2px);
             box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Expired booking styles */
+        .expired-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .expired-badge-inline {
+            display: inline-block;
+            padding: 8px 16px;
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .expired-row {
+            opacity: 0.6;
+            background: var(--bg-subtle);
+        }
+
+        .booking-confirmed.expired {
+            opacity: 0.7;
+        }
+
+        .booking-confirmed.expired .booking-status-badge {
+            background: var(--bg-subtle);
+        }
+
+        .booking-confirmed.expired .booking-status-badge .status-text {
+            color: var(--text-muted);
         }
 
         /* Selected Date Sessions */
@@ -2481,7 +2529,7 @@
             <!-- 步骤1: 选择学生 -->
             <div id="gradeSelection">
                 <div class="form-group">
-                    <label>搜索学生姓名</label>
+                    <label>您是哪位学生的家长？</label>
                     <div class="student-search-container">
                         <div class="student-search-input-wrapper">
                             <input type="text" id="studentSearch" class="student-search-input" placeholder="输入学生姓名搜索..." autocomplete="off">
@@ -2963,6 +3011,14 @@
                     // 如果 location 包含"腾讯"或"线上"，判定为线上会议
                     const isOnline = location.includes('腾讯') || location.includes('线上');
 
+                    // 检查预约是否已过期
+                    const now = new Date();
+                    const today = now.toISOString().split('T')[0];
+                    const currentTime = now.getHours().toString().padStart(2, '0') + ':' +
+                                       now.getMinutes().toString().padStart(2, '0');
+                    const isExpired = booking.date < today ||
+                                     (booking.date === today && booking.endTime < currentTime);
+
                     let meetingInfo;
                     if (isOnline) {
                         // 腾讯会议：显示会议号和密码
@@ -2981,8 +3037,13 @@
                         meetingInfo = `<span class="meeting-info-offline">${locationText}</span>`;
                     }
 
+                    // 过期预约不显示取消按钮
+                    const cancelButton = isExpired
+                        ? '<span class="expired-badge">已过期</span>'
+                        : `<button class="btn-delete" onclick="deleteMyBooking('${booking._id}', '${booking.date}', '${booking.startTime}', '${booking.teacherName}')">取消预约</button>`;
+
                     html += `
-                        <tr>
+                        <tr ${isExpired ? 'class="expired-row"' : ''}>
                             <td>${booking.teacherName}</td>
                             <td>${booking.subjects ? booking.subjects.join('、') : ''}</td>
                             <td>${booking.date}</td>
@@ -2993,9 +3054,7 @@
                                 </span>
                             </td>
                             <td>${meetingInfo}</td>
-                            <td>
-                                <button class="btn-delete" onclick="deleteMyBooking('${booking._id}', '${booking.date}', '${booking.startTime}', '${booking.teacherName}')">取消预约</button>
-                            </td>
+                            <td>${cancelButton}</td>
                         </tr>
                     `;
                 });
@@ -3467,6 +3526,14 @@
                 const meetingTypeLabel = isOnline ? '腾讯会议' : '线下';
                 const meetingTypeClass = isOnline ? 'online' : 'offline';
 
+                // 检查预约是否已过期
+                const now = new Date();
+                const today = now.toISOString().split('T')[0];
+                const currentTime = now.getHours().toString().padStart(2, '0') + ':' +
+                                   now.getMinutes().toString().padStart(2, '0');
+                const isExpired = myBooking.date < today ||
+                                 (myBooking.date === today && myBooking.endTime < currentTime);
+
                 // 构建会议信息显示
                 let meetingInfo = '';
                 if (isOnline) {
@@ -3485,11 +3552,16 @@
                     `;
                 }
 
+                // 过期预约不显示取消按钮
+                const cancelButton = isExpired
+                    ? '<span class="expired-badge-inline">已过期</span>'
+                    : `<button class="cancel-booking-btn" onclick="cancelMyBooking('${myBooking._id}', '${myBooking.date}', '${myBooking.startTime}', '${myBooking.teacherName}')">取消预约</button>`;
+
                 sidebarContent.innerHTML = `
-                    <div class="booking-confirmed">
+                    <div class="booking-confirmed ${isExpired ? 'expired' : ''}">
                         <div class="booking-status-badge">
-                            <span class="status-icon">✓</span>
-                            <span class="status-text">已预约该日期</span>
+                            <span class="status-icon">${isExpired ? '⏱' : '✓'}</span>
+                            <span class="status-text">${isExpired ? '预约已过期' : '已预约该日期'}</span>
                         </div>
                         <div class="booking-details">
                             <div class="booking-item">
@@ -3510,9 +3582,7 @@
                                 <span class="booking-value">${myBooking.studentName || ''}</span>
                             </div>
                         </div>
-                        <button class="cancel-booking-btn" onclick="cancelMyBooking('${myBooking._id}', '${myBooking.date}', '${myBooking.startTime}', '${myBooking.teacherName}')">
-                            取消预约
-                        </button>
+                        ${cancelButton}
                     </div>
                 `;
             } else if (daySessions.length === 0) {
@@ -3527,9 +3597,19 @@
                 // 按开始时间排序
                 const sortedSessions = daySessions.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
+                // 获取当前时间
+                const now = new Date();
+                const today = now.toISOString().split('T')[0];
+                const currentTime = now.getHours().toString().padStart(2, '0') + ':' +
+                                   now.getMinutes().toString().padStart(2, '0');
+                const selectedDateStr = formatDate(date);
+
                 let html = '<div class="sidebar-time-slots">';
                 sortedSessions.forEach(session => {
                     const isBooked = session.bookedBy;
+
+                    // 检查时段是否已过期（当天且结束时间已过）
+                    const isExpired = selectedDateStr === today && session.endTime < currentTime;
 
                     // 判断会议类型（根据 location 字段）
                     const location = session.location || '';
@@ -3537,12 +3617,28 @@
                     const meetingTypeLabel = isOnline ? '腾讯会议' : '线下';
                     const meetingTypeClass = isOnline ? 'online' : 'offline';
 
+                    // 确定时段状态和是否可点击
+                    let slotStatus = '';
+                    let slotClass = '';
+                    let isClickable = false;
+
+                    if (isBooked) {
+                        slotStatus = '已预约';
+                        slotClass = 'booked';
+                    } else if (isExpired) {
+                        slotStatus = '已过期';
+                        slotClass = 'expired';
+                    } else {
+                        slotStatus = '可预约';
+                        isClickable = true;
+                    }
+
                     html += `
-                        <div class="sidebar-slot-card ${isBooked ? 'booked' : ''}"
-                             ${!isBooked ? `onclick="bookSession('${session._id}', '${session.date}', '${session.startTime}', '${session.endTime}')"` : ''}>
+                        <div class="sidebar-slot-card ${slotClass}"
+                             ${isClickable ? `onclick="bookSession('${session._id}', '${session.date}', '${session.startTime}', '${session.endTime}')"` : ''}>
                             <div class="sidebar-slot-time">${session.startTime} - ${session.endTime}</div>
                             <div class="sidebar-slot-type ${meetingTypeClass}">${meetingTypeLabel}</div>
-                            <div class="sidebar-slot-status ${isBooked ? 'booked' : ''}">${isBooked ? '已预约' : '可预约'}</div>
+                            <div class="sidebar-slot-status ${slotClass}">${slotStatus}</div>
                         </div>
                     `;
                 });

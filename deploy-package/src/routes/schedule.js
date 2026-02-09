@@ -5,6 +5,112 @@ const { getCollection, getGHSCollection, Collections, GHSCollections } = require
 
 const router = Router()
 
+// ==================== 预约冲突检测辅助函数 ====================
+
+/**
+ * 将时间字符串转换为分钟数（用于时间比较）
+ * @param {string} timeStr - 时间字符串，格式如 "09:00"
+ * @returns {number} - 从0点开始的分钟数
+ */
+function parseTimeToMinutes(timeStr) {
+  const [hours, minutes] = timeStr.split(':').map(Number)
+  return hours * 60 + minutes
+}
+
+/**
+ * 检查两个时间段是否重叠
+ * 使用严格不等式：09:00-09:15 和 09:15-09:30 不冲突
+ * @param {string} start1 - 第一个时段的开始时间
+ * @param {string} end1 - 第一个时段的结束时间
+ * @param {string} start2 - 第二个时段的开始时间
+ * @param {string} end2 - 第二个时段的结束时间
+ * @returns {boolean} - 是否重叠
+ */
+function isTimeOverlap(start1, end1, start2, end2) {
+  const s1 = parseTimeToMinutes(start1)
+  const e1 = parseTimeToMinutes(end1)
+  const s2 = parseTimeToMinutes(start2)
+  const e2 = parseTimeToMinutes(end2)
+  // 时间重叠的条件：s1 < e2 && e1 > s2
+  return s1 < e2 && e1 > s2
+}
+
+/**
+ * 检查家长预约冲突
+ * @param {string} parentPhone - 家长手机号
+ * @param {string} teacherEmail - 教师邮箱
+ * @param {string} date - 预约日期
+ * @param {string} startTime - 开始时间
+ * @param {string} endTime - 结束时间
+ * @returns {Promise<object>} - { hasConflict: boolean, message: string }
+ */
+async function checkParentBookingConflicts(parentPhone, teacherEmail, date, startTime, endTime) {
+  // 1. 检查bookings集合中同一天同一教师的预约
+  const bookings = getGHSCollection(GHSCollections.Bookings)
+  const sameTeacherBooking = await bookings.findOne({
+    parentPhone,
+    teacherEmail,
+    bookingDate: date,
+    status: { $nin: ['cancelled', 'completed'] }
+  })
+
+  if (sameTeacherBooking) {
+    return {
+      hasConflict: true,
+      message: `该家长今天已经预约了该教师`
+    }
+  }
+
+  // 2. 检查bookings集合中时间冲突的预约
+  const dayBookings = await bookings.find({
+    parentPhone,
+    bookingDate: date,
+    status: { $nin: ['cancelled', 'completed'] }
+  }).toArray()
+
+  for (const booking of dayBookings) {
+    if (isTimeOverlap(startTime, endTime, booking.startTime, booking.endTime)) {
+      return {
+        hasConflict: true,
+        message: `该时段与家长预约 ${booking.teacherName}老师 (${booking.startTime}-${booking.endTime}) 冲突`
+      }
+    }
+  }
+
+  // 3. 检查sessions集合（家长端创建的预约）中的冲突
+  const sessions = getGHSCollection(GHSCollections.Sessions)
+  const sessionsSameTeacher = await sessions.findOne({
+    parentPhone,
+    teacherEmail,
+    date,
+    bookedBy: { $exists: true, $ne: '' }
+  })
+
+  if (sessionsSameTeacher) {
+    return {
+      hasConflict: true,
+      message: `该家长今天已经预约了该教师`
+    }
+  }
+
+  const sessionsDayBookings = await sessions.find({
+    parentPhone,
+    date,
+    bookedBy: { $exists: true, $ne: '' }
+  }).toArray()
+
+  for (const booking of sessionsDayBookings) {
+    if (isTimeOverlap(startTime, endTime, booking.startTime, booking.endTime)) {
+      return {
+        hasConflict: true,
+        message: `该时段与家长预约 ${booking.teacherName}老师 (${booking.startTime}-${booking.endTime}) 冲突`
+      }
+    }
+  }
+
+  return { hasConflict: false }
+}
+
 // 权限检查中间件：排除 C 组（清洁阿姨）
 const scheduleAccessMiddleware = (req, res, next) => {
   const allowedGroups = ['S', 'A', 'B', 'T', 'F']
@@ -253,36 +359,28 @@ router.post('/sessions', authMiddleware, scheduleAccessMiddleware, async (req, r
 // 批量创建日程时段
 router.post('/sessions/batch', authMiddleware, scheduleAccessMiddleware, async (req, res) => {
   try {
-    const { sessions } = req.body
+    const { dates, startTime, endTime, location, maxBookings = 1, note } = req.body
 
-    if (!sessions || !Array.isArray(sessions) || sessions.length === 0) {
-      return res.status(400).json({ success: false, error: '请至少提供一个时段' })
+    if (!dates || !Array.isArray(dates) || dates.length === 0) {
+      return res.status(400).json({ success: false, error: '请至少选择一个日期' })
     }
 
-    // 验证每个时段的数据
-    for (const session of sessions) {
-      if (!session.date || !session.startTime || !session.endTime) {
-        return res.status(400).json({ success: false, error: '每个时段必须包含日期、开始时间和结束时间' })
-      }
-    }
-
-    // 添加教师信息和默认值
-    const sessionsWithMeta = sessions.map(session => ({
+    const sessions = dates.map(date => ({
       teacherEmail: req.user.email,
       teacherName: req.user.name,
-      date: session.date,
-      startTime: session.startTime,
-      endTime: session.endTime,
-      location: session.location || '',
-      maxBookings: parseInt(session.maxBookings) || 1,
+      date: date,
+      startTime,
+      endTime,
+      location: location || '',
+      maxBookings: parseInt(maxBookings) || 1,
       currentBookings: 0,
-      note: session.note || '',
+      note: note || '',
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date()
     }))
 
-    const result = await getGHSCollection(GHSCollections.Sessions).insertMany(sessionsWithMeta)
+    const result = await getGHSCollection(GHSCollections.Sessions).insertMany(sessions)
 
     res.json({
       success: true,
@@ -416,6 +514,21 @@ router.post('/bookings', authMiddleware, scheduleAccessMiddleware, async (req, r
       return res.status(404).json({ success: false, error: '日程时段不存在或已停用' })
     }
 
+    // 验证时段是否已过期
+    const now = new Date()
+    const today = now.toISOString().split('T')[0]
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' +
+                       now.getMinutes().toString().padStart(2, '0')
+
+    // 如果日期早于今天
+    if (session.date < today) {
+      return res.status(400).json({ success: false, error: '该时段已过期，无法预约' })
+    }
+    // 如果是今天且结束时间早于当前时间
+    if (session.date === today && session.endTime < currentTime) {
+      return res.status(400).json({ success: false, error: '该时段已过期，无法预约' })
+    }
+
     // 检查是否已满
     if (session.currentBookings >= session.maxBookings) {
       return res.status(400).json({ success: false, error: '该时段预约已满' })
@@ -430,6 +543,21 @@ router.post('/bookings', authMiddleware, scheduleAccessMiddleware, async (req, r
 
     if (existingBooking) {
       return res.status(400).json({ success: false, error: '该学生已预约此时段' })
+    }
+
+    // 如果提供了家长手机号，检查预约冲突
+    if (parentPhone && parentPhone.trim() !== '') {
+      const conflictCheck = await checkParentBookingConflicts(
+        parentPhone,
+        session.teacherEmail,
+        session.date,
+        session.startTime,
+        session.endTime
+      )
+
+      if (conflictCheck.hasConflict) {
+        return res.status(409).json({ success: false, error: conflictCheck.message })
+      }
     }
 
     const booking = {
@@ -479,6 +607,52 @@ router.put('/bookings/:id', authMiddleware, scheduleAccessMiddleware, async (req
     const { id } = req.params
     const { status, note } = req.body
 
+    // 处理历史预约数据（legacy_ 前缀）
+    if (id.startsWith('legacy_')) {
+      // 从 legacy ID 中提取 session ID
+      const sessionId = id.replace('legacy_', '')
+
+      // 获取时段信息
+      const session = await getGHSCollection(GHSCollections.Sessions).findOne({
+        _id: new ObjectId(sessionId)
+      })
+
+      if (!session) {
+        return res.status(404).json({ success: false, error: '时段不存在' })
+      }
+
+      // 权限检查：对应教师或管理员可以修改
+      const canModify =
+        req.user.group === 'S' ||
+        session.teacherEmail === req.user.email ||
+        session.teacherName === req.user.name
+
+      if (!canModify) {
+        return res.status(403).json({ success: false, error: '无权限修改此预约' })
+      }
+
+      // 如果是取消预约，清除时段中的预约信息
+      if (status === 'cancelled') {
+        await getGHSCollection(GHSCollections.Sessions).updateOne(
+          { _id: new ObjectId(sessionId) },
+          {
+            $set: {
+              bookedBy: '老师关闭',
+              studentName: '',
+              parentPhone: '',
+              note: '',
+              updatedAt: new Date()
+            },
+            $inc: { currentBookings: Math.max(0, -(session.currentBookings || 0)) }
+          }
+        )
+        return res.json({ success: true, message: '预约已取消' })
+      }
+
+      return res.status(400).json({ success: false, error: '历史预约只能取消' })
+    }
+
+    // 处理新预约数据（Bookings 集合）
     const booking = await getGHSCollection(GHSCollections.Bookings).findOne({
       _id: new ObjectId(id)
     })

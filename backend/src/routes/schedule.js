@@ -607,6 +607,52 @@ router.put('/bookings/:id', authMiddleware, scheduleAccessMiddleware, async (req
     const { id } = req.params
     const { status, note } = req.body
 
+    // 处理历史预约数据（legacy_ 前缀）
+    if (id.startsWith('legacy_')) {
+      // 从 legacy ID 中提取 session ID
+      const sessionId = id.replace('legacy_', '')
+
+      // 获取时段信息
+      const session = await getGHSCollection(GHSCollections.Sessions).findOne({
+        _id: new ObjectId(sessionId)
+      })
+
+      if (!session) {
+        return res.status(404).json({ success: false, error: '时段不存在' })
+      }
+
+      // 权限检查：对应教师或管理员可以修改
+      const canModify =
+        req.user.group === 'S' ||
+        session.teacherEmail === req.user.email ||
+        session.teacherName === req.user.name
+
+      if (!canModify) {
+        return res.status(403).json({ success: false, error: '无权限修改此预约' })
+      }
+
+      // 如果是取消预约，清除时段中的预约信息
+      if (status === 'cancelled') {
+        await getGHSCollection(GHSCollections.Sessions).updateOne(
+          { _id: new ObjectId(sessionId) },
+          {
+            $set: {
+              bookedBy: '老师关闭',
+              studentName: '',
+              parentPhone: '',
+              note: '',
+              updatedAt: new Date()
+            },
+            $inc: { currentBookings: Math.max(0, -(session.currentBookings || 0)) }
+          }
+        )
+        return res.json({ success: true, message: '预约已取消' })
+      }
+
+      return res.status(400).json({ success: false, error: '历史预约只能取消' })
+    }
+
+    // 处理新预约数据（Bookings 集合）
     const booking = await getGHSCollection(GHSCollections.Bookings).findOne({
       _id: new ObjectId(id)
     })
