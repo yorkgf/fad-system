@@ -551,6 +551,16 @@
             background: linear-gradient(135deg, #667eea10 0%, #764ba210 100%);
         }
 
+        .day-cell.selected {
+            border: 2px solid #667eea;
+            background: #e8f4e8;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        .day-cell.selected:hover {
+            background: #d1e7d1;
+        }
+
         .day-number {
             font-weight: 500;
             font-size: 14px;
@@ -662,6 +672,226 @@
 
         .slot-status.booked {
             color: #f56c6c;
+        }
+
+        /* 日历左右分栏布局 - 参照FAD系统"我的日程" */
+        .calendar-layout {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .calendar-main {
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* 右侧时段栏 */
+        .sidebar-panel {
+            width: 320px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+            overflow: hidden;
+            transition: all 0.3s ease;
+            /* 默认显示，通过.hidden类来控制隐藏 */
+        }
+
+        .sidebar-panel.hidden {
+            display: none;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #eee;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .sidebar-header h4 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .close-sidebar-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .close-sidebar-btn:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .sidebar-content {
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .sidebar-empty {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+        }
+
+        .sidebar-empty p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        /* 侧边栏中的时段卡片 */
+        .sidebar-time-slots {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .sidebar-slot-card {
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sidebar-slot-card:hover {
+            border-color: #667eea;
+            background: #f5f7ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .sidebar-slot-card.booked {
+            background: #fff5f5;
+            border-color: #ffd4d4;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .sidebar-slot-time {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .sidebar-slot-status {
+            font-size: 13px;
+            color: #667eea;
+            font-weight: 500;
+        }
+
+        .sidebar-slot-status.booked {
+            color: #f56c6c;
+        }
+
+        /* 会议类型标识 */
+        .sidebar-slot-type {
+            font-size: 12px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-align: center;
+            margin: 4px 0;
+        }
+
+        .sidebar-slot-type.online {
+            background-color: #e8f5e8;
+            color: #4caf50;
+            border: 1px solid #4caf50;
+        }
+
+        .sidebar-slot-type.offline {
+            background-color: #fff3e0;
+            color: #ff9800;
+            border: 1px solid #ff9800;
+        }
+
+        .sidebar-slot-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #999;
+        }
+
+        /* 会议类型徽章 */
+        .meeting-type-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .meeting-type-badge.online {
+            background-color: #e8f5e8;
+            color: #4caf50;
+        }
+
+        .meeting-type-badge.offline {
+            background-color: #fff3e0;
+            color: #ff9800;
+        }
+
+        /* 会议信息样式 */
+        .meeting-info-online {
+            font-size: 13px;
+            color: #333;
+        }
+
+        .meeting-info-online div {
+            margin: 2px 0;
+        }
+
+        .meeting-info-offline {
+            color: #ff9800;
+            font-weight: 500;
+        }
+
+        .sidebar-slot-actions {
+            margin-top: 12px;
+        }
+
+        .sidebar-slot-btn {
+            width: 100%;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sidebar-slot-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .sidebar-slot-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
         }
 
         .selected-student-tag {
@@ -824,6 +1054,20 @@
                 padding: 3px 8px;
             }
 
+            /* 日历响应式 */
+            .calendar-layout {
+                flex-direction: column;
+            }
+
+            .sidebar-panel {
+                width: 100%;
+                order: -1; /* 移动端时段列表显示在上方 */
+            }
+
+            .sidebar-content {
+                max-height: 300px;
+            }
+
             .session-grid {
                 grid-template-columns: 1fr;
             }
@@ -960,7 +1204,7 @@
                 <div id="teacherList" class="teacher-grid"></div>
             </div>
 
-            <!-- 步骤3: 选择时段（日历视图） -->
+            <!-- 步骤3: 选择时段（日历视图 + 右侧栏） -->
             <div id="sessionSelection" style="display:none;">
                 <button class="back-btn" onclick="backToTeacherSelection()">← 返回选择教师</button>
                 <h3 id="selectedTeacherInfo" style="margin-bottom: 15px; color: #333;"></h3>
@@ -970,42 +1214,56 @@
                     <p>点击日历上有标记的日期查看可预约时段</p>
                 </div>
 
-                <!-- 日历视图容器 -->
-                <div class="calendar-container">
-                    <!-- 日历头部 -->
-                    <div class="calendar-header">
-                        <div class="month-navigation">
-                            <button class="nav-btn" onclick="changeCalendarMonth(-1)">←</button>
-                            <span id="currentMonthYear" class="current-month">2024年1月</span>
-                            <button class="nav-btn" onclick="changeCalendarMonth(1)">→</button>
+                <!-- 左右分栏布局 -->
+                <div class="calendar-layout">
+                    <!-- 左侧：日历视图 -->
+                    <div class="calendar-main">
+                        <div class="calendar-container">
+                            <!-- 日历头部 -->
+                            <div class="calendar-header">
+                                <div class="month-navigation">
+                                    <button class="nav-btn" onclick="changeCalendarMonth(-1)">←</button>
+                                    <span id="currentMonthYear" class="current-month">2024年1月</span>
+                                    <button class="nav-btn" onclick="changeCalendarMonth(1)">→</button>
+                                </div>
+                            </div>
+
+                            <!-- 星期标题 -->
+                            <div class="week-header">
+                                <div class="week-day">日</div>
+                                <div class="week-day">一</div>
+                                <div class="week-day">二</div>
+                                <div class="week-day">三</div>
+                                <div class="week-day">四</div>
+                                <div class="week-day">五</div>
+                                <div class="week-day">六</div>
+                            </div>
+
+                            <!-- 日期格子 -->
+                            <div id="calendarGrid" class="days-grid">
+                                <!-- 动态生成 -->
+                            </div>
                         </div>
                     </div>
 
-                    <!-- 星期标题 -->
-                    <div class="week-header">
-                        <div class="week-day">日</div>
-                        <div class="week-day">一</div>
-                        <div class="week-day">二</div>
-                        <div class="week-day">三</div>
-                        <div class="week-day">四</div>
-                        <div class="week-day">五</div>
-                        <div class="week-day">六</div>
-                    </div>
-
-                    <!-- 日期格子 -->
-                    <div id="calendarGrid" class="days-grid">
-                        <!-- 动态生成 -->
+                    <!-- 右侧：时段列表栏 -->
+                    <div id="sidebarPanel" class="sidebar-panel">
+                        <div class="sidebar-header">
+                            <h4 id="selectedDateTitle">选择日期查看时段</h4>
+                            <button class="close-sidebar-btn" onclick="closeSidebar()">×</button>
+                        </div>
+                        <div id="sidebarContent" class="sidebar-content">
+                            <div class="sidebar-empty">
+                                <p>请点击左侧日历上的日期</p>
+                                <p>查看该日期的可预约时段</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 选中日期的时段列表 -->
-                <div id="selectedDateSessions" style="display:none; margin-top:20px;">
-                    <h4 id="selectedDateTitle" style="margin-bottom:15px; color:#333;"></h4>
-                    <div id="timeSlotsList" class="time-slots-grid"></div>
-                </div>
-
-                <!-- 旧的时段列表（保留兼容） -->
+                <!-- 旧的时段列表（保留兼容，隐藏） -->
                 <div id="sessionList" class="session-grid" style="display:none;"></div>
+                <div id="selectedDateSessions" style="display:none;"></div>
             </div>
         </div>
 
@@ -1031,6 +1289,64 @@
         }
 
         document.getElementById('parentPhone').textContent = parentPhone;
+
+        // ==================== 预约冲突检测函数 ====================
+
+        /**
+         * 将时间字符串转换为分钟数
+         */
+        function parseTimeToMinutes(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return hours * 60 + minutes;
+        }
+
+        /**
+         * 检查两个时间段是否重叠
+         * 连续时段不冲突：09:00-09:15 和 09:15-09:30 返回 false
+         */
+        function isTimeOverlap(start1, end1, start2, end2) {
+            const s1 = parseTimeToMinutes(start1);
+            const e1 = parseTimeToMinutes(end1);
+            const s2 = parseTimeToMinutes(start2);
+            const e2 = parseTimeToMinutes(end2);
+            return s1 < e2 && e1 > s2;
+        }
+
+        /**
+         * 前端预检查预约冲突
+         * @param {string} teacherName - 教师姓名
+         * @param {string} date - 预约日期
+         * @param {string} startTime - 开始时间
+         * @param {string} endTime - 结束时间
+         * @returns {object} - { hasConflict: boolean, message: string }
+         */
+        function checkFrontendConflicts(teacherName, date, startTime, endTime) {
+            // 获取家长当天的所有预约
+            const dayBookings = myBookings.filter(b => b.date === date);
+
+            // 检查同教师
+            const sameTeacherBooking = dayBookings.find(b => b.teacherName === teacherName);
+            if (sameTeacherBooking) {
+                return {
+                    hasConflict: true,
+                    message: `您今天已经预约了${teacherName}老师`
+                };
+            }
+
+            // 检查时间冲突
+            for (const booking of dayBookings) {
+                if (isTimeOverlap(startTime, endTime, booking.startTime, booking.endTime)) {
+                    return {
+                        hasConflict: true,
+                        message: `该时段与您预约 ${booking.teacherName}老师 (${booking.startTime}-${booking.endTime}) 冲突`
+                    };
+                }
+            }
+
+            return { hasConflict: false };
+        }
+
+        // ==================== 标签页切换 ====================
 
         const tabs = document.querySelectorAll('.nav-tab');
         const tabContents = document.querySelectorAll('.tab-content');
@@ -1229,12 +1545,45 @@
             document.getElementById('selectedDateSessions').style.display = 'none';
             selectedCalendarDate = null;
 
+            // 隐藏右侧栏并重置内容
+            const sidebarPanel = document.getElementById('sidebarPanel');
+            if (sidebarPanel) {
+                sidebarPanel.classList.add('hidden');
+                const sidebarContent = document.getElementById('sidebarContent');
+                if (sidebarContent) {
+                    sidebarContent.innerHTML = `
+                        <div class="sidebar-empty">
+                            <p>请点击左侧日历上的日期</p>
+                            <p>查看该日期的可预约时段</p>
+                        </div>
+                    `;
+                }
+            }
+
             document.getElementById('teacherSelection').style.display = 'none';
             document.getElementById('sessionSelection').style.display = 'block';
             updateStepIndicator(3);
         }
 
         async function bookSession(sessionId, date, startTime, endTime) {
+            // 前端预检查冲突
+            const conflictCheck = checkFrontendConflicts(currentTeacher.name, date, startTime, endTime);
+            if (conflictCheck.hasConflict) {
+                alert(conflictCheck.message);
+                return;
+            }
+
+            // 客户端时间验证 - 提升用户体验，提前过滤已过期时段
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            const currentTime = now.getHours().toString().padStart(2, '0') + ':' +
+                               now.getMinutes().toString().padStart(2, '0');
+
+            if (date < today || (date === today && endTime < currentTime)) {
+                alert('该时段已过期，无法预约');
+                return;
+            }
+
             if (!confirm(`确认预约 ${currentTeacher.name} 老师的 ${date} ${startTime}-${endTime} 时段吗？`)) {
                 return;
             }
@@ -1252,6 +1601,8 @@
 
                 if (result.success) {
                     alert('预约成功！');
+                    // 更新本地预约记录缓存
+                    await loadMyBookingsForCheck();
                     backToTeacherSelection();
                 } else {
                     alert('预约失败：' + result.message);
@@ -1270,6 +1621,11 @@
         function backToTeacherSelection() {
             document.getElementById('sessionSelection').style.display = 'none';
             document.getElementById('teacherSelection').style.display = 'block';
+            // 隐藏右侧栏
+            const sidebarPanel = document.getElementById('sidebarPanel');
+            if (sidebarPanel) {
+                sidebarPanel.classList.add('hidden');
+            }
             updateStepIndicator(2);
         }
 
@@ -1307,8 +1663,8 @@
                                 <th>科目</th>
                                 <th>日期</th>
                                 <th>时间段</th>
-                                <th>会议号</th>
-                                <th>会议密码</th>
+                                <th>会议形式</th>
+                                <th>会议信息</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
@@ -1316,14 +1672,41 @@
                 `;
 
                 bookings.forEach(booking => {
+                    // 判断会议类型（根据 location 字段）
+                    const location = booking.location || '';
+                    // 如果 location 包含"腾讯"或"线上"，判定为线上会议
+                    const isOnline = location.includes('腾讯') || location.includes('线上');
+
+                    let meetingInfo;
+                    if (isOnline) {
+                        // 腾讯会议：显示会议号和密码
+                        meetingInfo = `
+                            <div class="meeting-info-online">
+                                <div><strong>会议号：</strong>${booking.meetingId || '未设置'}</div>
+                                <div><strong>密码：</strong>${booking.meetingPassword || '未设置'}</div>
+                            </div>
+                        `;
+                    } else {
+                        // 线下：显示具体地点，如果 location 为"线下"或为空，则显示"到校参加"
+                        let locationText = location.trim();
+                        if (locationText === '' || locationText === '线下') {
+                            locationText = '到校参加';
+                        }
+                        meetingInfo = `<span class="meeting-info-offline">${locationText}</span>`;
+                    }
+
                     html += `
                         <tr>
                             <td>${booking.teacherName}</td>
                             <td>${booking.subjects ? booking.subjects.join('、') : ''}</td>
                             <td>${booking.date}</td>
                             <td>${booking.startTime} - ${booking.endTime}</td>
-                            <td>${booking.meetingId || '未设置'}</td>
-                            <td>${booking.meetingPassword || '未设置'}</td>
+                            <td>
+                                <span class="meeting-type-badge ${isOnline ? 'online' : 'offline'}">
+                                    ${isOnline ? '腾讯会议' : '线下'}
+                                </span>
+                            </td>
+                            <td>${meetingInfo}</td>
                             <td>
                                 <button class="btn-delete" onclick="deleteMyBooking('${booking._id}', '${booking.date}', '${booking.startTime}', '${booking.teacherName}')">取消预约</button>
                             </td>
@@ -1352,7 +1735,7 @@
 
                 if (result.success) {
                     alert('预约已取消');
-                    loadSessions();
+                    await loadMyBookingsForCheck();
                     loadMyBookings();
                 } else {
                     alert('取消失败：' + result.message);
@@ -1638,6 +2021,11 @@
             if (isOtherMonth) cell.classList.add('other-month');
             if (isToday) cell.classList.add('today');
 
+            // 检查是否是当前选中的日期
+            if (selectedCalendarDate && date.toDateString() === selectedCalendarDate.toDateString()) {
+                cell.classList.add('selected');
+            }
+
             // 格式化日期字符串 YYYY-MM-DD
             const dateStr = formatDate(date);
 
@@ -1681,17 +2069,20 @@
         // 选中日历日期
         function selectCalendarDay(date) {
             selectedCalendarDate = date;
+            // 重新渲染日历以更新选中状态
+            renderCalendar();
+            // 显示右侧栏时段列表
             showDateSessions(date);
         }
 
-        // 显示选中日期的不同时段
+        // 显示选中日期的不同时段（右侧栏）
         function showDateSessions(date) {
             const dateStr = formatDate(date);
             const daySessions = teacherSessions.filter(s => s.date === dateStr);
 
-            // 显示选中日期的容器
-            const container = document.getElementById('selectedDateSessions');
-            container.style.display = 'block';
+            // 显示右侧栏
+            const sidebarPanel = document.getElementById('sidebarPanel');
+            const sidebarContent = document.getElementById('sidebarContent');
 
             // 更新标题
             const title = document.getElementById('selectedDateTitle');
@@ -1699,43 +2090,56 @@
             const day = date.getDate();
             const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
             const weekDay = weekDays[date.getDay()];
-            title.textContent = `${month}月${day}日 周${weekDay} 的可预约时段`;
+            title.textContent = `${month}月${day}日 周${weekDay}`;
 
             // 生成时段列表
-            const slotsList = document.getElementById('timeSlotsList');
             if (daySessions.length === 0) {
-                slotsList.innerHTML = '<div class="empty-state"><p>该日期没有可预约时段</p></div>';
-                return;
-            }
-
-            let html = '';
-            // 按开始时间排序
-            const sortedSessions = daySessions.sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-            sortedSessions.forEach(session => {
-                const isBooked = session.bookedBy;
-                const statusClass = isBooked ? 'booked' : '';
-                const statusText = isBooked ? '已预约' : '可预约';
-
-                html += `
-                    <div class="time-slot-card ${statusClass}"
-                         ${!isBooked ? `onclick="bookSession('${session._id}', '${session.date}', '${session.startTime}', '${session.endTime}')"` : ''}>
-                        <div class="slot-time">${session.startTime} - ${session.endTime}</div>
-                        <div class="slot-status ${statusClass}">${statusText}</div>
+                sidebarContent.innerHTML = `
+                    <div class="sidebar-empty">
+                        <p>该日期没有可预约时段</p>
                     </div>
                 `;
-            });
+            } else {
+                // 按开始时间排序
+                const sortedSessions = daySessions.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-            slotsList.innerHTML = html;
+                let html = '<div class="sidebar-time-slots">';
+                sortedSessions.forEach(session => {
+                    const isBooked = session.bookedBy;
 
-            // 滚动到时段列表
-            container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    // 判断会议类型（根据 location 字段）
+                    const location = session.location || '';
+                    const isOnline = location.includes('腾讯') || location === '线上';
+                    const meetingTypeLabel = isOnline ? '腾讯会议' : '线下';
+                    const meetingTypeClass = isOnline ? 'online' : 'offline';
+
+                    html += `
+                        <div class="sidebar-slot-card ${isBooked ? 'booked' : ''}"
+                             ${!isBooked ? `onclick="bookSession('${session._id}', '${session.date}', '${session.startTime}', '${session.endTime}')"` : ''}>
+                            <div class="sidebar-slot-time">${session.startTime} - ${session.endTime}</div>
+                            <div class="sidebar-slot-type ${meetingTypeClass}">${meetingTypeLabel}</div>
+                            <div class="sidebar-slot-status ${isBooked ? 'booked' : ''}">${isBooked ? '已预约' : '可预约'}</div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                sidebarContent.innerHTML = html;
+            }
+
+            // 显示右侧栏
+            sidebarPanel.classList.remove('hidden');
         }
 
-        // 关闭选中日期的时段列表
-        function closeDateSessions() {
-            document.getElementById('selectedDateSessions').style.display = 'none';
+        // 关闭右侧栏
+        function closeSidebar() {
+            const sidebarPanel = document.getElementById('sidebarPanel');
+            sidebarPanel.classList.add('hidden');
             selectedCalendarDate = null;
+        }
+
+        // 关闭选中日期的时段列表（旧函数，保留兼容）
+        function closeDateSessions() {
+            closeSidebar();
         }
 
         // 学生搜索输入框防抖

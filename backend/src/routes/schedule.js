@@ -5,6 +5,112 @@ const { getCollection, getGHSCollection, Collections, GHSCollections } = require
 
 const router = Router()
 
+// ==================== 预约冲突检测辅助函数 ====================
+
+/**
+ * 将时间字符串转换为分钟数（用于时间比较）
+ * @param {string} timeStr - 时间字符串，格式如 "09:00"
+ * @returns {number} - 从0点开始的分钟数
+ */
+function parseTimeToMinutes(timeStr) {
+  const [hours, minutes] = timeStr.split(':').map(Number)
+  return hours * 60 + minutes
+}
+
+/**
+ * 检查两个时间段是否重叠
+ * 使用严格不等式：09:00-09:15 和 09:15-09:30 不冲突
+ * @param {string} start1 - 第一个时段的开始时间
+ * @param {string} end1 - 第一个时段的结束时间
+ * @param {string} start2 - 第二个时段的开始时间
+ * @param {string} end2 - 第二个时段的结束时间
+ * @returns {boolean} - 是否重叠
+ */
+function isTimeOverlap(start1, end1, start2, end2) {
+  const s1 = parseTimeToMinutes(start1)
+  const e1 = parseTimeToMinutes(end1)
+  const s2 = parseTimeToMinutes(start2)
+  const e2 = parseTimeToMinutes(end2)
+  // 时间重叠的条件：s1 < e2 && e1 > s2
+  return s1 < e2 && e1 > s2
+}
+
+/**
+ * 检查家长预约冲突
+ * @param {string} parentPhone - 家长手机号
+ * @param {string} teacherEmail - 教师邮箱
+ * @param {string} date - 预约日期
+ * @param {string} startTime - 开始时间
+ * @param {string} endTime - 结束时间
+ * @returns {Promise<object>} - { hasConflict: boolean, message: string }
+ */
+async function checkParentBookingConflicts(parentPhone, teacherEmail, date, startTime, endTime) {
+  // 1. 检查bookings集合中同一天同一教师的预约
+  const bookings = getGHSCollection(GHSCollections.Bookings)
+  const sameTeacherBooking = await bookings.findOne({
+    parentPhone,
+    teacherEmail,
+    bookingDate: date,
+    status: { $nin: ['cancelled', 'completed'] }
+  })
+
+  if (sameTeacherBooking) {
+    return {
+      hasConflict: true,
+      message: `该家长今天已经预约了该教师`
+    }
+  }
+
+  // 2. 检查bookings集合中时间冲突的预约
+  const dayBookings = await bookings.find({
+    parentPhone,
+    bookingDate: date,
+    status: { $nin: ['cancelled', 'completed'] }
+  }).toArray()
+
+  for (const booking of dayBookings) {
+    if (isTimeOverlap(startTime, endTime, booking.startTime, booking.endTime)) {
+      return {
+        hasConflict: true,
+        message: `该时段与家长预约 ${booking.teacherName}老师 (${booking.startTime}-${booking.endTime}) 冲突`
+      }
+    }
+  }
+
+  // 3. 检查sessions集合（家长端创建的预约）中的冲突
+  const sessions = getGHSCollection(GHSCollections.Sessions)
+  const sessionsSameTeacher = await sessions.findOne({
+    parentPhone,
+    teacherEmail,
+    date,
+    bookedBy: { $exists: true, $ne: '' }
+  })
+
+  if (sessionsSameTeacher) {
+    return {
+      hasConflict: true,
+      message: `该家长今天已经预约了该教师`
+    }
+  }
+
+  const sessionsDayBookings = await sessions.find({
+    parentPhone,
+    date,
+    bookedBy: { $exists: true, $ne: '' }
+  }).toArray()
+
+  for (const booking of sessionsDayBookings) {
+    if (isTimeOverlap(startTime, endTime, booking.startTime, booking.endTime)) {
+      return {
+        hasConflict: true,
+        message: `该时段与家长预约 ${booking.teacherName}老师 (${booking.startTime}-${booking.endTime}) 冲突`
+      }
+    }
+  }
+
+  return { hasConflict: false }
+}
+
 // 权限检查中间件：排除 C 组（清洁阿姨）
 const scheduleAccessMiddleware = (req, res, next) => {
   const allowedGroups = ['S', 'A', 'B', 'T', 'F']
@@ -408,6 +514,21 @@ router.post('/bookings', authMiddleware, scheduleAccessMiddleware, async (req, r
       return res.status(404).json({ success: false, error: '日程时段不存在或已停用' })
     }
 
+    // 验证时段是否已过期
+    const now = new Date()
+    const today = now.toISOString().split('T')[0]
+    const currentTime = now.getHours().toString().padStart(2, '0') + ':' +
+                       now.getMinutes().toString().padStart(2, '0')
+
+    // 如果日期早于今天
+    if (session.date < today) {
+      return res.status(400).json({ success: false, error: '该时段已过期，无法预约' })
+    }
+    // 如果是今天且结束时间早于当前时间
+    if (session.date === today && session.endTime < currentTime) {
+      return res.status(400).json({ success: false, error: '该时段已过期，无法预约' })
+    }
+
     // 检查是否已满
     if (session.currentBookings >= session.maxBookings) {
       return res.status(400).json({ success: false, error: '该时段预约已满' })
@@ -422,6 +543,21 @@ router.post('/bookings', authMiddleware, scheduleAccessMiddleware, async (req, r
 
     if (existingBooking) {
       return res.status(400).json({ success: false, error: '该学生已预约此时段' })
+    }
+
+    // 如果提供了家长手机号，检查预约冲突
+    if (parentPhone && parentPhone.trim() !== '') {
+      const conflictCheck = await checkParentBookingConflicts(
+        parentPhone,
+        session.teacherEmail,
+        session.date,
+        session.startTime,
+        session.endTime
+      )
+
+      if (conflictCheck.hasConflict) {
+        return res.status(409).json({ success: false, error: conflictCheck.message })
+      }
     }
 
     const booking = {

@@ -77,6 +77,106 @@ function error(res, message, status = 500) {
     res.status(status).json({ success: false, message });
 }
 
+// ==================== 预约冲突检测 ====================
+
+/**
+ * 将时间字符串转换为分钟数（用于时间比较）
+ * @param {string} timeStr - 时间字符串，格式如 "09:00"
+ * @returns {number} - 从0点开始的分钟数
+ */
+function parseTimeToMinutes(timeStr) {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
+}
+
+/**
+ * 检查两个时间段是否重叠
+ * 使用严格不等式：09:00-09:15 和 09:15-09:30 不冲突
+ * @param {string} start1 - 第一个时段的开始时间
+ * @param {string} end1 - 第一个时段的结束时间
+ * @param {string} start2 - 第二个时段的开始时间
+ * @param {string} end2 - 第二个时段的结束时间
+ * @returns {boolean} - 是否重叠
+ */
+function isTimeOverlap(start1, end1, start2, end2) {
+    const s1 = parseTimeToMinutes(start1);
+    const e1 = parseTimeToMinutes(end1);
+    const s2 = parseTimeToMinutes(start2);
+    const e2 = parseTimeToMinutes(end2);
+    // 时间重叠的条件：s1 < e2 && e1 > s2
+    return s1 < e2 && e1 > s2;
+}
+
+/**
+ * 检查预约冲突
+ * @param {object} db - MongoDB数据库实例
+ * @param {string} parentPhone - 家长手机号
+ * @param {string} teacherEmail - 教师邮箱
+ * @param {string} date - 预约日期（YYYY-MM-DD格式）
+ * @param {string} startTime - 开始时间
+ * @param {string} endTime - 结束时间
+ * @returns {Promise<object>} - { hasConflict: boolean, message: string }
+ */
+async function checkBookingConflicts(db, parentPhone, teacherEmail, date, startTime, endTime) {
+    // 1. 检查sessions集合中同一天同一教师的预约
+    const sameTeacherBooking = await db.collection('sessions').findOne({
+        parentPhone,
+        teacherEmail,
+        date,
+        bookedBy: { $exists: true, $ne: '' }
+    });
+
+    if (sameTeacherBooking) {
+        return {
+            hasConflict: true,
+            message: `您今天已经预约了该教师`
+        };
+    }
+
+    // 2. 检查sessions集合中时间冲突的预约
+    const dayBookings = await db.collection('sessions').find({
+        parentPhone,
+        date,
+        bookedBy: { $exists: true, $ne: '' }
+    }).toArray();
+
+    for (const booking of dayBookings) {
+        if (isTimeOverlap(startTime, endTime, booking.startTime, booking.endTime)) {
+            return {
+                hasConflict: true,
+                message: `该时段与您预约 ${booking.teacherName}老师 (${booking.startTime}-${booking.endTime}) 冲突`
+            };
+        }
+    }
+
+    // 3. 检查bookings集合（教师端创建的预约）中的冲突
+    const dayBookingsFromAPI = await db.collection('bookings').find({
+        parentPhone,
+        bookingDate: date,
+        status: { $nin: ['cancelled', 'completed'] }
+    }).toArray();
+
+    for (const booking of dayBookingsFromAPI) {
+        // 检查同一教师
+        if (booking.teacherEmail === teacherEmail) {
+            return {
+                hasConflict: true,
+                message: `您今天已经预约了该教师`
+            };
+        }
+
+        // 检查时间冲突
+        if (isTimeOverlap(startTime, endTime, booking.startTime, booking.endTime)) {
+            return {
+                hasConflict: true,
+                message: `该时段与您预约 ${booking.teacherName}老师 (${booking.startTime}-${booking.endTime}) 冲突`
+            };
+        }
+    }
+
+    return { hasConflict: false };
+}
+
 // API 路由 - 家长端专用
 
 // 获取班级列表（从GHA数据库）
@@ -181,8 +281,53 @@ app.put('/api/sessions/book', async (req, res) => {
         const { sessionId, bookedBy, parentPhone, studentName } = req.body;
         const db = await getDB();
 
+        // 验证必填参数
+        if (!sessionId || !parentPhone || !studentName) {
+            return error(res, '缺少必要参数', 400);
+        }
+
         // 转换字符串ID为ObjectId
         const objId = new ObjectId(sessionId);
+
+        // 获取时段信息用于冲突检测
+        const session = await db.collection('sessions').findOne({ _id: objId });
+        if (!session) {
+            return error(res, '时段不存在', 404);
+        }
+
+        // 验证时段是否已过期
+        const now = new Date();
+        const today = now.toISOString().split('T')[0];
+        const currentTime = now.getHours().toString().padStart(2, '0') + ':' +
+                           now.getMinutes().toString().padStart(2, '0');
+
+        // 如果日期早于今天
+        if (session.date < today) {
+            return error(res, '该时段已过期，无法预约', 400);
+        }
+        // 如果是今天且结束时间早于当前时间
+        if (session.date === today && session.endTime < currentTime) {
+            return error(res, '该时段已过期，无法预约', 400);
+        }
+
+        // 检查时段是否已被预约
+        if (session.bookedBy && session.bookedBy !== '') {
+            return error(res, '该时段已被预约', 400);
+        }
+
+        // 执行冲突检测
+        const conflictCheck = await checkBookingConflicts(
+            db,
+            parentPhone,
+            session.teacherEmail || '',
+            session.date,
+            session.startTime,
+            session.endTime
+        );
+
+        if (conflictCheck.hasConflict) {
+            return error(res, conflictCheck.message, 409);
+        }
 
         // 使用原子操作：检查未被预约且更新，避免并发冲突
         const result = await db.collection('sessions').updateOne(
@@ -197,11 +342,6 @@ app.put('/api/sessions/book', async (req, res) => {
         );
 
         if (result.matchedCount === 0) {
-            // 需要区分：时段不存在 vs 已被预约
-            const exists = await db.collection('sessions').findOne({ _id: objId });
-            if (!exists) {
-                return error(res, '时段不存在', 404);
-            }
             return error(res, '该时段已被预约', 400);
         }
 
@@ -235,6 +375,7 @@ app.get('/api/bookings/parent/:phone', async (req, res) => {
                 date: booking.date,
                 startTime: booking.startTime,
                 endTime: booking.endTime,
+                location: booking.location || '',  // 添加 location 字段
                 meetingId: teacher ? teacher.meetingId : '',
                 meetingPassword: teacher ? teacher.meetingPassword : '',
                 bookedBy: booking.bookedBy,
