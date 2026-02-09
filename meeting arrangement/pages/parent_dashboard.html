@@ -1248,9 +1248,22 @@
                 return;
             }
 
-            // 从学生信息中提取年级（班级前3个字符如 G10, G11, Pre）
-            const gradeMatch = selectedStudent.class.match(/^(Pre|G\d+)/i);
-            currentGrade = gradeMatch ? gradeMatch[1].toUpperCase() : selectedStudent.class;
+            // 根据班级名称映射到年级
+            // 十二年级 -> G12, 十一年级 -> G11, 十年级 -> G10, 九年级 -> Pre
+            const className = selectedStudent.class;
+            if (className.startsWith('十二年级')) {
+                currentGrade = 'G12';
+            } else if (className.startsWith('十一年级')) {
+                currentGrade = 'G11';
+            } else if (className.startsWith('十年级')) {
+                currentGrade = 'G10';
+            } else if (className.startsWith('九年级')) {
+                currentGrade = 'Pre';
+            } else {
+                // 如果无法匹配，尝试从班级前3个字符提取（如G10A）
+                const gradeMatch = className.match(/^(Pre|G\d+)/i);
+                currentGrade = gradeMatch ? gradeMatch[1].toUpperCase() : className;
+            }
 
             sessionStorage.setItem('studentName', selectedStudent.name);
             sessionStorage.setItem('studentClass', selectedStudent.class);
