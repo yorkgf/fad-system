@@ -167,10 +167,13 @@ backend/src/
 - Only two semesters: `春季(Spring)` (Feb-Jul) and `秋季(Fall)` (Sep-Jan)
 - Current semester auto-detected by `getCurrentSemester()` in `common.js` based on month
 - All records tagged with semester for filtering and analysis
-- **Academic Year**: Some functions operate on an annual scope (both semesters combined):
+- **Academic Year**: A full academic year consists of:
+  - Fall semester (e.g., 2024年秋季) + Spring semester of the following year (e.g., 2025年春季)
+  - Example: 2024-2025学年 = 2024年秋季(Fall) + 2025年春季(Spring)
+- **Annual scope functions**: Some functions operate on the full academic year:
   - FAD statistics for suspension/dismissal (6+ for warning, 9+ for dismissal)
-  - Reward offset logic (uses latest FAD across all semesters)
-  - Query parameter `semester=学年` triggers annual scope aggregation
+  - Reward offset logic (uses latest FAD across both semesters in the academic year)
+  - Query parameter `semester=学年` triggers academic year scope aggregation
 
 ### Record Withdrawal
 - Cascade deletes any generated FAD/warnings from accumulated records
