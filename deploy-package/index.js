@@ -1,6 +1,7 @@
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
+const serverless = require('serverless-http')
 const { connectDB } = require('./src/utils/db.js')
 
 // 路由
@@ -28,6 +29,8 @@ const corsOptions = {
   maxAge: 86400 // 预检请求缓存 24 小时
 }
 
+app.use(cors(corsOptions))
+
 // 安全响应头（使用 helmet）
 app.use(helmet({
   // 内容安全策略 - 开发环境允许内联样式
@@ -54,14 +57,9 @@ app.use(helmet({
   hidePoweredBy: true
 }))
 
-app.use(cors(corsOptions))
 app.use(express.json())
 
 // 健康检查
-app.get('/', (req, res) => {
-  res.json({ status: 'ok', message: 'FAD Backend API', time: new Date().toISOString() })
-})
-
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
 })
@@ -76,8 +74,8 @@ app.use('/api/fad-records', fadRoutes)
 app.use('/api/reward-records', rewardRoutes)
 app.use('/api/room-praise', roomRoutes)
 app.use('/api/room-warning', roomRoutes)
-app.use('/api', otherRoutes)
 app.use('/api/schedule', scheduleRoutes)
+app.use('/api', otherRoutes)
 
 // 错误处理
 app.use((err, req, res, next) => {
@@ -91,11 +89,13 @@ app.use((err, req, res, next) => {
 // 连接数据库
 connectDB().catch(err => console.error('Database connection error:', err))
 
-// 启动服务器
-const PORT = process.env.PORT || 9000
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`服务器运行在端口 ${PORT}`)
-})
+// 云函数入口 - 导出 serverless-http handler
+module.exports.handler = serverless(app)
 
-// 导出 app
-module.exports = app
+// 如果直接运行（本地开发）
+const PORT = process.env.PORT || 8080
+if (require.main === module) {
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on port ${PORT}`)
+  })
+}

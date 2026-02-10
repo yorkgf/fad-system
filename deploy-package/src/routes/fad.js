@@ -2,6 +2,8 @@ const { Router } = require('express')
 const { ObjectId } = require('mongodb')
 const { getCollection, Collections } = require('../utils/db.js')
 const { authMiddleware } = require('../utils/auth.js')
+const { paginate } = require('../utils/pagination.js')
+const { DB_FIELDS } = require('../utils/constants.js')
 
 const router = Router()
 
@@ -28,13 +30,13 @@ router.get('/', authMiddleware, async (req, res) => {
     if (delivered === 'false') filter.是否已发放 = { $ne: true }
     if (student) filter.学生 = { $regex: student, $options: 'i' }
 
-    const skip = (parseInt(page) - 1) * parseInt(pageSize)
-    const limit = parseInt(pageSize)
-
-    const [records, total] = await Promise.all([
-      getCollection(Collections.FADRecords).find(filter).sort({ 记录日期: -1 }).skip(skip).limit(limit).toArray(),
-      getCollection(Collections.FADRecords).countDocuments(filter)
-    ])
+    const [records, total] = await paginate(
+      getCollection(Collections.FADRecords),
+      filter,
+      { 记录日期: -1 },
+      page,
+      pageSize
+    )
 
     res.json({ success: true, data: records, total })
   } catch (error) {
@@ -56,13 +58,13 @@ router.get('/unexecuted', authMiddleware, async (req, res) => {
     if (semester) filter.学期 = semester
     if (sourceType) filter.FAD来源类型 = sourceType
 
-    const skip = (parseInt(page) - 1) * parseInt(pageSize)
-    const limit = parseInt(pageSize)
-
-    const [records, total] = await Promise.all([
-      getCollection(Collections.FADRecords).find(filter).sort({ 记录日期: -1 }).skip(skip).limit(limit).toArray(),
-      getCollection(Collections.FADRecords).countDocuments(filter)
-    ])
+    const [records, total] = await paginate(
+      getCollection(Collections.FADRecords),
+      filter,
+      { 记录日期: -1 },
+      page,
+      pageSize
+    )
 
     res.json({ success: true, data: records, total })
   } catch (error) {
@@ -85,13 +87,13 @@ router.get('/undelivered', authMiddleware, async (req, res) => {
     if (semester) filter.学期 = semester
     if (sourceType) filter.FAD来源类型 = sourceType
 
-    const skip = (parseInt(page) - 1) * parseInt(pageSize)
-    const limit = parseInt(pageSize)
-
-    const [records, total] = await Promise.all([
-      getCollection(Collections.FADRecords).find(filter).sort({ 记录日期: -1 }).skip(skip).limit(limit).toArray(),
-      getCollection(Collections.FADRecords).countDocuments(filter)
-    ])
+    const [records, total] = await paginate(
+      getCollection(Collections.FADRecords),
+      filter,
+      { 记录日期: -1 },
+      page,
+      pageSize
+    )
 
     res.json({ success: true, data: records, total })
   } catch (error) {

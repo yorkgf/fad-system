@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getMyClassAsHomeTeacher } from '@/api/students'
+import { UserGroup, FAD_EXECUTION_GROUPS, ADMIN_GROUPS, SCHEDULE_ACCESS_GROUPS } from '@/utils/userGroups'
 
 const routes = [
   {
@@ -184,19 +185,19 @@ router.beforeEach(async (to, from, next) => {
     next('/login')
   } else if (to.path === '/login' && userStore.isLoggedIn) {
     next('/')
-  } else if ((userStore.userGroup === 'C' || userStore.userGroup === 'F') && !limitedAllowedRoutes.includes(to.path)) {
+  } else if ((userStore.userGroup === UserGroup.CLEANING || userStore.userGroup === UserGroup.FACULTY) && !limitedAllowedRoutes.includes(to.path)) {
     // C组和F组用户尝试访问未授权页面，重定向到首页
     next('/')
   } else if (to.path === '/fad/school-stats') {
     // 学校FAD统计页面：S组、A组可以访问
-    if (userStore.userGroup === 'S' || userStore.userGroup === 'A') {
+    if (ADMIN_GROUPS.includes(userStore.userGroup)) {
       next()
     } else {
       next('/')
     }
   } else if (to.path === '/fad/class-stats') {
     // 班级FAD统计页面：B组、T组、S组、A组班主任可以访问（都需要班主任权限）
-    if (['B', 'T', 'S', 'A'].includes(userStore.userGroup)) {
+    if (FAD_EXECUTION_GROUPS.includes(userStore.userGroup)) {
       // B组、T组、S组、A组都需要检查是否为班主任
       try {
         const res = await getMyClassAsHomeTeacher()
@@ -214,36 +215,35 @@ router.beforeEach(async (to, from, next) => {
     }
   } else if (to.path === '/fad/execution') {
     // FAD执行页面：S组、T组、B组、A组可以访问
-    if (['S', 'T', 'B', 'A'].includes(userStore.userGroup)) {
+    if (FAD_EXECUTION_GROUPS.includes(userStore.userGroup)) {
       next()
     } else {
       next('/')
     }
   } else if (to.path === '/room/clean' || to.path === '/room/best-dorm') {
     // 寝室清扫、最佳寝室排名页面：S组、A组可以访问
-    if (['S', 'A'].includes(userStore.userGroup)) {
+    if (ADMIN_GROUPS.includes(userStore.userGroup)) {
       next()
     } else {
       next('/')
     }
   } else if (to.path === '/elec/violations' || to.path === '/phone/no-phone-list') {
     // 网课违规使用电子产品、未交手机名单页面：S组、T组、B组、A组可以访问
-    if (['S', 'T', 'B', 'A'].includes(userStore.userGroup)) {
+    if (FAD_EXECUTION_GROUPS.includes(userStore.userGroup)) {
       next()
     } else {
       next('/')
     }
   } else if (to.path === '/stop-class' || to.path === '/data/all') {
     // 约谈/停课管理、数据查询页面：S组、A组可以访问
-    if (['S', 'A'].includes(userStore.userGroup)) {
+    if (ADMIN_GROUPS.includes(userStore.userGroup)) {
       next()
     } else {
       next('/')
     }
   } else if (to.path.startsWith('/schedule')) {
     // 日程管理页面：S组、A组、B组、T组、F组可以访问（排除C组）
-    const allowedGroups = ['S', 'A', 'B', 'T', 'F']
-    if (allowedGroups.includes(userStore.userGroup)) {
+    if (SCHEDULE_ACCESS_GROUPS.includes(userStore.userGroup)) {
       next()
     } else {
       next('/')

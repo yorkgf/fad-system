@@ -2,6 +2,8 @@ const { Router } = require('express')
 const { ObjectId } = require('mongodb')
 const { getCollection, Collections } = require('../utils/db.js')
 const { authMiddleware } = require('../utils/auth.js')
+const { paginate } = require('../utils/pagination.js')
+const { THRESHOLDS } = require('../utils/constants.js')
 const dayjs = require('dayjs')
 
 const router = Router()
@@ -13,13 +15,13 @@ router.get('/elec-violations/cancelled', authMiddleware, async (req, res) => {
 
     const filter = { 是否已撤回: { $ne: true } }
 
-    const skip = (parseInt(page) - 1) * parseInt(pageSize)
-    const limit = parseInt(pageSize)
-
-    const [records, total] = await Promise.all([
-      getCollection(Collections.ElecProductsViolationRecords).find(filter).sort({ 记录日期: -1 }).skip(skip).limit(limit).toArray(),
-      getCollection(Collections.ElecProductsViolationRecords).countDocuments(filter)
-    ])
+    const [records, total] = await paginate(
+      getCollection(Collections.ElecProductsViolationRecords),
+      filter,
+      { 记录日期: -1 },
+      page,
+      pageSize
+    )
 
     res.json({ success: true, data: records, total })
   } catch (error) {
@@ -69,7 +71,7 @@ router.get('/stop-class/warning', authMiddleware, async (req, res) => {
           fadCount: { $sum: 1 }
         }
       },
-      { $match: { fadCount: { $gte: 3, $lt: 6 } } },
+      { $match: { fadCount: { $gte: THRESHOLDS.FAD.WARNING_MIN, $lt: THRESHOLDS.FAD.STOP_CLASS_MIN } } },
       { $sort: { fadCount: -1 } }
     ]).toArray()
 
@@ -142,13 +144,13 @@ router.get('/stop-class/list', authMiddleware, async (req, res) => {
     if (semester && semester !== '学年') filter.学期 = semester
 
     // 根据type确定FAD次数范围
-    let fadMatch = { $gte: 6 }
+    let fadMatch = { $gte: THRESHOLDS.FAD.STOP_CLASS_MIN }
     if (type === 'stop') {
       // 停课：6-8次
-      fadMatch = { $gte: 6, $lt: 9 }
+      fadMatch = { $gte: THRESHOLDS.FAD.STOP_CLASS_MIN, $lt: THRESHOLDS.FAD.DISMISS_MIN }
     } else if (type === 'dismiss') {
       // 劝退：9次及以上
-      fadMatch = { $gte: 9 }
+      fadMatch = { $gte: THRESHOLDS.FAD.DISMISS_MIN }
     }
 
     const result = await getCollection(Collections.FADRecords).aggregate([
@@ -198,7 +200,7 @@ router.get('/stop-class/list', authMiddleware, async (req, res) => {
           学生: r._id.student,
           班级: r._id.class,
           fadCount: r.fadCount,
-          level: r.fadCount >= 9 ? 'danger' : 'warning',
+          level: r.fadCount >= THRESHOLDS.FAD.DISMISS_MIN ? 'danger' : 'warning',
           已劝退: !!dismissRecord,
           停课记录: stopRecord ? {
             停课开始日期: stopRecord.停课开始日期,
@@ -408,7 +410,7 @@ router.get('/teaching-tickets/reward', authMiddleware, async (req, res) => {
           count: { $sum: 1 }
         }
       },
-      { $match: { count: { $gte: 6 } } },
+      { $match: { count: { $gte: THRESHOLDS.TEACHING.REWARD_EXCHANGE } } },
       { $sort: { count: -1 } }
     ]).toArray()
 
@@ -418,7 +420,7 @@ router.get('/teaching-tickets/reward', authMiddleware, async (req, res) => {
         学生: r._id.student,
         班级: r._id.class,
         count: r.count,
-        rewardable: Math.floor(r.count / 6)
+        rewardable: Math.floor(r.count / THRESHOLDS.TEACHING.REWARD_EXCHANGE)
       }))
     })
   } catch (error) {
@@ -436,7 +438,7 @@ router.post('/teaching-tickets/reward/exchange', authMiddleware, async (req, res
       return res.status(400).json({ success: false, error: '参数错误' })
     }
 
-    const ticketCount = count * 6
+    const ticketCount = count * THRESHOLDS.TEACHING.REWARD_EXCHANGE
 
     // 查找未兑换的教学Reward票
     const tickets = await getCollection(Collections.TeachingRewardTicket)
@@ -473,7 +475,7 @@ router.post('/teaching-tickets/reward/exchange', authMiddleware, async (req, res
       })
 
       // 标记对应的教学Reward票已兑换
-      const ticketIds = tickets.slice(i * 6, (i + 1) * 6).map(t => t._id)
+      const ticketIds = tickets.slice(i * THRESHOLDS.TEACHING.REWARD_EXCHANGE, (i + 1) * THRESHOLDS.TEACHING.REWARD_EXCHANGE).map(t => t._id)
       await getCollection(Collections.TeachingRewardTicket).updateMany(
         { _id: { $in: ticketIds } },
         {

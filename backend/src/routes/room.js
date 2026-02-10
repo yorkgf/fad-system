@@ -2,6 +2,7 @@ const { Router } = require('express')
 const { ObjectId } = require('mongodb')
 const { getCollection, Collections } = require('../utils/db.js')
 const { authMiddleware } = require('../utils/auth.js')
+const { THRESHOLDS, DB_FIELDS } = require('../utils/constants.js')
 
 const router = Router()
 
@@ -127,7 +128,7 @@ router.get('/cleanable', authMiddleware, async (req, res) => {
           latestDate: { $max: '$记录日期' }
         }
       },
-      { $match: { uncleanedCount: { $gte: 3 } } },
+      { $match: { uncleanedCount: { $gte: THRESHOLDS.ROOM.WARNING_CLEANABLE } } },
       { $sort: { uncleanedCount: -1 } }
     ]).toArray()
 

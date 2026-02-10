@@ -52,10 +52,53 @@ const RECORD_TYPE_TO_COLLECTION = {
 // 不发送邮件通知的记录类型
 const NO_EMAIL_TYPES = ['寝室表扬', 'Teaching Reward Ticket', 'Reward']
 
+// FAD/Reward 业务阈值常量
+const THRESHOLDS = {
+  REWARD: {
+    OFFSET_EXECUTION: 2,    // 2个奖励抵消执行状态
+    OFFSET_RECORD: 3,       // 3个奖励冲销记录
+  },
+  FAD: {
+    WARNING_MIN: 3,         // 3个FAD发出警告
+    STOP_CLASS_MIN: 6,      // 6个FAD建议停课
+    DISMISS_MIN: 9,         // 9个FAD建议退学
+  },
+  ROOM: {
+    PRAISE_REWARD: 10,      // 10次寝室表扬获得奖励提示
+    WARNING_CLEANABLE: 3,   // 3个以下警告可清除
+  },
+  TEACHING: {
+    REWARD_EXCHANGE: 6,     // 6个教学奖励票可兑换奖励
+  }
+}
+
+// 数据库字段名常量
+const DB_FIELDS = {
+  REWARD_DELIVERED: '是否已发放',
+  REWARD_EXECUTED: '是否已执行或冲抵',
+  REWARD_OFFSET: '是否已冲销记录',
+  FAD_EXECUTED: '是否已执行或冲抵',
+  FAD_OFFSET: '是否已冲销记录',
+  WITHDRAWN: '是否已撤回',
+  STUDENT: '学生',
+  SEMESTER: '学期',
+  RECORD_DATE: '记录日期',
+  CLASS: '班级',
+  TEACHER: '记录老师',
+  FAD_SOURCE_TYPE: 'FAD来源类型',
+  REWARD_ID_LIST: '冲销记录Reward ID',
+  FAD_ID: '冲销记录FAD ID',
+  ACCUMULATED_FAD_ID: '累计FAD ID',
+  ACCUMULATED_WARNING_ID: '累计寝室批评 ID',
+  CLEANED: '是否已打扫'
+}
+
 module.exports = {
   FAD_SOURCE_TYPE,
   RECORD_TO_FAD_SOURCE,
   ACCUMULATE_RULES,
   RECORD_TYPE_TO_COLLECTION,
-  NO_EMAIL_TYPES
+  NO_EMAIL_TYPES,
+  THRESHOLDS,
+  DB_FIELDS
 }

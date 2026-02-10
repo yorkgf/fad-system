@@ -2,6 +2,7 @@ const { Router } = require('express')
 const { ObjectId } = require('mongodb')
 const { authMiddleware } = require('../utils/auth.js')
 const { getCollection, getGHSCollection, Collections, GHSCollections } = require('../utils/db.js')
+const { UserGroup, SCHEDULE_ACCESS_GROUPS } = require('../utils/userGroups.js')
 
 const router = Router()
 
@@ -113,8 +114,7 @@ async function checkParentBookingConflicts(parentPhone, teacherEmail, date, star
 
 // 权限检查中间件：排除 C 组（清洁阿姨）
 const scheduleAccessMiddleware = (req, res, next) => {
-  const allowedGroups = ['S', 'A', 'B', 'T', 'F']
-  if (!allowedGroups.includes(req.user.group)) {
+  if (!SCHEDULE_ACCESS_GROUPS.includes(req.user.group)) {
     return res.status(403).json({ success: false, error: '无权限访问日程管理功能' })
   }
   next()
