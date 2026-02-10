@@ -18,6 +18,33 @@ const router = Router()
 // 需要检查重复的记录类型（同一天不允许重复录入）
 const DUPLICATE_CHECK_TYPES = ['寝室表扬', '寝室批评', '寝室垃圾未倒']
 
+// ==================== 学年辅助函数 ====================
+
+/**
+ * 获取当前学年的学期列表
+ * 学年包括秋季学期（第一学期）和第二年春季学期（第二学期）
+ * 例如：2024-2025学年 = 2024年秋季 + 2025年春季
+ * @returns {Array<String>} 学年包含的两个学期
+ */
+function getCurrentAcademicYearSemesters() {
+  const currentMonth = new Date().getMonth() + 1 // 1-12
+  const currentYear = new Date().getFullYear()
+
+  if (currentMonth >= 2 && currentMonth <= 7) {
+    // 当前是春季学期（2-7月），学年是 去年秋季 + 今年春季
+    return [
+      `${currentYear - 1}年秋季`,
+      `${currentYear}年春季`
+    ]
+  } else {
+    // 当前是秋季学期（8-1月），学年是 今年秋季 + 明年春季
+    return [
+      `${currentYear}年秋季`,
+      `${currentYear + 1}年春季`
+    ]
+  }
+}
+
 // 累计产生FAD的记录类型
 const FAD_ACCUMULATE_TYPES = [
   'Late_Records',           // 早点名迟到
@@ -101,9 +128,11 @@ router.post('/', authMiddleware, async (req, res) => {
       const result = await getCollection(Collections.FADRecords).insertOne(fadRecord)
       insertedId = result.insertedId
     } else if (recordType === 'Reward') {
-      // 检查是否存在可冲抵的FAD（未执行或未冲销，年度范围）
+      // 检查是否存在可冲抵的FAD（未执行或未冲销，当前学年范围）
+      const academicYearSemesters = getCurrentAcademicYearSemesters()
       const availableFAD = await getCollection(Collections.FADRecords).findOne({
         学生: student,
+        学期: { $in: academicYearSemesters },
         $or: [
           { 是否已执行或冲抵: false },
           { 是否已冲销记录: false }
@@ -127,7 +156,7 @@ router.post('/', authMiddleware, async (req, res) => {
       const result = await getCollection(Collections.RewardRecords).insertOne(rewardRecord)
       insertedId = result.insertedId
 
-      // 处理Reward冲销FAD逻辑（年度范围）
+      // 处理Reward冲销FAD逻辑（当前学年范围）
       await handleRewardOffset(student, priorityOffset)
     } else if (recordType === '上网课违规使用电子产品') {
       // 统计该学生本学期违规次数
@@ -688,32 +717,38 @@ async function checkRewardExchangeHint({ recordType, student, semester }) {
 // ==================== Reward冲销FAD辅助函数 ====================
 
 /**
- * 查找该学生未冲销的Reward记录（年度范围）
+ * 查找该学生未冲销的Reward记录（当前学年范围）
  * @param {String} student - 学生姓名
  * @returns {Promise<Array>} 未冲销的Reward列表
  */
 async function findUnoffsetRewards(student) {
+  const academicYearSemesters = getCurrentAcademicYearSemesters()
+
   return await getCollection(Collections.RewardRecords)
     .find({
       学生: student,
-      是否已冲销记录: false
+      是否已冲销记录: false,
+      学期: { $in: academicYearSemesters }
     })
     .sort({ 记录日期: -1 }) // 按时间倒序，使用最新的Reward
     .toArray()
 }
 
 /**
- * 按优先级查找未执行的FAD（年度范围）
+ * 按优先级查找未执行的FAD（当前学年范围）
  * @param {String} student - 学生姓名
  * @returns {Promise<Object|null>} 找到的FAD记录或null
  */
 async function findUnexecutedFADByPriority(student) {
+  const academicYearSemesters = getCurrentAcademicYearSemesters()
+
   // 优先级1：查找已关联1张Reward的未执行FAD
   let targetFAD = await getCollection(Collections.FADRecords).findOne(
     {
       学生: student,
       是否已执行或冲抵: false,
-      '冲销记录Reward ID': { $size: 1 }
+      '冲销记录Reward ID': { $size: 1 },
+      学期: { $in: academicYearSemesters }
     },
     { sort: { 记录日期: -1 } } // 使用最新的FAD
   )
@@ -723,7 +758,8 @@ async function findUnexecutedFADByPriority(student) {
     targetFAD = await getCollection(Collections.FADRecords).findOne(
       {
         学生: student,
-        是否已执行或冲抵: false
+        是否已执行或冲抵: false,
+        学期: { $in: academicYearSemesters }
       },
       { sort: { 记录日期: -1 } } // 使用最新的FAD
     )
@@ -733,17 +769,20 @@ async function findUnexecutedFADByPriority(student) {
 }
 
 /**
- * 按优先级查找未冲销的FAD（年度范围）
+ * 按优先级查找未冲销的FAD（当前学年范围）
  * @param {String} student - 学生姓名
  * @returns {Promise<Object|null>} 找到的FAD记录或null
  */
 async function findUnoffsetFADByPriority(student) {
+  const academicYearSemesters = getCurrentAcademicYearSemesters()
+
   // 优先级1：查找已关联2张Reward的未冲销FAD
   let targetFAD = await getCollection(Collections.FADRecords).findOne(
     {
       学生: student,
       是否已冲销记录: false,
-      '冲销记录Reward ID': { $size: 2 }
+      '冲销记录Reward ID': { $size: 2 },
+      学期: { $in: academicYearSemesters }
     },
     { sort: { 记录日期: -1 } } // 使用最新的FAD
   )
@@ -754,7 +793,8 @@ async function findUnoffsetFADByPriority(student) {
       {
         学生: student,
         是否已冲销记录: false,
-        '冲销记录Reward ID': { $size: 1 }
+        '冲销记录Reward ID': { $size: 1 },
+        学期: { $in: academicYearSemesters }
       },
       { sort: { 记录日期: -1 } } // 使用最新的FAD
     )
@@ -765,7 +805,8 @@ async function findUnoffsetFADByPriority(student) {
     targetFAD = await getCollection(Collections.FADRecords).findOne(
       {
         学生: student,
-        是否已冲销记录: false
+        是否已冲销记录: false,
+        学期: { $in: academicYearSemesters }
       },
       { sort: { 记录日期: -1 } } // 使用最新的FAD
     )
