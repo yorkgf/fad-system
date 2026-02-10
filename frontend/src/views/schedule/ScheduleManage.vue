@@ -121,8 +121,8 @@
           </el-radio-group>
         </el-form-item>
 
-        <!-- 地点 -->
-        <el-form-item label="地点">
+        <!-- 地点（必选） -->
+        <el-form-item label="地点" required>
           <el-select v-model="batchForm.location" placeholder="请选择地点类型" class="full-width">
             <el-option label="线下" value="线下" />
             <el-option label="腾讯会议" value="腾讯会议" />
@@ -381,6 +381,11 @@ async function createBatchSessions() {
 
   if (!batchForm.value.enableMorning && !batchForm.value.enableAfternoon) {
     ElMessage.warning('请至少启用上午或下午时段')
+    return
+  }
+
+  if (!batchForm.value.location) {
+    ElMessage.warning('请选择地点')
     return
   }
 
