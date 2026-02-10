@@ -101,10 +101,9 @@ router.post('/', authMiddleware, async (req, res) => {
       const result = await getCollection(Collections.FADRecords).insertOne(fadRecord)
       insertedId = result.insertedId
     } else if (recordType === 'Reward') {
-      // 检查是否存在可冲抵的FAD（未执行或未冲销）
+      // 检查是否存在可冲抵的FAD（未执行或未冲销，年度范围）
       const availableFAD = await getCollection(Collections.FADRecords).findOne({
         学生: student,
-        学期: semester,
         $or: [
           { 是否已执行或冲抵: false },
           { 是否已冲销记录: false }
@@ -128,8 +127,8 @@ router.post('/', authMiddleware, async (req, res) => {
       const result = await getCollection(Collections.RewardRecords).insertOne(rewardRecord)
       insertedId = result.insertedId
 
-      // 处理Reward冲销FAD逻辑
-      await handleRewardOffset(student, semester, priorityOffset)
+      // 处理Reward冲销FAD逻辑（年度范围）
+      await handleRewardOffset(student, priorityOffset)
     } else if (recordType === '上网课违规使用电子产品') {
       // 统计该学生本学期违规次数
       const violationCount = await getCollection(Collections.ElecProductsViolationRecords)
@@ -689,108 +688,87 @@ async function checkRewardExchangeHint({ recordType, student, semester }) {
 // ==================== Reward冲销FAD辅助函数 ====================
 
 /**
- * 查找该学生未冲销的Reward记录
+ * 查找该学生未冲销的Reward记录（年度范围）
  * @param {String} student - 学生姓名
- * @param {String} semester - 学期
  * @returns {Promise<Array>} 未冲销的Reward列表
  */
-async function findUnoffsetRewards(student, semester) {
+async function findUnoffsetRewards(student) {
   return await getCollection(Collections.RewardRecords)
     .find({
       学生: student,
-      学期: semester,
       是否已冲销记录: false
     })
-    .sort({ 记录日期: -1 })
+    .sort({ 记录日期: -1 }) // 按时间倒序，使用最新的Reward
     .toArray()
 }
 
 /**
- * 按优先级查找未执行的FAD
+ * 按优先级查找未执行的FAD（年度范围）
  * @param {String} student - 学生姓名
- * @param {String} semester - 学期
  * @returns {Promise<Object|null>} 找到的FAD记录或null
  */
-async function findUnexecutedFADByPriority(student, semester) {
+async function findUnexecutedFADByPriority(student) {
   // 优先级1：查找已关联1张Reward的未执行FAD
   let targetFAD = await getCollection(Collections.FADRecords).findOne(
     {
       学生: student,
-      学期: semester,
       是否已执行或冲抵: false,
       '冲销记录Reward ID': { $size: 1 }
     },
-    { sort: { 记录日期: -1 } }
+    { sort: { 记录日期: -1 } } // 使用最新的FAD
   )
-  if (targetFAD) {
-    console.log('找到已关联1张Reward的未执行FAD')
-    return targetFAD
-  }
 
-  // 优先级2：查找任意未执行的FAD
-  targetFAD = await getCollection(Collections.FADRecords).findOne(
-    {
-      学生: student,
-      学期: semester,
-      是否已执行或冲抵: false
-    },
-    { sort: { 记录日期: -1 } }
-  )
-  if (targetFAD) {
-    console.log('找到未执行的FAD')
+  if (!targetFAD) {
+    // 优先级2：查找任意未执行的FAD
+    targetFAD = await getCollection(Collections.FADRecords).findOne(
+      {
+        学生: student,
+        是否已执行或冲抵: false
+      },
+      { sort: { 记录日期: -1 } } // 使用最新的FAD
+    )
   }
 
   return targetFAD
 }
 
 /**
- * 按优先级查找未冲销的FAD
+ * 按优先级查找未冲销的FAD（年度范围）
  * @param {String} student - 学生姓名
- * @param {String} semester - 学期
  * @returns {Promise<Object|null>} 找到的FAD记录或null
  */
-async function findUnoffsetFADByPriority(student, semester) {
+async function findUnoffsetFADByPriority(student) {
   // 优先级1：查找已关联2张Reward的未冲销FAD
   let targetFAD = await getCollection(Collections.FADRecords).findOne(
     {
       学生: student,
-      学期: semester,
       是否已冲销记录: false,
       '冲销记录Reward ID': { $size: 2 }
     },
-    { sort: { 记录日期: -1 } }
+    { sort: { 记录日期: -1 } } // 使用最新的FAD
   )
-  if (targetFAD) {
-    console.log('找到已关联2张Reward的FAD')
-    return targetFAD
+
+  if (!targetFAD) {
+    // 优先级2：查找已关联1张Reward的未冲销FAD
+    targetFAD = await getCollection(Collections.FADRecords).findOne(
+      {
+        学生: student,
+        是否已冲销记录: false,
+        '冲销记录Reward ID': { $size: 1 }
+      },
+      { sort: { 记录日期: -1 } } // 使用最新的FAD
+    )
   }
 
-  // 优先级2：查找已关联1张Reward的未冲销FAD
-  targetFAD = await getCollection(Collections.FADRecords).findOne(
-    {
-      学生: student,
-      学期: semester,
-      是否已冲销记录: false,
-      '冲销记录Reward ID': { $size: 1 }
-    },
-    { sort: { 记录日期: -1 } }
-  )
-  if (targetFAD) {
-    console.log('找到已关联1张Reward的FAD')
-    return targetFAD
-  }
-
-  // 优先级3：查找任意未冲销的FAD
-  targetFAD = await getCollection(Collections.FADRecords).findOne(
-    {
-      学生: student,
-      学期: semester,
-      是否已冲销记录: false
-    },
-    { sort: { 记录日期: -1 } }
-  )
-  if (targetFAD) {
-    console.log('找到未冲销的FAD')
+  if (!targetFAD) {
+    // 优先级3：查找任意未冲销的FAD
+    targetFAD = await getCollection(Collections.FADRecords).findOne(
+      {
+        学生: student,
+        是否已冲销记录: false
+      },
+      { sort: { 记录日期: -1 } } // 使用最新的FAD
+    )
   }
 
   return targetFAD
@@ -857,38 +835,37 @@ async function updateRewardOffsetStatus(reward, fadId) {
 }
 
 /**
- * 根据优先级策略查找目标FAD
+ * 根据优先级策略查找目标FAD（年度范围）
  * @param {String} student - 学生姓名
- * @param {String} semester - 学期
  * @param {Boolean} priorityOffset - 是否优先抵消执行
  * @returns {Promise<Object|null>} 找到的FAD记录或null
  */
-async function findTargetFADByStrategy(student, semester, priorityOffset) {
+async function findTargetFADByStrategy(student, priorityOffset) {
   let targetFAD = null
 
   if (priorityOffset) {
     // 优先冲抵执行：先查找未执行的FAD
     console.log('优先冲抵执行模式，按优先级查找未执行的FAD')
-    targetFAD = await findUnexecutedFADByPriority(student, semester)
+    targetFAD = await findUnexecutedFADByPriority(student)
 
     // 如果没有未执行的FAD，查找未冲销的FAD
     if (!targetFAD) {
       console.log('没有未执行的FAD，按优先级查找未冲销的FAD')
-      targetFAD = await findUnoffsetFADByPriority(student, semester)
+      targetFAD = await findUnoffsetFADByPriority(student)
     }
   } else {
     // 优先冲销记录：查找未冲销的FAD
     console.log('优先冲销记录模式，按优先级查找未冲销的FAD')
-    targetFAD = await findUnoffsetFADByPriority(student, semester)
+    targetFAD = await findUnoffsetFADByPriority(student)
   }
 
   return targetFAD
 }
 
-// 辅助函数：处理Reward冲销FAD（重构后的简化版本）
-async function handleRewardOffset(student, semester, priorityOffset) {
-  // 步骤1：查找该学生未冲销的Reward
-  const rewards = await findUnoffsetRewards(student, semester)
+// 辅助函数：处理Reward冲销FAD（重构后的简化版本，年度范围）
+async function handleRewardOffset(student, priorityOffset) {
+  // 步骤1：查找该学生未冲销的Reward（不按学期）
+  const rewards = await findUnoffsetRewards(student)
 
   // 没有未冲销的Reward，不触发冲抵
   if (rewards.length === 0) {
@@ -898,8 +875,8 @@ async function handleRewardOffset(student, semester, priorityOffset) {
 
   console.log(`找到 ${rewards.length} 个未冲销的Reward，priorityOffset=${priorityOffset}`)
 
-  // 步骤2：根据优先级策略查找目标FAD
-  const targetFAD = await findTargetFADByStrategy(student, semester, priorityOffset)
+  // 步骤2：根据优先级策略查找目标FAD（不按学期）
+  const targetFAD = await findTargetFADByStrategy(student, priorityOffset)
 
   // 没有找到符合条件的FAD
   if (!targetFAD) {
