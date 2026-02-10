@@ -42,15 +42,23 @@
             {{ Math.floor(row.count / 10) }} 个Reward
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120">
+        <el-table-column label="操作" width="220">
           <template #default="{ row }">
             <el-button
               type="primary"
               size="small"
               :disabled="row.count < 10"
-              @click="handleExchange(row)"
+              @click="handlePrintReward(row)"
             >
-              兑换
+              打印Reward
+            </el-button>
+            <el-button
+              type="success"
+              size="small"
+              :disabled="row.count < 10"
+              @click="handleMarkExchanged(row)"
+            >
+              已兑换
             </el-button>
           </template>
         </el-table-column>
@@ -213,12 +221,42 @@ async function generateRewardPDF(rewardData) {
   }
 }
 
-async function handleExchange(row) {
+async function handlePrintReward(row) {
   const rewardCount = Math.floor(row.count / 10)
 
   try {
     await ElMessageBox.confirm(
-      `确定为 ${row.学生} 兑换 ${rewardCount} 个Reward吗？\n将消耗 ${rewardCount * 10} 次寝室表扬`,
+      `确定为 ${row.学生} 打印 ${rewardCount} 个Reward吗？`,
+      '确认打印',
+      {
+        confirmButtonText: '确定打印',
+        cancelButtonText: '取消',
+        type: 'info'
+      }
+    )
+
+    const rewardData = {
+      student: row.学生,
+      studentClass: row.班级,
+      count: rewardCount,
+      date: new Date()
+    }
+
+    await generateRewardPDF(rewardData)
+    ElMessage.success(`已为 ${row.学生} 生成 ${rewardCount} 个Reward PDF`)
+  } catch (error) {
+    if (error !== 'cancel') {
+      ElMessage.error('打印失败: ' + (error.message || '未知错误'))
+    }
+  }
+}
+
+async function handleMarkExchanged(row) {
+  const rewardCount = Math.floor(row.count / 10)
+
+  try {
+    await ElMessageBox.confirm(
+      `确定为 ${row.学生} 标记兑换 ${rewardCount} 个Reward吗？\n将消耗 ${rewardCount * 10} 次寝室表扬`,
       '确认兑换',
       {
         confirmButtonText: '确定兑换',
@@ -228,19 +266,14 @@ async function handleExchange(row) {
     )
 
     loading.value = true
-    const res = await praiseToReward({
+    await praiseToReward({
       student: row.学生,
       studentClass: row.班级,
       semester: filters.semester,
       count: rewardCount
     })
 
-    // 生成并下载PDF
-    if (res.rewardData) {
-      await generateRewardPDF(res.rewardData)
-    }
-
-    ElMessage.success(`成功为 ${row.学生} 兑换 ${rewardCount} 个Reward，PDF已下载`)
+    ElMessage.success(`成功为 ${row.学生} 兑换 ${rewardCount} 个Reward`)
     fetchData()
   } catch (error) {
     if (error !== 'cancel') {
