@@ -152,9 +152,11 @@ backend/src/
 - 6 Teaching Reward Tickets → Reward hint (frontend notification only)
 
 ### Reward Offset Rules (records.js:handleRewardOffset)
+- **Annual scope**: Reward offset logic operates across all semesters in an academic year, not limited to a single semester
 - 2 Rewards → offset FAD execution (是否已执行或冲抵 = true)
 - 3 Rewards → offset FAD record (是否已冲销记录 = true)
 - `priorityOffset` flag controls whether to prioritize offsetting execution vs record
+- System uses the **latest FAD** when applying reward offsets (sorted by 记录日期 descending)
 
 ### Direct FAD Triggers (no accumulation)
 - 上网课违规使用电子产品 → immediate FAD (source: elec), separate collection `Elec_Products_Violation_Records`
@@ -165,6 +167,10 @@ backend/src/
 - Only two semesters: `春季(Spring)` (Feb-Jul) and `秋季(Fall)` (Sep-Jan)
 - Current semester auto-detected by `getCurrentSemester()` in `common.js` based on month
 - All records tagged with semester for filtering and analysis
+- **Academic Year**: Some functions operate on an annual scope (both semesters combined):
+  - FAD statistics for suspension/dismissal (6+ for warning, 9+ for dismissal)
+  - Reward offset logic (uses latest FAD across all semesters)
+  - Query parameter `semester=学年` triggers annual scope aggregation
 
 ### Record Withdrawal
 - Cascade deletes any generated FAD/warnings from accumulated records
@@ -384,3 +390,5 @@ npm run build:prod
 - Phone late records (`21:30后` and `22:00后`) share the same collection `Phone_Late_Records` but have different FAD behavior
 - The system uses MongoDB native driver (not Mongoose) - queries use MongoDB aggregation syntax directly
 - SCF environment uses `PORT` environment variable (defaults to 9000 in `scf_bootstrap`)
+- **Annual scope**: Reward offset and FAD statistics operate across all semesters, not just the current semester
+- **Latest FAD priority**: When applying rewards, the system selects the most recent FAD (by 记录日期) regardless of semester
