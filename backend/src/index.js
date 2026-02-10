@@ -1,5 +1,6 @@
 const express = require('express')
 const cors = require('cors')
+const helmet = require('helmet')
 const serverless = require('serverless-http')
 const { connectDB } = require('./utils/db.js')
 
@@ -15,7 +16,7 @@ const scheduleRoutes = require('./routes/schedule.js')
 
 const app = express()
 
-// CORS 配置 - 允许所有来源，支持预检请求和凭证
+// CORS 配置 - 允许所有来源
 const corsOptions = {
   origin: function (origin, callback) {
     // 允许所有来源（包括 null）
@@ -24,10 +25,38 @@ const corsOptions = {
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  exposedHeaders: ['Content-Range', 'X-Content-Range']
+  exposedHeaders: ['Content-Range', 'X-Content-Range'],
+  maxAge: 86400 // 预检请求缓存 24 小时
 }
 
 app.use(cors(corsOptions))
+
+// 安全响应头（使用 helmet）
+app.use(helmet({
+  // 内容安全策略 - 开发环境允许内联样式
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"], // Element Plus 需要 unsafe-inline
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", "*"]
+    }
+  },
+  // HTTP 严格传输安全（仅在生产环境启用）
+  hsts: process.env.NODE_ENV === 'production' ? {
+    maxAge: 31536000, // 365 天
+    includeSubDomains: true,
+    preload: true
+  } : false,
+  // 防止 MIME 类型嗅探
+  noSniff: true,
+  // XSS 过滤器
+  xssFilter: true,
+  // 隐藏 X-Powered-By 头
+  hidePoweredBy: true
+}))
+
 app.use(express.json())
 
 // 健康检查

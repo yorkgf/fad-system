@@ -1,13 +1,20 @@
 const jwt = require('jsonwebtoken')
 const { getCollection, Collections } = require('./db.js')
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fad-secret-key-2024'
+// JWT 配置
+const JWT_SECRET = 'fad-secret-2024'
 const JWT_EXPIRES_IN = '7d'
 
+/**
+ * 生成 JWT token
+ */
 function generateToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN })
 }
 
+/**
+ * 验证 JWT token
+ */
 function verifyToken(token) {
   try {
     return jwt.verify(token, JWT_SECRET)

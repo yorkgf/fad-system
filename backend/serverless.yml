@@ -7,11 +7,9 @@ provider:
   memorySize: 256
   timeout: 30
   environment:
-    MONGO_URI: mongodb://49.235.189.246:27017
-    DB_NAME: GHA
-    GHS_MONGO_URI: mongodb://49.235.189.246:27017
-    GHS_DB_NAME: GHS
-    JWT_SECRET: fad-secret-key-2024-production
+    # 敏感配置请在腾讯云 SCF 控制台配置环境变量
+    # 需要配置: MONGO_URI, DB_NAME, GHS_MONGO_URI, GHS_DB_NAME
+    # 需要配置: JWT_SECRET, JWT_SECRET_OLD (迁移期), ALLOWED_ORIGINS
     JWT_EXPIRES_IN: 7d
     SENDER_NAME: FAD管理系统
 

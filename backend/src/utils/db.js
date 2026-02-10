@@ -1,7 +1,8 @@
 const { MongoClient } = require('mongodb')
 
 // GHA 数据库配置（FAD系统主数据库）
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://49.235.189.246:27017'
+// 注意: MONGO_URI 必须在环境变量中配置，不允许使用默认值
+const MONGO_URI = process.env.MONGO_URI
 const DB_NAME = process.env.DB_NAME || 'GHA'
 
 // GHS 数据库配置（Meeting Arrangement日程系统数据库）
@@ -14,6 +15,11 @@ let client = null
 
 async function connectDB() {
   if (db && ghsDB) return { db, ghsDB }
+
+  // 验证必需的环境变量
+  if (!MONGO_URI) {
+    throw new Error('MONGO_URI environment variable is required. Please configure it in SCF console or .env file.')
+  }
 
   try {
     client = new MongoClient(MONGO_URI)

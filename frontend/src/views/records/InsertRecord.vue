@@ -459,17 +459,14 @@ async function handleSubmit() {
 
   submitting.value = true
   try {
-    // 构建记录提交列表
-    const recordPromises = []
-
-    // 根据记录类型和学生数量构建提交记录
-    form.selectedStudents.forEach(studentName => {
+    // 串行处理记录提交，防止重复累计
+    const results = []
+    for (const studentName of form.selectedStudents) {
       const recordCount = isTicketRecord.value ? form.ticketCount : 1
 
-      // 为每个学生创建 recordCount 条记录
       for (let i = 0; i < recordCount; i++) {
-        recordPromises.push(
-          insertRecord({
+        try {
+          const result = await insertRecord({
             recordType: form.recordType,
             date: form.date,
             student: studentName,
@@ -481,16 +478,21 @@ async function handleSubmit() {
             priorityOffset: form.recordType === 'Reward' ? form.priorityOffset : undefined,
             cancelUntil: form.recordType === '上网课违规使用电子产品' ? form.cancelUntil : undefined
           })
-        )
+          results.push({ status: 'fulfilled', value: result })
+        } catch (error) {
+          results.push({ status: 'rejected', reason: error })
+        }
       }
-    })
-
-    const results = await Promise.allSettled(recordPromises)
+    }
     const successCount = results.filter(r => r.status === 'fulfilled').length
     const failedCount = results.filter(r => r.status === 'rejected').length
     const accumulatedFAD = results
       .filter(r => r.status === 'fulfilled' && r.value?.accumulatedFAD)
       .reduce((sum, r) => sum + (r.value.accumulatedFAD || 0), 0)
+
+    const accumulatedWarning = results
+      .filter(r => r.status === 'fulfilled' && r.value?.accumulatedWarning)
+      .reduce((sum, r) => sum + (r.value.accumulatedWarning || 0), 0)
 
     // 收集所有警告消息（去重）
     const warningMessages = new Set()
@@ -505,6 +507,9 @@ async function handleSubmit() {
       let message = `成功为 ${successCount} 名学生创建了记录`
       if (accumulatedFAD > 0) {
         message += `\n已触发 ${accumulatedFAD} 条FAD累计`
+      }
+      if (accumulatedWarning > 0) {
+        message += `\n已触发 ${accumulatedWarning} 条寝室批评累计`
       }
       if (warningMessages.size > 0) {
         message += `\n${Array.from(warningMessages).join('\n')}`

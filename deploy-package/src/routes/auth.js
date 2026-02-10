@@ -1,10 +1,69 @@
 const { Router } = require('express')
 const bcrypt = require('bcryptjs')
+const crypto = require('crypto')
 const { getCollection, Collections } = require('../utils/db.js')
 const { generateToken, authMiddleware } = require('../utils/auth.js')
 const { sendPasswordEmail } = require('../utils/email.js')
 
 const router = Router()
+
+/**
+ * 自动迁移明文密码到 bcrypt
+ * 当用户使用明文密码登录成功后，自动升级为 bcrypt 哈希
+ * @param {Object} teacher - 教师对象
+ * @param {string} plaintextPassword - 明文密码
+ * @returns {Promise<boolean>} - 是否进行了迁移
+ */
+async function migratePasswordIfNeeded(teacher, plaintextPassword) {
+  // 如果密码已经是 bcrypt 哈希（以 $2 开头），无需迁移
+  if (teacher.Password.startsWith('$2')) {
+    return false
+  }
+
+  console.log(`Migrating plaintext password for teacher: ${teacher.email}`)
+
+  // 使用 bcrypt 哈希明文密码
+  const hashedPassword = await bcrypt.hash(plaintextPassword, 10)
+
+  // 更新数据库
+  await getCollection(Collections.Teachers).updateOne(
+    { email: teacher.email },
+    { $set: { Password: hashedPassword } }
+  )
+
+  console.log(`Password migration completed for: ${teacher.email}`)
+  return true
+}
+
+/**
+ * 生成安全的随机密码
+ * 使用 crypto.randomInt() 确保密码强度
+ * @returns {string} - 16 位安全密码，包含大小写字母、数字、特殊字符
+ */
+function generateSecurePassword() {
+  const chars = {
+    upper: 'ABCDEFGHJKLMNPQRSTUVWXYZ',    // 排除 I, O 避免混淆
+    lower: 'abcdefghijkmnpqrstuvwxyz',    // 排除 l, o 避免混淆
+    numbers: '23456789',                  // 排除 0, 1 避免混淆
+    special: '!@#$%^&*'                   // 常用特殊字符
+  }
+
+  // 确保至少包含每种类型
+  let password = ''
+  password += chars.upper[crypto.randomInt(chars.upper.length)]
+  password += chars.lower[crypto.randomInt(chars.lower.length)]
+  password += chars.numbers[crypto.randomInt(chars.numbers.length)]
+  password += chars.special[crypto.randomInt(chars.special.length)]
+
+  // 填充剩余位数到 16 位
+  const allChars = chars.upper + chars.lower + chars.numbers + chars.special
+  for (let i = 4; i < 16; i++) {
+    password += allChars[crypto.randomInt(allChars.length)]
+  }
+
+  // 打乱密码顺序
+  return password.split('').sort(() => crypto.randomInt(3) - 1).join('')
+}
 
 // 登录
 router.post('/login', async (req, res) => {
@@ -23,10 +82,19 @@ router.post('/login', async (req, res) => {
 
     // 验证密码（支持明文和加密两种方式）
     let isValid = false
+    let wasMigrated = false
+
     if (teacher.Password.startsWith('$2')) {
+      // 密码已加密，使用 bcrypt 验证
       isValid = await bcrypt.compare(password, teacher.Password)
     } else {
+      // 密码未加密（旧数据），明文比较
       isValid = teacher.Password === password
+
+      // 如果验证成功且使用明文密码，自动迁移到 bcrypt
+      if (isValid) {
+        wasMigrated = await migratePasswordIfNeeded(teacher, password)
+      }
     }
 
     if (!isValid) {
@@ -39,7 +107,8 @@ router.post('/login', async (req, res) => {
       success: true,
       token,
       name: teacher.Name,
-      group: teacher.Group
+      group: teacher.Group,
+      requiresPasswordChange: wasMigrated // 如果进行了密码迁移，通知前端
     })
   } catch (error) {
     console.error('Login error:', error)
@@ -62,14 +131,21 @@ router.post('/reset-password', async (req, res) => {
       return res.status(404).json({ success: false, error: '未授权用户' })
     }
 
-    // 生成新密码
-    const newPassword = Math.random().toString(36).substring(2, 8)
+    // 生成安全的随机密码（16位，包含大小写字母、数字、特殊字符）
+    const newPassword = generateSecurePassword()
     const hashedPassword = await bcrypt.hash(newPassword, 10)
 
     await getCollection(Collections.Teachers).updateOne(
       { email },
-      { $set: { Password: hashedPassword } }
+      {
+        $set: {
+          Password: hashedPassword,
+          forcePasswordChange: true  // 标记需要强制修改密码
+        }
+      }
     )
+
+    console.log(`Password reset for: ${email}`)
 
     // 发送邮件
     await sendPasswordEmail({ to: email, newPassword })
@@ -114,8 +190,15 @@ router.put('/change-password', authMiddleware, async (req, res) => {
 
     await getCollection(Collections.Teachers).updateOne(
       { email: req.user.email },
-      { $set: { Password: hashedPassword } }
+      {
+        $set: {
+          Password: hashedPassword,
+          forcePasswordChange: false  // 清除强制修改密码标记
+        }
+      }
     )
+
+    console.log(`Password changed for: ${req.user.email}`)
 
     res.json({ success: true, message: '密码修改成功' })
   } catch (error) {

@@ -81,6 +81,7 @@ router.post('/', authMiddleware, async (req, res) => {
 
     let insertedId = null
     let accumulatedFAD = 0
+    let accumulatedWarning = 0 // 新增变量
     let warningMessage = null
 
     // 根据记录类型处理
@@ -213,8 +214,8 @@ router.post('/', authMiddleware, async (req, res) => {
           record.是否已累计FAD = false
           record['累计FAD ID'] = null
         } else if (rule.result === '寝室批评') {
-          record.是否已累计寝室警告 = false
-          record['累计寝室警告 ID'] = null
+          record.是否已累计寝室批评 = false
+          record['累计寝室批评 ID'] = null
         } else if (rule.result === 'Reward_Hint') {
           record.是否已累计Reward = false
           record['累计Reward ID'] = null
@@ -232,15 +233,17 @@ router.post('/', authMiddleware, async (req, res) => {
 
       // 检查是否需要累计
       if (rule) {
-        const accumulated = await checkAndAccumulate({
+        const accumulatedResult = await checkAndAccumulate({
           recordType,
           student,
           semester,
           studentClass,
           rule
         })
-        if (accumulated) {
+        if (accumulatedResult === 'FAD') {
           accumulatedFAD = 1
+        } else if (accumulatedResult === '寝室批评') {
+          accumulatedWarning = 1 // 新增字段用于表示累计寝室批评
         }
 
         // 检查是否达到兑换提示阈值
@@ -272,7 +275,8 @@ router.post('/', authMiddleware, async (req, res) => {
     res.json({
       success: true,
       insertedId,
-      accumulatedFAD,
+      accumulatedFAD: accumulatedFAD || 0,
+      accumulatedWarning: accumulatedWarning || 0, // 新增字段
       warningMessage
     })
   } catch (error) {
@@ -574,7 +578,7 @@ async function checkAndAccumulate({ recordType, student, semester, studentClass,
   if (rule.result === 'FAD') {
     filter.是否已累计FAD = { $ne: true }
   } else if (rule.result === '寝室批评') {
-    filter.是否已累计寝室警告 = { $ne: true }
+    filter.是否已累计寝室批评 = { $ne: true }
   }
 
   const count = await getCollection(collectionName).countDocuments(filter)
@@ -609,7 +613,7 @@ async function checkAndAccumulate({ recordType, student, semester, studentClass,
         }
       )
 
-      return true
+      return 'FAD' // 返回累积结果类型
     } else if (rule.result === '寝室批评') {
       // 插入寝室批评
       const warningResult = await getCollection(Collections.RoomWarningRecords).insertOne({
@@ -631,15 +635,15 @@ async function checkAndAccumulate({ recordType, student, semester, studentClass,
         { _id: { $in: ids } },
         {
           $set: {
-            是否已累计寝室警告: true,
-            '累计寝室警告 ID': warningResult.insertedId.toString()
+            是否已累计寝室批评: true,
+            '累计寝室批评 ID': warningResult.insertedId.toString()
           }
         }
       )
 
       // 递归检查寝室批评是否累计FAD
       const warningRule = ACCUMULATE_RULES['寝室批评']
-      await checkAndAccumulate({
+      const recursiveResult = await checkAndAccumulate({
         recordType: '寝室批评',
         student,
         semester,
@@ -647,7 +651,11 @@ async function checkAndAccumulate({ recordType, student, semester, studentClass,
         rule: warningRule
       })
 
-      return true
+      // 如果递归检查返回了FAD，说明寝室批评已经累计成FAD了
+      if (recursiveResult === 'FAD') {
+        return 'FAD'
+      }
+      return '寝室批评' // 只返回寝室批评，不返回FAD
     }
   }
 
@@ -909,8 +917,8 @@ async function getChainRecords(record, collection) {
   }
 
   // 如果有累计的寝室警告
-  if (record['累计寝室警告 ID']) {
-    const warningId = record['累计寝室警告 ID']
+  if (record['累计寝室批评 ID']) {
+    const warningId = record['累计寝室批评 ID']
     const warning = await getCollection('Room_Warning_Records').findOne({ _id: new ObjectId(warningId) })
     if (warning) {
       chainRecords.push({
@@ -956,15 +964,15 @@ async function resetAccumulateStatus(record, collection, resetRecords) {
     })
   }
 
-  if (record['累计寝室警告 ID']) {
-    const warningId = record['累计寝室警告 ID']
+  if (record['累计寝室批评 ID']) {
+    const warningId = record['累计寝室批评 ID']
 
     await getCollection(collection).updateMany(
       {
-        '累计寝室警告 ID': warningId,
+        '累计寝室批评 ID': warningId,
         _id: { $ne: record._id }
       },
-      { $set: { 是否已累计寝室警告: false, '累计寝室警告 ID': null } }
+      { $set: { 是否已累计寝室批评: false, '累计寝室批评 ID': null } }
     )
   }
 }

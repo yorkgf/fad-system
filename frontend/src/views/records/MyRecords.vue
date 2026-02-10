@@ -558,7 +558,7 @@ function exportData() {
       // 如果已累计FAD但没有 fadStatus（兼容旧数据）
       status = '已累计FAD'
     } else if (row.是否已累计寝室批评) {
-      status = '已累计寝室警告'
+      status = '已累计寝室批评'
     } else if (row.是否已累计Reward) {
       status = '已累计Reward'
     } else {

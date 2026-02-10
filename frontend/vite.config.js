@@ -41,7 +41,10 @@ export default defineConfig({
     port: 3000,
     proxy: {
       '/api': {
-        target: 'https://1300190563-l4w10rylyq.ap-shanghai.tencentscf.com',
+        // 默认代理到本地后端开发服务器
+        // 如果需要代理到生产 API，请取消注释下面的行：
+        // target: 'https://1300190563-l4w10rylyq.ap-shanghai.tencentscf.com',
+        target: 'http://localhost:8080',
         changeOrigin: true
       }
     }
