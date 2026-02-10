@@ -42,9 +42,25 @@ Frontend dev server proxies `/api` to `http://localhost:8080` by default (config
 ## Architecture
 
 ### Tech Stack
-- **Frontend**: Vue 3 (Composition API) + Element Plus + Pinia + Vue Router + Axios + Vite
-- **Backend**: Express + MongoDB (native driver, not Mongoose) + JWT + serverless-http
+- **Frontend**: Vue 3 (Composition API) + Element Plus + Pinia + Vue Router + Axios + Vite (ES Modules)
+- **Backend**: Express + MongoDB (native driver, not Mongoose) + JWT + serverless-http (CommonJS)
 - **Deployment**: Tencent SCF (backend) + EdgeOne Pages (frontend)
+
+### API Route Paths (registered in `backend/src/index.js`)
+| Path Prefix | Router File | Domain |
+|-------------|------------|--------|
+| `/api/auth` | `auth.js` | Login, logout, user info |
+| `/api/teachers` | `auth.js` | Teacher management (shared router) |
+| `/api/students` | `students.js` | Student queries |
+| `/api/classes` | `students.js` (classesRouter) | Class queries (sub-router) |
+| `/api/records` | `records.js` | Record CRUD, withdrawal, accumulation |
+| `/api/fad-records` | `fad.js` | FAD queries, execution, delivery |
+| `/api/reward-records` | `reward.js` | Reward operations |
+| `/api/room-praise` | `room.js` | Dorm praise/warning (shared router) |
+| `/api/room-warning` | `room.js` | Dorm praise/warning (shared router) |
+| `/api/schedule` | `schedule.js` | Meeting scheduling (GHS) |
+| `/api` | `other.js` | Elec violations, phone lists, tickets |
+| `/api/health` | inline | Health check endpoint |
 
 ### User Groups & Permissions
 Six user groups defined in `backend/src/utils/userGroups.js`:
@@ -152,6 +168,7 @@ See `backend/.env.example` for all variables. Key ones:
 - `MONGO_URI` / `DB_NAME` - Main GHA database connection
 - `GHS_MONGO_URI` / `GHS_DB_NAME` - Meeting arrangement GHS database (optional)
 - `JWT_SECRET` / `JWT_EXPIRES_IN` (default: `7d`) - Authentication
+- `JWT_SECRET_OLD` - Previous JWT secret for dual-key migration (see `auth.js`). During migration, tokens signed with the old key are still accepted. Remove after all old tokens expire.
 - `BREVO_API_KEY` / `SENDER_EMAIL` / `SENDER_NAME` - Email notifications
 - `PORT` (default: `8080`) / `NODE_ENV`
 
@@ -175,6 +192,7 @@ After modifying backend source: copy `backend/src/` to `deploy-package/src/` and
 ## Gotchas
 
 - `deploy-package/` is a pre-bundled SCF package - source changes require manual rebuild (see above)
+- Backend uses `dotenv` in dev mode (`index.js`) but it's not in `backend/package.json` - it relies on a hoisted install or must be installed separately
 - Email notifications use Brevo API - `NO_EMAIL_TYPES` in `constants.js` lists excluded record types (`寝室表扬`, `Teaching Reward Ticket`, `Reward`)
 - Teacher login data is initialized via the "教职工" page in the "其他" module
 - Phone late records (`21:30后` and `22:00后`) share `Phone_Late_Records` collection but have different FAD behavior
@@ -182,3 +200,4 @@ After modifying backend source: copy `backend/src/` to `deploy-package/src/` and
 - Frontend uses `@` alias for `src/` directory (configured in `vite.config.js`)
 - JWT tokens have 7-day expiry; Axios interceptor auto-injects `Authorization: Bearer {token}` from Pinia `useUserStore`
 - Response interceptor handles 401 (auto logout), 403, 404, 500 with Element Plus messages
+- Backend is CommonJS (`require`), frontend is ES Modules (`import`/`export`) - don't mix module syntax when editing
