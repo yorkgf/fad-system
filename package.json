@@ -1,0 +1,24 @@
+{
+  "name": "fad_new",
+  "version": "1.0.0",
+  "description": "> 📘 **部署指南**: [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) | 📋 **检查清单**: [DEPLOYMENT_CHECKLIST.md](./DEPLOYMENT_CHECKLIST.md)",
+  "main": "test-fix.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yorkgf/fad-system.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/yorkgf/fad-system/issues"
+  },
+  "homepage": "https://github.com/yorkgf/fad-system#readme",
+  "dependencies": {
+    "axios": "^1.13.5"
+  }
+}

@@ -1,3 +1,8 @@
+// 加载环境变量（仅在开发环境）
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config()
+}
+
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')

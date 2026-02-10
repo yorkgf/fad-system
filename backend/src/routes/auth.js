@@ -250,12 +250,14 @@ router.get('/me', authMiddleware, async (req, res) => {
 // 获取当前用户可用的记录类型
 router.get('/me/record-types', authMiddleware, async (req, res) => {
   try {
+    // Group字段可能是字符串或数组，需要两种查询方式
     const recordTypes = await getCollection(Collections.RecordType)
       .find({
         $or: [
-          { Group: req.user.group },
-          { Group: 'ALL' },
-          ...(req.user.group === 'S' ? [{}] : [])
+          { Group: req.user.group },           // 字符串匹配
+          { Group: { $in: [req.user.group] } }, // 数组包含匹配
+          { Group: 'ALL' },                    // 全部用户
+          ...(req.user.group === 'S' ? [{}] : []) // S组用户可访问所有
         ]
       })
       .toArray()

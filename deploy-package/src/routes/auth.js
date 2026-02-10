@@ -65,6 +65,36 @@ function generateSecurePassword() {
   return password.split('').sort(() => crypto.randomInt(3) - 1).join('')
 }
 
+/**
+ * 验证密码强度
+ * @param {string} password - 待验证的密码
+ * @returns {{valid: boolean, errors: string[]}} - 验证结果和错误信息
+ */
+function validatePasswordStrength(password) {
+  const errors = []
+
+  if (password.length < 8) {
+    errors.push('密码至少需要8位')
+  }
+  if (!/[A-Z]/.test(password)) {
+    errors.push('需包含大写字母')
+  }
+  if (!/[a-z]/.test(password)) {
+    errors.push('需包含小写字母')
+  }
+  if (!/[0-9]/.test(password)) {
+    errors.push('需包含数字')
+  }
+  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    errors.push('需包含特殊字符')
+  }
+
+  return {
+    valid: errors.length === 0,
+    errors
+  }
+}
+
 // 登录
 router.post('/login', async (req, res) => {
   try {
@@ -220,12 +250,14 @@ router.get('/me', authMiddleware, async (req, res) => {
 // 获取当前用户可用的记录类型
 router.get('/me/record-types', authMiddleware, async (req, res) => {
   try {
+    // Group字段可能是字符串或数组，需要两种查询方式
     const recordTypes = await getCollection(Collections.RecordType)
       .find({
         $or: [
-          { Group: req.user.group },
-          { Group: 'ALL' },
-          ...(req.user.group === 'S' ? [{}] : [])
+          { Group: req.user.group },           // 字符串匹配
+          { Group: { $in: [req.user.group] } }, // 数组包含匹配
+          { Group: 'ALL' },                    // 全部用户
+          ...(req.user.group === 'S' ? [{}] : []) // S组用户可访问所有
         ]
       })
       .toArray()
