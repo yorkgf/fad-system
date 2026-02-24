@@ -615,20 +615,33 @@ async function checkAndAccumulate({ recordType, student, semester, studentClass,
   const count = await getCollection(collectionName).countDocuments(filter)
 
   if (count >= rule.count) {
-    // 获取要标记的记录
+    // 获取要标记的记录（按日期升序排序）
     const recordsToMark = await getCollection(collectionName)
       .find(filter)
+      .sort({ 记录日期: 1 })
       .limit(rule.count)
       .toArray()
 
     if (rule.result === 'FAD') {
+      // 构建详细描述，包含每条累计记录的信息
+      const detailLines = recordsToMark.map((r, index) => {
+        const dateStr = r.记录日期
+          ? new Date(r.记录日期).toLocaleDateString('zh-CN')
+          : '未知日期'
+        const teacher = r.记录老师 || '未知'
+        const reason = r.记录事由 ? ` - ${r.记录事由}` : ''
+        return `${index + 1}. ${dateStr} ${teacher}${reason}`
+      }).join('\n')
+
+      const description = `累计${rule.count}次${recordType}:\n${detailLines}`
+
       // 插入FAD
       const fadResult = await insertFAD({
         student,
         studentClass,
         semester,
         teacher: `系统: 累计${recordType}触发`,
-        description: `累计${rule.count}次${recordType}`,
+        description,
         sourceType: rule.sourceType
       })
 
@@ -646,6 +659,15 @@ async function checkAndAccumulate({ recordType, student, semester, studentClass,
 
       return 'FAD' // 返回累积结果类型
     } else if (rule.result === '寝室批评') {
+      // 构建详细描述，包含每条累计记录的信息
+      const detailLines = recordsToMark.map((r, index) => {
+        const dateStr = r.记录日期
+          ? new Date(r.记录日期).toLocaleDateString('zh-CN')
+          : '未知日期'
+        const teacher = r.记录老师 || '未知'
+        return `${index + 1}. ${dateStr} ${teacher}`
+      }).join('\n')
+
       // 插入寝室批评
       const warningResult = await getCollection(Collections.RoomWarningRecords).insertOne({
         记录类型: '寝室批评',
@@ -653,6 +675,7 @@ async function checkAndAccumulate({ recordType, student, semester, studentClass,
         学生: student,
         班级: studentClass,
         记录老师: '系统: 累计垃圾未倒触发',
+        记录事由: `累计${rule.count}次寝室垃圾未倒:\n${detailLines}`,
         学期: semester,
         是否已累计FAD: false,
         '累计FAD ID': null,
