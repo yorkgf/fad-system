@@ -34,3 +34,8 @@ export function deliverFAD(id, deliverTeacher) {
 export function getStudentUnionFAD(params) {
   return request.get('/fad-records/student-union', { params })
 }
+
+// 修改FAD来源类型
+export function updateFADSourceType(id, sourceType) {
+  return request.put(`/fad-records/${id}/source-type`, { sourceType })
+}

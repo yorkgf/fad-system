@@ -426,4 +426,37 @@ router.get('/student-union', authMiddleware, async (req, res) => {
   }
 })
 
+// 修改FAD来源类型 (仅S组用户可用)
+router.put('/:id/source-type', authMiddleware, async (req, res) => {
+  try {
+    // 权限检查: 仅允许 S 组
+    if (req.user.group !== 'S') {
+      return res.status(403).json({ success: false, error: '没有权限修改FAD来源类型' })
+    }
+
+    const { id } = req.params
+    const { sourceType } = req.body
+
+    // 验证 sourceType 值
+    const validSourceTypes = ['dorm', 'teach', 'elec', 'other']
+    if (!validSourceTypes.includes(sourceType)) {
+      return res.status(400).json({ success: false, error: '无效的FAD来源类型' })
+    }
+
+    const result = await getCollection(Collections.FADRecords).updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { FAD来源类型: sourceType } }
+    )
+
+    if (result.matchedCount === 0) {
+      return res.status(404).json({ success: false, error: 'FAD记录不存在' })
+    }
+
+    res.json({ success: true, message: 'FAD来源类型修改成功' })
+  } catch (error) {
+    console.error('Update FAD source type error:', error)
+    res.status(500).json({ success: false, error: 'FAD来源类型修改失败' })
+  }
+})
+
 module.exports = router

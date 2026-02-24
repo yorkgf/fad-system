@@ -152,8 +152,17 @@
             </template>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="{ row }">
+            <el-button
+              v-if="filters.collection === 'FAD_Records' && userStore.userGroup === 'S'"
+              type="primary"
+              size="small"
+              plain
+              @click="handleEditSourceType(row)"
+            >
+              修改来源
+            </el-button>
             <el-tooltip
               v-if="!isWithdrawable(row)"
               :content="getWithdrawDisabledReason(row)"
@@ -255,6 +264,28 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 修改FAD来源类型对话框（仅S组可用） -->
+    <el-dialog v-model="editSourceTypeDialog.visible" title="修改FAD来源类型" width="400px">
+      <el-form label-width="100px">
+        <el-form-item label="学生">{{ editSourceTypeDialog.record?.学生 }}</el-form-item>
+        <el-form-item label="班级">{{ editSourceTypeDialog.record?.班级 }}</el-form-item>
+        <el-form-item label="来源类型">
+          <el-select v-model="editSourceTypeDialog.sourceType" style="width: 100%">
+            <el-option
+              v-for="item in commonStore.fadSourceTypes"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="editSourceTypeDialog.visible = false">取消</el-button>
+        <el-button type="primary" :loading="editSourceTypeDialog.loading" @click="submitEditSourceType">确定</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -265,6 +296,7 @@ import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useCommonStore } from '@/stores/common'
 import { getMyRecords, checkWithdrawable, withdrawRecord } from '@/api/records'
+import { updateFADSourceType } from '@/api/fad'
 import dayjs from 'dayjs'
 
 const userStore = useUserStore()
@@ -418,6 +450,14 @@ const withdrawDialog = reactive({
   reason: ''
 })
 
+// 修改FAD来源类型对话框（仅S组可用）
+const editSourceTypeDialog = reactive({
+  visible: false,
+  record: null,
+  sourceType: '',
+  loading: false
+})
+
 onMounted(async () => {
   commonStore.generateSemesters()
   filters.semester = commonStore.getCurrentSemester()
@@ -525,6 +565,27 @@ async function confirmWithdraw() {
     ElMessage.error('撤回失败')
   } finally {
     withdrawDialog.submitting = false
+  }
+}
+
+// 修改FAD来源类型（仅S组可用）
+function handleEditSourceType(row) {
+  editSourceTypeDialog.record = row
+  editSourceTypeDialog.sourceType = row.FAD来源类型 || 'other'
+  editSourceTypeDialog.visible = true
+}
+
+async function submitEditSourceType() {
+  editSourceTypeDialog.loading = true
+  try {
+    await updateFADSourceType(editSourceTypeDialog.record._id, editSourceTypeDialog.sourceType)
+    ElMessage.success('FAD来源类型修改成功')
+    editSourceTypeDialog.visible = false
+    fetchData()
+  } catch (error) {
+    ElMessage.error('修改失败')
+  } finally {
+    editSourceTypeDialog.loading = false
   }
 }
 
