@@ -8,7 +8,8 @@ FAD (学生纪律与奖励管理系统) - Student discipline and reward manageme
 
 **Integrated Systems:**
 - **FAD Core**: Student discipline/reward management (GHA database)
-- **Meeting Arrangement (日程管理)**: Parent-teacher conference booking system (GHS database) - Teacher portal integrated into FAD; standalone parent portal remains in `meeting arrangement/` folder
+- **Meeting Arrangement (日程管理)**: Parent-teacher conference booking system (GHS database) - Teacher portal integrated into FAD
+- **Parent Portal**: Standalone parent-facing booking interface in `meeting arrangement/` folder (separate Vue app, not part of main FAD build)
 
 ## Development Commands
 
@@ -85,11 +86,13 @@ See `frontend/src/router/index.js` for the complete route permission matrix.
 - **Teacher profile sync**: GHS teacher profiles auto-created from GHA data when accessing schedule features
 
 ### Key Files for Business Logic
-- `backend/src/utils/constants.js` - Accumulation rules, record type→collection mappings, FAD source types, threshold constants
+- `backend/src/utils/constants.js` - Accumulation rules, record type→collection mappings, FAD source types, threshold constants, `DB_FIELDS` for standardized field names
 - `backend/src/utils/userGroups.js` - User group definitions and permission helper functions
-- `backend/src/routes/records.js` - Core record insertion with accumulation, duplicate prevention, reward offset logic (~900 lines, largest route file)
+- `backend/src/routes/records.js` - Core record insertion with accumulation, duplicate prevention, reward offset logic (~1000 lines, largest route file)
 - `frontend/src/stores/common.js` - Record type definitions (must stay in sync with backend), semester utilities
 - `frontend/src/router/index.js` - Route permission matrix by user group
+
+**DB_FIELDS Usage**: Use constants from `DB_FIELDS` (e.g., `DB_FIELDS.STUDENT`, `DB_FIELDS.SEMESTER`, `DB_FIELDS.WITHDRAWN`) instead of hardcoding Chinese field names in queries to ensure consistency.
 
 ## Database
 
