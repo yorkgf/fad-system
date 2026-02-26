@@ -7,6 +7,7 @@
         <span class="app-name">FAD 学生管理系统</span>
       </div>
       <div class="header-right">
+        <LangSwitch class="header-lang-switch" />
         <el-dropdown @command="handleCommand">
           <span class="user-info">
             <el-icon><User /></el-icon>
@@ -81,6 +82,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import LangSwitch from '@/components/LangSwitch.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -319,6 +321,20 @@ const handleCommand = (command) => {
 .header-right {
   display: flex;
   align-items: center;
+  gap: 16px;
+}
+
+.header-lang-switch :deep(.lang-switch) {
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  transition: all 0.25s ease;
+}
+
+.header-lang-switch :deep(.lang-switch:hover) {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
 
 .user-info {
