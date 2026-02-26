@@ -4,7 +4,7 @@
       <div class="logo-wrapper">
         <img src="/logo.png" alt="Logo" class="logo" />
       </div>
-      <h1 class="title">FAD 学生管理系统</h1>
+      <h1 class="title">{{ $t('login.title') }}</h1>
 
       <el-form
         ref="formRef"
@@ -13,20 +13,20 @@
         label-position="top"
         @submit.prevent="handleSubmit"
       >
-        <el-form-item label="邮箱地址" prop="email">
+        <el-form-item :label="$t('login.email')" prop="email">
           <el-input
             v-model="form.email"
-            placeholder="请输入邮箱地址"
+            :placeholder="$t('login.emailPlaceholder')"
             :prefix-icon="Message"
             size="large"
           />
         </el-form-item>
 
-        <el-form-item label="密码" prop="password">
+        <el-form-item :label="$t('login.password')" prop="password">
           <el-input
             v-model="form.password"
             type="password"
-            placeholder="请输入密码"
+            :placeholder="$t('login.passwordPlaceholder')"
             :prefix-icon="Lock"
             size="large"
             show-password
@@ -42,13 +42,13 @@
             class="login-btn"
             @click="handleSubmit"
           >
-            登录
+            {{ $t('login.login') }}
           </el-button>
         </el-form-item>
 
         <div class="forgot-password">
           <el-link type="primary" @click="handleResetPassword">
-            忘记密码？
+            {{ $t('login.forgotPassword') }}
           </el-link>
         </div>
       </el-form>
@@ -57,13 +57,15 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Message, Lock } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { resetPassword } from '@/api/auth'
 
+const { t } = useI18n()
 const router = useRouter()
 const userStore = useUserStore()
 
@@ -75,15 +77,15 @@ const form = reactive({
   password: ''
 })
 
-const rules = {
+const rules = computed(() => ({
   email: [
-    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    { required: true, message: () => t('login.emailRequired'), trigger: 'blur' },
+    { type: 'email', message: () => t('login.emailFormat'), trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' }
+    { required: true, message: () => t('login.passwordRequired'), trigger: 'blur' }
   ]
-}
+}))
 
 async function handleSubmit() {
   const valid = await formRef.value.validate().catch(() => false)
@@ -92,10 +94,10 @@ async function handleSubmit() {
   loading.value = true
   try {
     await userStore.login(form.email, form.password)
-    ElMessage.success('登录成功')
+    ElMessage.success(t('login.loginSuccess'))
     router.push('/')
   } catch (error) {
-    // 错误已在拦截器中处理
+    // Error handled by interceptor
   } finally {
     loading.value = false
   }
@@ -103,27 +105,27 @@ async function handleSubmit() {
 
 async function handleResetPassword() {
   if (!form.email) {
-    ElMessage.warning('请先输入邮箱地址')
+    ElMessage.warning(t('login.enterEmailFirst'))
     return
   }
 
   try {
     await ElMessageBox.confirm(
-      `确定要重置密码吗？新密码将发送到 ${form.email}`,
-      '重置密码',
+      t('login.resetPasswordConfirm', { email: form.email }),
+      t('login.resetPasswordTitle'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning'
       }
     )
 
     loading.value = true
     await resetPassword(form.email)
-    ElMessage.success('新密码已发送至邮箱，请查收')
+    ElMessage.success(t('login.newPasswordSent'))
   } catch (error) {
     if (error !== 'cancel') {
-      // 错误已在拦截器中处理
+      // Error handled by interceptor
     }
   } finally {
     loading.value = false
