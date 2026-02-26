@@ -111,6 +111,10 @@
     "dataQuerySubtitle": "Query all data",
     "schedule": "Schedule Management",
     "scheduleSubtitle": "Book teacher meeting times",
+    "mySchedule": "My Schedule",
+    "myBookings": "My Bookings",
+    "fadStats": "FAD Statistics",
+    "rewardDelivery": "Reward Notice Delivery",
     "teacherInfo": "Teacher Info",
     "changePassword": "Change Password"
   },

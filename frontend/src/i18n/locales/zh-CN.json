@@ -111,6 +111,10 @@
     "dataQuerySubtitle": "查询所有数据",
     "schedule": "日程管理",
     "scheduleSubtitle": "预约教师面谈时间",
+    "mySchedule": "我的日程",
+    "myBookings": "我的预约",
+    "fadStats": "FAD统计",
+    "rewardDelivery": "Reward通知单发放",
     "teacherInfo": "教师信息",
     "changePassword": "修改密码"
   },

@@ -68,7 +68,7 @@
           >
             {{ $t('nav.backToHome') }}
           </el-button>
-          <h2 class="page-title">{{ $route.meta.title }}</h2>
+          <h2 class="page-title">{{ $route.meta.titleKey ? $t($route.meta.titleKey) : $route.meta.title }}</h2>
         </div>
         <div class="page-body">
           <router-view />
