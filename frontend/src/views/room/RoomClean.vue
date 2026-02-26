@@ -3,10 +3,10 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>寝室清扫</span>
+          <span>{{ $t('room.clean.title') }}</span>
           <el-select
             v-model="filters.semester"
-            placeholder="选择学期"
+            :placeholder="$t('room.clean.selectSemester')"
             style="width: 180px"
             @change="fetchData"
           >
@@ -21,28 +21,28 @@
       </template>
 
       <el-alert
-        title="规则说明：至少有3条未清扫的寝室批评记录才能执行清扫"
+        :title="$t('room.clean.ruleInfo')"
         type="info"
         :closable="false"
         style="margin-bottom: 20px"
       />
 
       <el-table v-loading="loading" :data="records" stripe>
-        <el-table-column prop="学生" label="学生" width="120" />
-        <el-table-column prop="班级" label="班级" width="150" />
-        <el-table-column prop="uncleanedCount" label="未清扫次数" width="120">
+        <el-table-column prop="学生" :label="$t('room.clean.student')" width="120" />
+        <el-table-column prop="班级" :label="$t('room.clean.class')" width="150" />
+        <el-table-column prop="uncleanedCount" :label="$t('room.clean.uncleanedCount')" width="120">
           <template #default="{ row }">
             <el-tag :type="row.uncleanedCount >= 3 ? 'danger' : 'warning'">
               {{ row.uncleanedCount }} 次
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="latestDate" label="最近一次" width="120">
+        <el-table-column prop="latestDate" :label="$t('room.clean.latestDate')" width="120">
           <template #default="{ row }">
             {{ formatDate(row.latestDate) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120">
+        <el-table-column :label="$t('room.clean.operation')" width="120">
           <template #default="{ row }">
             <el-button
               type="primary"
@@ -50,7 +50,7 @@
               :disabled="row.uncleanedCount < 3"
               @click="handleClean(row)"
             >
-              确认清扫
+              {{ $t('room.clean.confirmClean') }}
             </el-button>
           </template>
         </el-table-column>
@@ -61,11 +61,13 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCommonStore } from '@/stores/common'
 import { getCleanableWarnings, confirmClean } from '@/api/room'
 import dayjs from 'dayjs'
 
+const { t } = useI18n()
 const commonStore = useCommonStore()
 
 const loading = ref(false)
@@ -96,11 +98,11 @@ async function fetchData() {
 async function handleClean(row) {
   try {
     await ElMessageBox.confirm(
-      `确定 ${row.学生} 已完成清扫吗？\n将标记 ${row.uncleanedCount} 条寝室批评为已清扫`,
-      '确认清扫',
+      t('room.clean.confirmCleanMsg', { student: row.学生, count: row.uncleanedCount }),
+      t('room.clean.confirmCleanTitle'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'info'
       }
     )
@@ -111,11 +113,11 @@ async function handleClean(row) {
       semester: filters.semester
     })
 
-    ElMessage.success(`已确认 ${row.学生} 完成清扫`)
+    ElMessage.success(t('room.clean.cleanSuccess', { student: row.学生 }))
     fetchData()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('操作失败')
+      ElMessage.error(t('room.clean.cleanFailed'))
     }
   } finally {
     loading.value = false

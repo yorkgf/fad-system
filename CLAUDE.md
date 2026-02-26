@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Quick Reference
+
+- **Local dev**: `cd backend && npm run dev` + `cd frontend && npm run dev`
+- **Build for deploy**: `cd frontend && npm run build:prod`
+- **Add record type**: Update both `backend/src/utils/constants.js` AND `frontend/src/stores/common.js`
+- **Deploy backend**: Copy `backend/src/` to `deploy-package/src/`, upload to SCF
+
 ## Project Overview
 
 FAD (学生纪律与奖励管理系统) - Student discipline and reward management system built with Vue 3 + Express + MongoDB, deployed on Tencent Cloud SCF (Serverless) + EdgeOne Pages.
@@ -30,6 +37,15 @@ npm run start      # Production start (no watch)
 npm run deploy     # Deploy to Tencent SCF via serverless framework
 npm run logs       # View SCF logs (tail)
 ```
+
+### Meeting Arrangement (in `meeting arrangement/`)
+Standalone parent-facing Vue app for conference booking (separate from main FAD build):
+```bash
+cd "meeting arrangement"
+npm install
+npm run dev
+```
+This is deployed independently and uses the GHS database.
 
 ### Local Development Setup
 1. Backend: `cd backend && cp .env.example .env` (configure env vars), then `npm install && npm run dev`
@@ -98,6 +114,7 @@ See `frontend/src/router/index.js` for the complete route permission matrix.
 
 - MongoDB native driver (not Mongoose) - queries use MongoDB aggregation syntax directly
 - Main database: `GHA` via `MONGO_URI`; secondary: `GHS` via `GHS_MONGO_URI`
+- `GHS.sessions.csv` - Export of meeting booking data from GHS database (for backup/analysis)
 - Collections follow `{Type}_Records` pattern (e.g., `FAD_Records`, `Late_Records`)
 - System collections: `Teachers`, `Students`, `All_Classes`
 - Special collections without `_Records` suffix: `Teaching_FAD_Ticket`, `Teaching_Reward_Ticket`

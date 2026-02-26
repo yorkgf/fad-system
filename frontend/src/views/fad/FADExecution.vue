@@ -3,11 +3,11 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>FAD执行</span>
+          <span>{{ $t('fad.execution.title') }}</span>
           <div class="filters">
             <el-select
               v-model="filters.semester"
-              placeholder="选择学期"
+              :placeholder="$t('fad.execution.selectSemester')"
               style="width: 180px"
               @change="fetchData"
             >
@@ -20,7 +20,7 @@
             </el-select>
             <el-select
               v-model="filters.sourceType"
-              placeholder="FAD来源类型"
+              :placeholder="$t('fad.execution.fadSourceType')"
               style="width: 120px"
               clearable
               @change="fetchData"
@@ -43,30 +43,30 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="50" />
-        <el-table-column prop="学生" label="学生" width="100" />
-        <el-table-column prop="班级" label="班级" width="120" />
-        <el-table-column prop="记录日期" label="记录日期" width="120">
+        <el-table-column prop="学生" :label="$t('fad.execution.student')" width="100" />
+        <el-table-column prop="班级" :label="$t('fad.execution.class')" width="120" />
+        <el-table-column prop="记录日期" :label="$t('fad.execution.recordDate')" width="120">
           <template #default="{ row }">
             {{ formatDate(row.记录日期) }}
           </template>
         </el-table-column>
-        <el-table-column prop="记录事由" label="记录事由" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="记录老师" label="记录老师" width="120" />
-        <el-table-column prop="FAD来源类型" label="来源类型" width="100">
+        <el-table-column prop="记录事由" :label="$t('fad.execution.recordReason')" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="记录老师" :label="$t('fad.execution.recordTeacher')" width="120" />
+        <el-table-column prop="FAD来源类型" :label="$t('fad.execution.sourceType')" width="100">
           <template #default="{ row }">
             <el-tag :type="getSourceTypeTag(row.FAD来源类型)">
               {{ getSourceTypeLabel(row.FAD来源类型) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column :label="$t('fad.execution.operation')" width="100" fixed="right">
           <template #default="{ row }">
             <el-button
               type="primary"
               size="small"
               @click="handleExecute([row])"
             >
-              执行
+              {{ $t('fad.execution.execute') }}
             </el-button>
           </template>
         </el-table-column>
@@ -79,7 +79,7 @@
             :disabled="selectedRows.length === 0"
             @click="handleExecute(selectedRows)"
           >
-            批量执行 ({{ selectedRows.length }})
+            {{ $t('fad.execution.batchExecute', { count: selectedRows.length }) }}
           </el-button>
         </div>
         <el-pagination
@@ -97,11 +97,13 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCommonStore } from '@/stores/common'
 import { getUnexecutedFAD, executeFAD } from '@/api/fad'
 import dayjs from 'dayjs'
 
+const { t } = useI18n()
 const commonStore = useCommonStore()
 
 const loading = ref(false)
@@ -153,11 +155,11 @@ async function handleExecute(rows) {
 
   try {
     await ElMessageBox.confirm(
-      `确定要执行 ${count} 条FAD记录吗？\n学生：${studentNames}`,
-      '确认执行',
+      t('fad.execution.confirmExecute', { count, students: studentNames }),
+      t('fad.execution.confirmExecuteTitle'),
       {
-        confirmButtonText: '确定执行',
-        cancelButtonText: '取消',
+        confirmButtonText: t('fad.execution.confirmExecuteBtn'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning'
       }
     )
@@ -166,11 +168,11 @@ async function handleExecute(rows) {
     const promises = rows.map(row => executeFAD(row._id))
     await Promise.all(promises)
 
-    ElMessage.success(`成功执行 ${count} 条FAD记录`)
+    ElMessage.success(t('fad.execution.executeSuccess', { count }))
     fetchData()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('执行失败')
+      ElMessage.error(t('fad.execution.executeFailed'))
     }
   } finally {
     loading.value = false
@@ -182,8 +184,13 @@ function formatDate(date) {
 }
 
 function getSourceTypeLabel(type) {
-  const map = { dorm: '寝室类', teach: '教学类', other: '其他' }
-  return map[type] || type || '未分类'
+  const map = {
+    dorm: t('fad.execution.sourceDorm'),
+    teach: t('fad.execution.sourceTeach'),
+    elec: t('fad.execution.sourceElec'),
+    other: t('fad.execution.sourceOther')
+  }
+  return map[type] || type || t('fad.execution.sourceUncategorized')
 }
 
 function getSourceTypeTag(type) {

@@ -3,10 +3,10 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>最佳寝室排名</span>
+          <span>{{ $t('room.bestDorm.title') }}</span>
           <el-select
             v-model="filters.semesters"
-            placeholder="选择学期（可多选）"
+            :placeholder="$t('room.bestDorm.selectSemester')"
             multiple
             style="width: 300px"
             @change="fetchData"
@@ -22,14 +22,14 @@
       </template>
 
       <el-alert
-        title="计算方式：寝室表扬总数 ÷ 寝室人数（按楼层排名，每层Top 3）"
+        :title="$t('room.bestDorm.ruleInfo')"
         type="info"
         :closable="false"
         style="margin-bottom: 20px"
       />
 
       <div v-loading="loading">
-        <el-empty v-if="!loading && bestDorms.length === 0" description="暂无数据" />
+        <el-empty v-if="!loading && bestDorms.length === 0" :description="$t('room.bestDorm.noData')" />
 
         <div v-else>
           <div
@@ -39,28 +39,28 @@
           >
             <div class="floor-title">
               <el-icon><OfficeBuilding /></el-icon>
-              <span>{{ floorData.floor }}楼</span>
+              <span>{{ $t('room.bestDorm.floor', { floor: floorData.floor }) }}</span>
             </div>
 
             <el-card class="floor-card" shadow="hover">
               <el-table :data="floorData.dorms" stripe>
-                <el-table-column label="排名" width="80" align="center">
+                <el-table-column :label="$t('room.bestDorm.rank')" width="80" align="center">
                   <template #default="{ $index }">
                     <span :class="getRankClass($index + 1)">{{ $index + 1 }}</span>
                   </template>
                 </el-table-column>
-                <el-table-column prop="dormNumber" label="寝室号" width="120">
+                <el-table-column prop="dormNumber" :label="$t('room.bestDorm.dormNumber')" width="120">
                   <template #default="{ row }">
                     <el-tag type="primary">{{ row.dormNumber }}</el-tag>
                   </template>
                 </el-table-column>
-                <el-table-column prop="praiseCount" label="表扬总数" width="120">
+                <el-table-column prop="praiseCount" :label="$t('room.bestDorm.praiseCount')" width="120">
                   <template #default="{ row }">
                     <el-tag type="success">{{ row.praiseCount }} 次</el-tag>
                   </template>
                 </el-table-column>
-                <el-table-column prop="studentCount" label="寝室人数" width="100" />
-                <el-table-column prop="avgPraise" label="人均表扬" sortable>
+                <el-table-column prop="studentCount" :label="$t('room.bestDorm.studentCount')" width="100" />
+                <el-table-column prop="avgPraise" :label="$t('room.bestDorm.avgPraise')" sortable>
                   <template #default="{ row }">
                     <el-tag
                       :type="getAvgPraiseTagType(row.avgPraise)"
@@ -81,11 +81,12 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { OfficeBuilding } from '@element-plus/icons-vue'
 import { useCommonStore } from '@/stores/common'
 import { getBestDorm } from '@/api/room'
 
+const { t } = useI18n()
 const commonStore = useCommonStore()
 
 const loading = ref(false)

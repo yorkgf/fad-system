@@ -3,7 +3,7 @@
     <!-- 班级信息提示 -->
     <el-alert
       v-if="myClass"
-      :title="`正在查看：${myClass.Class}班 的FAD统计`"
+      :title="$t('fad.stats.viewingClass', { class: myClass.Class })"
       type="info"
       :closable="false"
       class="class-info-alert"
@@ -16,33 +16,33 @@
           <el-form :inline="false">
             <el-row :gutter="16">
               <el-col :xs="24" :sm="12">
-                <el-form-item label="统计周期">
+                <el-form-item :label="$t('fad.stats.statPeriod')">
                   <el-select
                     v-model="filters.timePeriod"
-                    placeholder="选择统计周期"
+                    :placeholder="$t('fad.stats.selectStatPeriod')"
                     style="width: 100%"
                     @change="fetchStats"
                   >
-                    <el-option label="春季" value="春季(Spring)" />
-                    <el-option label="秋季" value="秋季(Fall)" />
-                    <el-option label="学年" value="学年" />
+                    <el-option :label="$t('fad.stats.spring')" value="春季(Spring)" />
+                    <el-option :label="$t('fad.stats.fall')" value="秋季(Fall)" />
+                    <el-option :label="$t('fad.stats.academicYear')" value="学年" />
                   </el-select>
                 </el-form-item>
               </el-col>
               <el-col :xs="24" :sm="12">
-                <el-form-item label="来源">
+                <el-form-item :label="$t('fad.stats.source')">
                   <el-select
                     v-model="filters.sourceType"
-                    placeholder="全部"
+                    :placeholder="$t('fad.stats.all')"
                     clearable
                     style="width: 100%"
                     @change="fetchStats"
                   >
-                    <el-option label="全部" value="" />
-                    <el-option label="寝室类" value="dorm" />
-                    <el-option label="教学类" value="teach" />
-                    <el-option label="电子产品违规" value="elec" />
-                    <el-option label="其他" value="other" />
+                    <el-option :label="$t('fad.stats.all')" value="" />
+                    <el-option :label="$t('fad.stats.sourceDorm')" value="dorm" />
+                    <el-option :label="$t('fad.stats.sourceTeach')" value="teach" />
+                    <el-option :label="$t('fad.stats.sourceElec')" value="elec" />
+                    <el-option :label="$t('fad.stats.sourceOther')" value="other" />
                   </el-select>
                 </el-form-item>
               </el-col>
@@ -55,25 +55,25 @@
       <el-col :xs="12" :sm="6">
         <el-card class="stat-card">
           <div class="stat-value">{{ stats.total }}</div>
-          <div class="stat-label">本班FAD总数</div>
+          <div class="stat-label">{{ $t('fad.stats.classTotalFad') }}</div>
         </el-card>
       </el-col>
       <el-col :xs="12" :sm="6">
         <el-card class="stat-card">
           <div class="stat-value executed">{{ stats.executed }}</div>
-          <div class="stat-label">已执行</div>
+          <div class="stat-label">{{ $t('fad.stats.executed') }}</div>
         </el-card>
       </el-col>
       <el-col :xs="12" :sm="6">
         <el-card class="stat-card">
           <div class="stat-value warning">{{ stats.unexecuted }}</div>
-          <div class="stat-label">未执行</div>
+          <div class="stat-label">{{ $t('fad.stats.unexecuted') }}</div>
         </el-card>
       </el-col>
       <el-col :xs="12" :sm="6">
         <el-card class="stat-card">
           <div class="stat-value offset">{{ stats.offset }}</div>
-          <div class="stat-label">已冲销</div>
+          <div class="stat-label">{{ $t('fad.stats.offset') }}</div>
         </el-card>
       </el-col>
 
@@ -82,13 +82,13 @@
         <el-card class="warning-card">
           <template #header>
             <div class="card-header-flex">
-              <span>⚠️ 本班有未执行FAD的学生名单</span>
-              <el-tag class="header-tag" type="danger" size="small">共 {{ unexecutedStudents.length }} 人</el-tag>
+              <span>{{ $t('fad.stats.unexecutedWarningList') }}</span>
+              <el-tag class="header-tag" type="danger" size="small">{{ $t('fad.stats.totalCount', { count: unexecutedStudents.length }) }}</el-tag>
             </div>
           </template>
           <el-table :data="unexecutedStudents" stripe size="small" class="responsive-table">
-            <el-table-column prop="student" label="学生" min-width="80" />
-            <el-table-column prop="unexecutedCount" label="未执行数" min-width="100">
+            <el-table-column prop="student" :label="$t('fad.stats.student')" min-width="80" />
+            <el-table-column prop="unexecutedCount" :label="$t('fad.stats.unexecutedCount')" min-width="100">
               <template #default="{ row }">
                 <el-tag type="danger" size="small">{{ row.unexecutedCount }}</el-tag>
               </template>
@@ -101,41 +101,41 @@
       <el-col :span="24" v-if="classStudents.length > 0">
         <el-card>
           <template #header>
-            <span>本班有FAD的学生列表 (Top 20)</span>
+            <span>{{ $t('fad.stats.classStudentList') }}</span>
           </template>
           <el-table :data="classStudents" stripe class="responsive-table" row-key="student">
             <el-table-column type="expand">
               <template #default="{ row }">
                 <el-card class="expanded-card">
                   <template #header>
-                    <span>{{ row.student }} 的FAD详细记录</span>
+                    <span>{{ $t('fad.stats.studentFadDetail', { student: row.student }) }}</span>
                   </template>
                   <el-table :data="row.details" stripe size="small" class="details-table">
-                    <el-table-column prop="记录日期" label="记录日期" min-width="100">
+                    <el-table-column prop="记录日期" :label="$t('fad.stats.recordDate')" min-width="100">
                       <template #default="{ row }">
                         {{ formatDate(row.记录日期) }}
                       </template>
                     </el-table-column>
-                    <el-table-column prop="记录事由" label="记录事由" min-width="150" />
-                    <el-table-column prop="记录老师" label="记录老师" min-width="80" class-name="hide-on-xs" />
-                    <el-table-column prop="FAD来源类型" label="来源类型" min-width="80">
+                    <el-table-column prop="记录事由" :label="$t('fad.stats.recordReason')" min-width="150" />
+                    <el-table-column prop="记录老师" :label="$t('fad.stats.recordTeacher')" min-width="80" class-name="hide-on-xs" />
+                    <el-table-column prop="FAD来源类型" :label="$t('fad.stats.sourceTypeCol')" min-width="80">
                       <template #default="{ row }">
                         <el-tag :type="getSourceTypeTag(row.FAD来源类型)" size="small">
                           {{ getSourceTypeLabel(row.FAD来源类型) }}
                         </el-tag>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="是否已执行或冲抵" label="执行状态" min-width="80">
+                    <el-table-column prop="是否已执行或冲抵" :label="$t('fad.stats.executionStatus')" min-width="80">
                       <template #default="{ row }">
                         <el-tag :type="row.是否已执行或冲抵 ? 'success' : 'danger'" size="small">
-                          {{ row.是否已执行或冲抵 ? '已执行' : '未执行' }}
+                          {{ row.是否已执行或冲抵 ? $t('fad.stats.executedStatus') : $t('fad.stats.notExecutedStatus') }}
                         </el-tag>
                       </template>
                     </el-table-column>
-                    <el-table-column prop="是否已冲销记录" label="冲销状态" min-width="80" class-name="hide-on-xs">
+                    <el-table-column prop="是否已冲销记录" :label="$t('fad.stats.offsetStatus')" min-width="80" class-name="hide-on-xs">
                       <template #default="{ row }">
                         <el-tag :type="row.是否已冲销记录 ? 'info' : 'warning'" size="small">
-                          {{ row.是否已冲销记录 ? '已冲销' : '未冲销' }}
+                          {{ row.是否已冲销记录 ? $t('fad.stats.offsetDone') : $t('fad.stats.notOffset') }}
                         </el-tag>
                       </template>
                     </el-table-column>
@@ -143,15 +143,15 @@
                 </el-card>
               </template>
             </el-table-column>
-            <el-table-column prop="student" label="学生" min-width="80" />
-            <el-table-column prop="class" label="班级" min-width="80" class-name="hide-on-xs" />
-            <el-table-column prop="count" label="FAD总数" min-width="80" sortable>
+            <el-table-column prop="student" :label="$t('fad.stats.student')" min-width="80" />
+            <el-table-column prop="class" :label="$t('fad.stats.classCol')" min-width="80" class-name="hide-on-xs" />
+            <el-table-column prop="count" :label="$t('fad.stats.fadTotal')" min-width="80" sortable>
               <template #default="{ row }">
                 <el-tag type="danger" size="small">{{ row.count }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="executed" label="已执行" min-width="80" />
-            <el-table-column prop="unexecuted" label="未执行" min-width="80">
+            <el-table-column prop="executed" :label="$t('fad.stats.executed')" min-width="80" />
+            <el-table-column prop="unexecuted" :label="$t('fad.stats.unexecuted')" min-width="80">
               <template #default="{ row }">
                 <el-tag v-if="row.unexecuted > 0" type="danger" size="small">
                   {{ row.unexecuted }}
@@ -159,7 +159,7 @@
                 <span v-else>0</span>
               </template>
             </el-table-column>
-            <el-table-column prop="offset" label="已冲销" min-width="80" />
+            <el-table-column prop="offset" :label="$t('fad.stats.offset')" min-width="80" />
           </el-table>
         </el-card>
       </el-col>
@@ -169,11 +169,13 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useCommonStore } from '@/stores/common'
 import { useUserStore } from '@/stores/user'
 import { getFADStats } from '@/api/fad'
 import { getMyClassAsHomeTeacher } from '@/api/students'
 
+const { t } = useI18n()
 const commonStore = useCommonStore()
 const userStore = useUserStore()
 
@@ -285,8 +287,13 @@ function formatDate(dateString) {
 }
 
 function getSourceTypeLabel(type) {
-  const map = { dorm: '寝室类', teach: '教学类', elec: '电子产品违规', other: '其他' }
-  return map[type] || type || '未分类'
+  const map = {
+    dorm: t('fad.stats.sourceDorm'),
+    teach: t('fad.stats.sourceTeach'),
+    elec: t('fad.stats.sourceElec'),
+    other: t('fad.stats.sourceOther')
+  }
+  return map[type] || type || t('fad.stats.sourceUncategorized')
 }
 
 function getSourceTypeTag(type) {
@@ -334,6 +341,17 @@ function getSourceTypeTag(type) {
   font-size: 14px;
   color: #909399;
   margin-top: 8px;
+}
+
+.card-header-flex {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.header-tag {
+  flex-shrink: 0;
 }
 
 .responsive-table {

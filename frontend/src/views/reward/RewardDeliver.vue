@@ -3,10 +3,10 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>Reward通知单发放</span>
+          <span>{{ $t('reward.deliver.title') }}</span>
           <el-select
             v-model="filters.semester"
-            placeholder="选择学期"
+            :placeholder="$t('reward.deliver.selectSemester')"
             style="width: 180px"
             @change="fetchData"
           >
@@ -27,29 +27,29 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="50" />
-        <el-table-column prop="学生" label="学生" width="100" />
-        <el-table-column prop="班级" label="班级" width="120" />
-        <el-table-column prop="记录日期" label="记录日期" width="120">
+        <el-table-column prop="学生" :label="$t('reward.deliver.student')" width="100" />
+        <el-table-column prop="班级" :label="$t('reward.deliver.class')" width="120" />
+        <el-table-column prop="记录日期" :label="$t('reward.deliver.recordDate')" width="120">
           <template #default="{ row }">
             {{ formatDate(row.记录日期) }}
           </template>
         </el-table-column>
-        <el-table-column prop="记录事由" label="记录事由" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="记录老师" label="记录老师" width="120" />
-        <el-table-column label="冲销状态" width="100">
+        <el-table-column prop="记录事由" :label="$t('reward.deliver.recordReason')" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="记录老师" :label="$t('reward.deliver.recordTeacher')" width="120" />
+        <el-table-column :label="$t('reward.deliver.offsetStatus')" width="100">
           <template #default="{ row }">
-            <el-tag v-if="row.是否已冲销记录" type="success">已冲销FAD</el-tag>
-            <el-tag v-else type="info">未冲销</el-tag>
+            <el-tag v-if="row.是否已冲销记录" type="success">{{ $t('reward.deliver.offsetFad') }}</el-tag>
+            <el-tag v-else type="info">{{ $t('reward.deliver.notOffset') }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column :label="$t('reward.deliver.operation')" width="120" fixed="right">
           <template #default="{ row }">
             <el-button
               type="primary"
               size="small"
               @click="handleDeliver([row])"
             >
-              确认发放
+              {{ $t('reward.deliver.confirmDeliver') }}
             </el-button>
           </template>
         </el-table-column>
@@ -62,7 +62,7 @@
             :disabled="selectedRows.length === 0"
             @click="handleDeliver(selectedRows)"
           >
-            批量确认发放 ({{ selectedRows.length }})
+            {{ $t('reward.deliver.batchConfirmDeliver', { count: selectedRows.length }) }}
           </el-button>
         </div>
         <el-pagination
@@ -80,12 +80,14 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useCommonStore } from '@/stores/common'
 import { getUndeliveredReward, deliverReward } from '@/api/reward'
 import dayjs from 'dayjs'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const commonStore = useCommonStore()
 
@@ -135,11 +137,11 @@ async function handleDeliver(rows) {
 
   try {
     await ElMessageBox.confirm(
-      `确定要确认发放 ${count} 条Reward通知单吗？`,
-      '确认发放',
+      t('reward.deliver.confirmDeliverMsg', { count }),
+      t('reward.deliver.confirmDeliverTitle'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'info'
       }
     )
@@ -148,11 +150,11 @@ async function handleDeliver(rows) {
     const promises = rows.map(row => deliverReward(row._id, userStore.username))
     await Promise.all(promises)
 
-    ElMessage.success(`成功确认发放 ${count} 条Reward通知单`)
+    ElMessage.success(t('reward.deliver.deliverSuccess', { count }))
     fetchData()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('发放确认失败')
+      ElMessage.error(t('reward.deliver.deliverFailed'))
     }
   } finally {
     loading.value = false

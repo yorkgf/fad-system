@@ -3,11 +3,11 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>FAD通知单发放</span>
+          <span>{{ $t('fad.deliver.title') }}</span>
           <div class="filters">
             <el-select
               v-model="filters.semester"
-              placeholder="选择学期"
+              :placeholder="$t('fad.deliver.selectSemester')"
               style="width: 180px"
               @change="fetchData"
             >
@@ -20,7 +20,7 @@
             </el-select>
             <el-select
               v-model="filters.sourceType"
-              placeholder="FAD来源类型"
+              :placeholder="$t('fad.deliver.fadSourceType')"
               style="width: 120px"
               clearable
               @change="fetchData"
@@ -43,40 +43,40 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="50" />
-        <el-table-column prop="学生" label="学生" width="100" />
-        <el-table-column prop="班级" label="班级" width="120" />
-        <el-table-column prop="记录日期" label="记录日期" width="120">
+        <el-table-column prop="学生" :label="$t('fad.deliver.student')" width="100" />
+        <el-table-column prop="班级" :label="$t('fad.deliver.class')" width="120" />
+        <el-table-column prop="记录日期" :label="$t('fad.deliver.recordDate')" width="120">
           <template #default="{ row }">
             {{ formatDate(row.记录日期) }}
           </template>
         </el-table-column>
-        <el-table-column prop="记录事由" label="记录事由" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="记录老师" label="记录老师" width="120" />
-        <el-table-column prop="FAD来源类型" label="来源类型" width="100">
+        <el-table-column prop="记录事由" :label="$t('fad.deliver.recordReason')" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="记录老师" :label="$t('fad.deliver.recordTeacher')" width="120" />
+        <el-table-column prop="FAD来源类型" :label="$t('fad.deliver.sourceType')" width="100">
           <template #default="{ row }">
             <el-tag :type="getSourceTypeTag(row.FAD来源类型)">
               {{ getSourceTypeLabel(row.FAD来源类型) }}
             </el-tag>
           </template>
         </el-table-column>
-         <el-table-column label="状态" width="120">
+         <el-table-column :label="$t('fad.deliver.fadStatus')" width="120">
            <template #default="{ row }">
-             <el-tag v-if="row.是否已冲销记录" type="success" size="small">已冲销</el-tag>
-             <el-tag v-else-if="row.是否已执行或冲抵" type="warning" size="small">已执行未冲销</el-tag>
-             <el-tag v-else type="danger" size="small">未执行</el-tag>
+             <el-tag v-if="row.是否已冲销记录" type="success" size="small">{{ $t('fad.deliver.offsetDone') }}</el-tag>
+             <el-tag v-else-if="row.是否已执行或冲抵" type="warning" size="small">{{ $t('fad.deliver.executedNotOffset') }}</el-tag>
+             <el-tag v-else type="danger" size="small">{{ $t('fad.deliver.notExecuted') }}</el-tag>
            </template>
          </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column :label="$t('fad.deliver.operation')" width="180" fixed="right">
           <template #default="{ row }">
             <el-button size="small" @click="handleDownload(row)">
-              下载通知单
+              {{ $t('fad.deliver.downloadNotice') }}
             </el-button>
             <el-button
               type="primary"
               size="small"
               @click="handleDeliver([row])"
             >
-              确认发放
+              {{ $t('fad.deliver.confirmDeliver') }}
             </el-button>
           </template>
         </el-table-column>
@@ -89,7 +89,7 @@
             :disabled="selectedRows.length === 0"
             @click="handleDeliver(selectedRows)"
           >
-            批量确认发放 ({{ selectedRows.length }})
+            {{ $t('fad.deliver.batchConfirmDeliver', { count: selectedRows.length }) }}
           </el-button>
         </div>
         <el-pagination
@@ -107,6 +107,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useCommonStore } from '@/stores/common'
@@ -115,6 +116,7 @@ import dayjs from 'dayjs'
 import { PDFDocument, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const commonStore = useCommonStore()
 
@@ -266,7 +268,7 @@ async function handleDownload(row) {
     URL.revokeObjectURL(url)
   } catch (error) {
     console.error('生成PDF失败:', error)
-    ElMessage.error('生成PDF失败: ' + error.message)
+    ElMessage.error(t('fad.deliver.generatePdfFailed', { msg: error.message }))
   }
 }
 
@@ -275,11 +277,11 @@ async function handleDeliver(rows) {
 
   try {
     await ElMessageBox.confirm(
-      `确定要确认发放 ${count} 条FAD通知单吗？`,
-      '确认发放',
+      t('fad.deliver.confirmDeliverMsg', { count }),
+      t('fad.deliver.confirmDeliverTitle'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'info'
       }
     )
@@ -288,11 +290,11 @@ async function handleDeliver(rows) {
     const promises = rows.map(row => deliverFAD(row._id, userStore.username))
     await Promise.all(promises)
 
-    ElMessage.success(`成功确认发放 ${count} 条FAD通知单`)
+    ElMessage.success(t('fad.deliver.deliverSuccess', { count }))
     fetchData()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('发放确认失败')
+      ElMessage.error(t('fad.deliver.deliverFailed'))
     }
   } finally {
     loading.value = false
@@ -304,8 +306,13 @@ function formatDate(date) {
 }
 
 function getSourceTypeLabel(type) {
-  const map = { dorm: '寝室类', teach: '教学类', other: '其他' }
-  return map[type] || type || '未分类'
+  const map = {
+    dorm: t('fad.deliver.sourceDorm'),
+    teach: t('fad.deliver.sourceTeach'),
+    elec: t('fad.deliver.sourceElec'),
+    other: t('fad.deliver.sourceOther')
+  }
+  return map[type] || type || t('fad.deliver.sourceUncategorized')
 }
 
 function getSourceTypeTag(type) {

@@ -3,10 +3,10 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>寝室表扬兑奖</span>
+          <span>{{ $t('room.praiseReward.title') }}</span>
           <el-select
             v-model="filters.semester"
-            placeholder="选择学期"
+            :placeholder="$t('room.praiseReward.selectSemester')"
             style="width: 180px"
             @change="fetchData"
           >
@@ -21,28 +21,28 @@
       </template>
 
       <el-alert
-        title="规则说明：累计10次寝室表扬可兑换1个Reward"
+        :title="$t('room.praiseReward.ruleInfo')"
         type="info"
         :closable="false"
         style="margin-bottom: 20px"
       />
 
       <el-table v-loading="loading" :data="records" stripe>
-        <el-table-column prop="学生" label="学生" width="120" />
-        <el-table-column prop="班级" label="班级" width="150" />
-        <el-table-column prop="count" label="表扬次数" width="100">
+        <el-table-column prop="学生" :label="$t('room.praiseReward.student')" width="120" />
+        <el-table-column prop="班级" :label="$t('room.praiseReward.class')" width="150" />
+        <el-table-column prop="count" :label="$t('room.praiseReward.praiseCount')" width="100">
           <template #default="{ row }">
             <el-tag :type="row.count >= 10 ? 'success' : 'info'">
               {{ row.count }} 次
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="rewardable" label="可兑换" width="100">
+        <el-table-column prop="rewardable" :label="$t('room.praiseReward.rewardable')" width="100">
           <template #default="{ row }">
-            {{ Math.floor(row.count / 10) }} 个Reward
+            {{ $t('room.praiseReward.rewardableCount', { count: Math.floor(row.count / 10) }) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220">
+        <el-table-column :label="$t('room.praiseReward.operation')" width="220">
           <template #default="{ row }">
             <el-button
               type="primary"
@@ -50,7 +50,7 @@
               :disabled="row.count < 10"
               @click="handlePrintReward(row)"
             >
-              打印Reward
+              {{ $t('room.praiseReward.printReward') }}
             </el-button>
             <el-button
               type="success"
@@ -58,7 +58,7 @@
               :disabled="row.count < 10"
               @click="handleMarkExchanged(row)"
             >
-              已兑换
+              {{ $t('room.praiseReward.markExchanged') }}
             </el-button>
           </template>
         </el-table-column>
@@ -69,6 +69,7 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCommonStore } from '@/stores/common'
 import { getRewardablePraise, praiseToReward } from '@/api/room'
@@ -76,6 +77,7 @@ import { PDFDocument, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import dayjs from 'dayjs'
 
+const { t } = useI18n()
 const commonStore = useCommonStore()
 
 const loading = ref(false)
@@ -177,7 +179,7 @@ async function generateRewardPDF(rewardData) {
     })
 
     // 奖励原因 - Reason
-    const reasonText = '累计10次寝室表扬兑换'
+    const reasonText = t('room.praiseReward.praiseRewardReason')
     firstPage.drawText(reasonText, {
       x: 180,
       y: 530,
@@ -216,7 +218,7 @@ async function generateRewardPDF(rewardData) {
     return true
   } catch (error) {
     console.error('生成PDF失败:', error)
-    ElMessage.error('生成PDF失败: ' + error.message)
+    ElMessage.error(t('room.praiseReward.generatePdfFailed', { msg: error.message }))
     return false
   }
 }
@@ -226,11 +228,11 @@ async function handlePrintReward(row) {
 
   try {
     await ElMessageBox.confirm(
-      `确定为 ${row.学生} 打印 ${rewardCount} 个Reward吗？`,
-      '确认打印',
+      t('room.praiseReward.confirmPrint', { student: row.学生, count: rewardCount }),
+      t('room.praiseReward.confirmPrintTitle'),
       {
-        confirmButtonText: '确定打印',
-        cancelButtonText: '取消',
+        confirmButtonText: t('room.praiseReward.confirmPrintBtn'),
+        cancelButtonText: t('common.cancel'),
         type: 'info'
       }
     )
@@ -243,10 +245,10 @@ async function handlePrintReward(row) {
     }
 
     await generateRewardPDF(rewardData)
-    ElMessage.success(`已为 ${row.学生} 生成 ${rewardCount} 个Reward PDF`)
+    ElMessage.success(t('room.praiseReward.printSuccess', { student: row.学生, count: rewardCount }))
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('打印失败: ' + (error.message || '未知错误'))
+      ElMessage.error(t('room.praiseReward.printFailed', { msg: error.message || '' }))
     }
   }
 }
@@ -256,11 +258,11 @@ async function handleMarkExchanged(row) {
 
   try {
     await ElMessageBox.confirm(
-      `确定为 ${row.学生} 标记兑换 ${rewardCount} 个Reward吗？\n将消耗 ${rewardCount * 10} 次寝室表扬`,
-      '确认兑换',
+      t('room.praiseReward.confirmExchange', { student: row.学生, count: rewardCount, praiseCount: rewardCount * 10 }),
+      t('room.praiseReward.confirmExchangeTitle'),
       {
-        confirmButtonText: '确定兑换',
-        cancelButtonText: '取消',
+        confirmButtonText: t('room.praiseReward.confirmExchangeBtn'),
+        cancelButtonText: t('common.cancel'),
         type: 'info'
       }
     )
@@ -273,11 +275,11 @@ async function handleMarkExchanged(row) {
       count: rewardCount
     })
 
-    ElMessage.success(`成功为 ${row.学生} 兑换 ${rewardCount} 个Reward`)
+    ElMessage.success(t('room.praiseReward.exchangeSuccess', { student: row.学生, count: rewardCount }))
     fetchData()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('兑换失败')
+      ElMessage.error(t('room.praiseReward.exchangeFailed'))
     }
   } finally {
     loading.value = false
