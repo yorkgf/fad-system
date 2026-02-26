@@ -3,13 +3,13 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>我的预约</span>
-          <el-button @click="goBack">返回</el-button>
+          <span>{{ $t('schedule.myBookings.title') }}</span>
+          <el-button @click="goBack">{{ $t('schedule.myBookings.back') }}</el-button>
         </div>
       </template>
 
       <el-alert
-        title="以下是您为学生创建的所有预约记录"
+        :title="$t('schedule.myBookings.description')"
         type="info"
         show-icon
         :closable="false"
@@ -18,64 +18,64 @@
 
       <!-- 筛选 -->
       <el-form :inline="true" class="filter-form">
-        <el-form-item label="状态">
-          <el-select v-model="filter.status" placeholder="全部状态" clearable @change="loadBookings">
-            <el-option label="已确认" value="confirmed" />
-            <el-option label="待确认" value="pending" />
-            <el-option label="已完成" value="completed" />
-            <el-option label="已取消" value="cancelled" />
+        <el-form-item :label="$t('schedule.myBookings.filterStatus')">
+          <el-select v-model="filter.status" :placeholder="$t('schedule.myBookings.filterStatusAll')" clearable @change="loadBookings">
+            <el-option :label="$t('schedule.myBookings.statusConfirmed')" value="confirmed" />
+            <el-option :label="$t('schedule.myBookings.statusPending')" value="pending" />
+            <el-option :label="$t('schedule.myBookings.statusCompleted')" value="completed" />
+            <el-option :label="$t('schedule.myBookings.statusCancelled')" value="cancelled" />
           </el-select>
         </el-form-item>
-        <el-form-item label="日期范围">
+        <el-form-item :label="$t('schedule.myBookings.filterDateRange')">
           <el-date-picker
             v-model="filter.dateRange"
             type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
+            :range-separator="$t('schedule.myBookings.filterDateSeparator')"
+            :start-placeholder="$t('schedule.myBookings.filterStartDate')"
+            :end-placeholder="$t('schedule.myBookings.filterEndDate')"
             value-format="YYYY-MM-DD"
             @change="loadBookings"
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="loadBookings">刷新</el-button>
+          <el-button type="primary" @click="loadBookings">{{ $t('schedule.myBookings.refresh') }}</el-button>
         </el-form-item>
       </el-form>
 
       <!-- 预约列表 -->
       <el-table v-loading="loading" :data="bookings" stripe border>
-        <el-table-column label="预约时间" width="180">
+        <el-table-column :label="$t('schedule.myBookings.colBookingTime')" width="180">
           <template #default="{ row }">
             <div>{{ formatDate(row.bookingDate) }}</div>
             <div class="time-range">{{ row.startTime }} - {{ row.endTime }}</div>
           </template>
         </el-table-column>
 
-        <el-table-column label="被预约教师" width="120">
+        <el-table-column :label="$t('schedule.myBookings.colTeacher')" width="120">
           <template #default="{ row }">
             <div>{{ row.teacherName }}</div>
           </template>
         </el-table-column>
 
-        <el-table-column label="学生信息" min-width="200">
+        <el-table-column :label="$t('schedule.myBookings.colStudent')" min-width="200">
           <template #default="{ row }">
             <div><strong>{{ row.studentName }}</strong></div>
             <div v-if="row.studentClass" class="text-secondary">{{ row.studentClass }}</div>
           </template>
         </el-table-column>
 
-        <el-table-column label="家长信息" width="180">
+        <el-table-column :label="$t('schedule.myBookings.colParent')" width="180">
           <template #default="{ row }">
             <div v-if="row.parentName">{{ row.parentName }}</div>
             <div v-if="row.parentPhone" class="text-secondary">{{ row.parentPhone }}</div>
           </template>
         </el-table-column>
 
-        <el-table-column prop="purpose" label="预约目的" width="120" />
+        <el-table-column prop="purpose" :label="$t('schedule.myBookings.colPurpose')" width="120" />
 
-        <el-table-column prop="note" label="备注" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="note" :label="$t('schedule.myBookings.colNote')" min-width="150" show-overflow-tooltip />
 
-        <el-table-column label="状态" width="100" fixed="right">
+        <el-table-column :label="$t('schedule.myBookings.colStatus')" width="100" fixed="right">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">
               {{ getStatusLabel(row.status) }}
@@ -83,7 +83,7 @@
           </template>
         </el-table-column>
 
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column :label="$t('schedule.myBookings.colOperation')" width="120" fixed="right">
           <template #default="{ row }">
             <el-button
               v-if="row.status !== 'cancelled' && row.status !== 'completed'"
@@ -91,7 +91,7 @@
               size="small"
               @click="cancelBooking(row)"
             >
-              取消
+              {{ $t('schedule.myBookings.cancel') }}
             </el-button>
             <span v-else>-</span>
           </template>
@@ -101,7 +101,7 @@
       <!-- 会议信息提示 -->
       <el-alert
         v-if="hasUpcomingMeetings"
-        title="即将到来的会议"
+        :title="$t('schedule.myBookings.upcomingTitle')"
         type="success"
         :closable="false"
         class="mt-4"
@@ -110,16 +110,16 @@
           <strong>{{ formatDate(booking.bookingDate) }} {{ booking.startTime }}</strong>
           - {{ booking.teacherName }} ({{ booking.studentName }})
           <span v-if="booking.meetingId">
-            | 会议号: {{ booking.meetingId }}
-            <span v-if="booking.meetingPassword">(密码: {{ booking.meetingPassword }})</span>
+            | {{ $t('schedule.myBookings.meetingId', { id: booking.meetingId }) }}
+            <span v-if="booking.meetingPassword">{{ $t('schedule.myBookings.meetingPassword', { pwd: booking.meetingPassword }) }}</span>
           </span>
         </div>
       </el-alert>
 
       <div v-if="!bookings.length && !loading" class="empty-bookings">
-        <el-empty description="暂无预约记录" />
+        <el-empty :description="$t('schedule.myBookings.noBookings')" />
         <el-button type="primary" @click="goToScheduleManage">
-          去创建预约
+          {{ $t('schedule.myBookings.goCreate') }}
         </el-button>
       </div>
     </el-card>
@@ -128,11 +128,13 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyBookings, updateBooking } from '@/api/schedule'
 import dayjs from 'dayjs'
 
+const { t } = useI18n()
 const router = useRouter()
 
 const loading = ref(false)
@@ -167,7 +169,7 @@ async function loadBookings() {
     const res = await getMyBookings(params)
     bookings.value = res.data || []
   } catch (error) {
-    ElMessage.error('获取预约列表失败')
+    ElMessage.error(t('schedule.myBookings.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -176,20 +178,20 @@ async function loadBookings() {
 async function cancelBooking(booking) {
   try {
     await ElMessageBox.confirm(
-      `确定要取消 ${booking.studentName} 的预约吗？`,
-      '确认取消',
+      t('schedule.myBookings.confirmCancel', { student: booking.studentName }),
+      t('schedule.myBookings.confirmCancelTitle'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning'
       }
     )
     await updateBooking(booking._id, { status: 'cancelled' })
-    ElMessage.success('预约已取消')
+    ElMessage.success(t('schedule.myBookings.cancelSuccess'))
     loadBookings()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('取消失败')
+      ElMessage.error(t('schedule.myBookings.cancelFailed'))
     }
   }
 }
@@ -219,10 +221,10 @@ function getStatusType(status) {
 
 function getStatusLabel(status) {
   const labels = {
-    'confirmed': '已确认',
-    'pending': '待确认',
-    'cancelled': '已取消',
-    'completed': '已完成'
+    'confirmed': t('schedule.myBookings.statusConfirmed'),
+    'pending': t('schedule.myBookings.statusPending'),
+    'cancelled': t('schedule.myBookings.statusCancelled'),
+    'completed': t('schedule.myBookings.statusCompleted')
   }
   return labels[status] || status
 }

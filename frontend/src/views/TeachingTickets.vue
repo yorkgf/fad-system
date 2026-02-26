@@ -3,10 +3,10 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>教学票兑奖</span>
+          <span>{{ $t('teachingTickets.title') }}</span>
           <el-select
             v-model="filters.semester"
-            placeholder="选择学期"
+            :placeholder="$t('teachingTickets.selectSemester')"
             style="width: 180px"
             @change="fetchData"
           >
@@ -21,28 +21,28 @@
       </template>
 
       <el-alert
-        title="规则说明：累计6张Teaching Reward Ticket可兑换1个Reward"
+        :title="$t('teachingTickets.ruleInfo')"
         type="info"
         :closable="false"
         style="margin-bottom: 20px"
       />
 
       <el-table v-loading="loading" :data="records" stripe>
-        <el-table-column prop="学生" label="学生" width="120" />
-        <el-table-column prop="班级" label="班级" width="150" />
-        <el-table-column prop="count" label="Reward票数量" width="130">
+        <el-table-column prop="学生" :label="$t('teachingTickets.student')" width="120" />
+        <el-table-column prop="班级" :label="$t('teachingTickets.class')" width="150" />
+        <el-table-column prop="count" :label="$t('teachingTickets.ticketCount')" width="130">
           <template #default="{ row }">
             <el-tag :type="row.count >= 6 ? 'success' : 'info'">
-              {{ row.count }} 张
+              {{ $t('teachingTickets.ticketCountUnit', { count: row.count }) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="rewardable" label="可兑换" width="120">
+        <el-table-column prop="rewardable" :label="$t('teachingTickets.redeemable')" width="120">
           <template #default="{ row }">
-            {{ Math.floor(row.count / 6) }} 个Reward
+            {{ $t('teachingTickets.redeemableCount', { count: Math.floor(row.count / 6) }) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="220">
+        <el-table-column :label="$t('teachingTickets.operation')" width="220">
           <template #default="{ row }">
             <el-button
               type="primary"
@@ -50,7 +50,7 @@
               :disabled="row.count < 6"
               @click="handlePrintReward(row)"
             >
-              打印Reward
+              {{ $t('teachingTickets.printReward') }}
             </el-button>
             <el-button
               type="success"
@@ -58,19 +58,20 @@
               :disabled="row.count < 6"
               @click="handleMarkExchanged(row)"
             >
-              已兑换
+              {{ $t('teachingTickets.markExchanged') }}
             </el-button>
           </template>
         </el-table-column>
       </el-table>
 
-      <el-empty v-if="records.length === 0 && !loading" description="暂无可兑换的教学票" />
+      <el-empty v-if="records.length === 0 && !loading" :description="$t('teachingTickets.noRecords')" />
     </el-card>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCommonStore } from '@/stores/common'
 import { getTeachingRewardTickets, teachingTicketToReward } from '@/api/other'
@@ -78,6 +79,7 @@ import { PDFDocument, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import dayjs from 'dayjs'
 
+const { t } = useI18n()
 const commonStore = useCommonStore()
 
 const loading = ref(false)
@@ -216,7 +218,7 @@ async function generateRewardPDF(rewardData) {
     return true
   } catch (error) {
     console.error('生成PDF失败:', error)
-    ElMessage.error('生成PDF失败: ' + error.message)
+    ElMessage.error(t('teachingTickets.generatePdfFailed', { msg: error.message }))
     return false
   }
 }
@@ -226,11 +228,11 @@ async function handlePrintReward(row) {
 
   try {
     await ElMessageBox.confirm(
-      `确定为 ${row.学生} 打印 ${rewardCount} 个Reward吗？`,
-      '确认打印',
+      t('teachingTickets.confirmPrint', { student: row.学生, count: rewardCount }),
+      t('teachingTickets.confirmPrintTitle'),
       {
-        confirmButtonText: '确定打印',
-        cancelButtonText: '取消',
+        confirmButtonText: t('teachingTickets.confirmPrintBtn'),
+        cancelButtonText: t('common.cancel'),
         type: 'info'
       }
     )
@@ -243,10 +245,10 @@ async function handlePrintReward(row) {
     }
 
     await generateRewardPDF(rewardData)
-    ElMessage.success(`已为 ${row.学生} 生成 ${rewardCount} 个Reward PDF`)
+    ElMessage.success(t('teachingTickets.printSuccess', { student: row.学生, count: rewardCount }))
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('打印失败: ' + (error.message || '未知错误'))
+      ElMessage.error(t('teachingTickets.printFailed', { msg: error.message || '' }))
     }
   }
 }
@@ -256,11 +258,11 @@ async function handleMarkExchanged(row) {
 
   try {
     await ElMessageBox.confirm(
-      `确定为 ${row.学生} 标记兑换 ${rewardCount} 个Reward吗？\n将消耗 ${rewardCount * 6} 张Teaching Reward Ticket`,
-      '确认兑换',
+      t('teachingTickets.confirmExchange', { student: row.学生, count: rewardCount, ticketCount: rewardCount * 6 }),
+      t('teachingTickets.confirmExchangeTitle'),
       {
-        confirmButtonText: '确定兑换',
-        cancelButtonText: '取消',
+        confirmButtonText: t('teachingTickets.confirmExchangeBtn'),
+        cancelButtonText: t('common.cancel'),
         type: 'info'
       }
     )
@@ -273,11 +275,11 @@ async function handleMarkExchanged(row) {
       count: rewardCount
     })
 
-    ElMessage.success(`成功为 ${row.学生} 兑换 ${rewardCount} 个Reward`)
+    ElMessage.success(t('teachingTickets.exchangeSuccess', { student: row.学生, count: rewardCount }))
     fetchData()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('兑换失败')
+      ElMessage.error(t('teachingTickets.exchangeFailed'))
     }
   } finally {
     loading.value = false

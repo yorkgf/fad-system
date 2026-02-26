@@ -5,7 +5,7 @@
       <el-button circle @click="goBack">
         <el-icon><ArrowLeft /></el-icon>
       </el-button>
-      <h1 class="page-title">我的日程</h1>
+      <h1 class="page-title">{{ $t('schedule.mySchedule.title') }}</h1>
       <el-button type="primary" circle @click="goToScheduleManage">
         <el-icon><Plus /></el-icon>
       </el-button>
@@ -16,24 +16,24 @@
       <div class="header-left">
         <el-button class="back-btn" @click="goBack">
           <el-icon><ArrowLeft /></el-icon>
-          返回
+          {{ $t('schedule.mySchedule.back') }}
         </el-button>
-        <h1 class="page-title">我的日程</h1>
+        <h1 class="page-title">{{ $t('schedule.mySchedule.title') }}</h1>
       </div>
       <div class="header-stats">
         <div class="stat-item">
           <span class="stat-dot active"></span>
-          <span class="stat-label">开放时段</span>
+          <span class="stat-label">{{ $t('schedule.mySchedule.open') }}</span>
           <span class="stat-value">{{ activeSessionsCount }}</span>
         </div>
         <div class="stat-item">
           <span class="stat-dot closed"></span>
-          <span class="stat-label">已关闭</span>
+          <span class="stat-label">{{ $t('schedule.mySchedule.closed') }}</span>
           <span class="stat-value">{{ closedSessionsCount }}</span>
         </div>
         <div class="stat-item">
           <span class="stat-dot booked"></span>
-          <span class="stat-label">有预约</span>
+          <span class="stat-label">{{ $t('schedule.mySchedule.booked') }}</span>
           <span class="stat-value">{{ bookedSessionsCount }}</span>
         </div>
       </div>
@@ -43,15 +43,15 @@
     <div class="mobile-stats">
       <div class="stat-card">
         <span class="stat-value">{{ activeSessionsCount }}</span>
-        <span class="stat-label">开放</span>
+        <span class="stat-label">{{ $t('schedule.mySchedule.open') }}</span>
       </div>
       <div class="stat-card">
         <span class="stat-value">{{ closedSessionsCount }}</span>
-        <span class="stat-label">已关闭</span>
+        <span class="stat-label">{{ $t('schedule.mySchedule.closed') }}</span>
       </div>
       <div class="stat-card">
         <span class="stat-value">{{ bookedSessionsCount }}</span>
-        <span class="stat-label">有预约</span>
+        <span class="stat-label">{{ $t('schedule.mySchedule.booked') }}</span>
       </div>
     </div>
 
@@ -70,7 +70,7 @@
         </div>
         <el-button type="primary" @click="goToScheduleManage" class="manage-btn desktop-only">
           <el-icon><Plus /></el-icon>
-          新增时段
+          {{ $t('schedule.mySchedule.newSession') }}
         </el-button>
       </div>
 
@@ -98,7 +98,7 @@
           >
             <div class="day-header">
               <span class="day-number">{{ day.date }}</span>
-              <span v-if="day.isToday" class="today-badge">今</span>
+              <span v-if="day.isToday" class="today-badge">{{ $t('common.today').charAt(0) }}</span>
             </div>
 
             <!-- 桌面端显示时段详情 -->
@@ -107,11 +107,11 @@
               <div class="day-session-stats">
                 <span class="stat-badge active">
                   <span class="stat-dot"></span>
-                  {{ day.activeCount }}开放
+                  {{ day.activeCount }}{{ $t('schedule.mySchedule.open').charAt(0) }}
                 </span>
                 <span class="stat-badge booked" v-if="day.bookedCount > 0">
                   <span class="stat-dot"></span>
-                  {{ day.bookedCount }}已约
+                  {{ day.bookedCount }}{{ $t('schedule.mySchedule.booked').charAt(0) }}
                 </span>
               </div>
 
@@ -124,14 +124,14 @@
                 <span class="session-time">{{ session.startTime }}</span>
                 <span class="session-label">
                   <template v-if="session.currentBookings > 0 || (session.bookings && session.bookings.length > 0)">
-                    {{ getFirstStudentName(session) || '已预约' }}
+                    {{ getFirstStudentName(session) || $t('schedule.mySchedule.sessionBooked') }}
                   </template>
-                  <template v-else-if="!session.isActive">关闭</template>
-                  <template v-else>开放</template>
+                  <template v-else-if="!session.isActive">{{ $t('schedule.mySchedule.sessionClosed') }}</template>
+                  <template v-else>{{ $t('schedule.mySchedule.sessionOpen') }}</template>
                 </span>
               </div>
               <div v-if="day.sessions.length > 3" class="more-sessions">
-                +{{ day.sessions.length - 3 }} 个时段
+                +{{ day.sessions.length - 3 }}
               </div>
             </div>
 
@@ -157,9 +157,9 @@
     >
       <div class="day-detail-content">
         <div v-if="selectedDaySessions.length === 0" class="empty-day">
-          <el-empty description="该日期没有设置可预约时段">
+          <el-empty :description="$t('schedule.mySchedule.noSessionsForDay')">
             <el-button type="primary" @click="goToScheduleManage">
-              去设置时段
+              {{ $t('schedule.mySchedule.setSession') }}
             </el-button>
           </el-empty>
         </div>
@@ -188,7 +188,7 @@
                   <span class="end-time">{{ session.endTime }}</span>
                 </div>
                 <div class="session-duration">
-                  {{ calculateDuration(session.startTime, session.endTime) }}分钟
+                  {{ $t('schedule.mySchedule.minutes', { min: calculateDuration(session.startTime, session.endTime) }) }}
                 </div>
               </div>
 
@@ -212,7 +212,7 @@
             <div class="session-card-body">
               <div class="session-info-row">
                 <el-icon><Location /></el-icon>
-                <span>{{ session.location || '未设置地点' }}</span>
+                <span>{{ session.location || $t('schedule.mySchedule.locationNotSet') }}</span>
               </div>
               <div class="session-info-row" v-if="session.note">
                 <el-icon><Document /></el-icon>
@@ -220,7 +220,7 @@
               </div>
               <div class="session-info-row" v-if="session.meetingId">
                 <el-icon><VideoCamera /></el-icon>
-                <span>会议号: {{ session.meetingId }}</span>
+                <span>{{ $t('schedule.mySchedule.meetingId', { id: session.meetingId }) }}</span>
               </div>
             </div>
 
@@ -236,7 +236,7 @@
                   <div class="booking-header">
                     <div class="booking-student">
                       <el-icon><User /></el-icon>
-                      <span class="student-name">{{ booking.studentName || '未填写姓名' }}</span>
+                      <span class="student-name">{{ booking.studentName || $t('schedule.mySchedule.studentUnknown') }}</span>
                     </div>
                     <div class="booking-actions">
                       <el-tag :type="getStatusType(booking.status)" size="small" effect="light">
@@ -249,25 +249,25 @@
                         :icon="CircleClose"
                         @click="handleCancelBooking(session, booking)"
                       >
-                        取消预约
+                        {{ $t('schedule.mySchedule.cancelBooking') }}
                       </el-button>
                     </div>
                   </div>
                   <div class="booking-info">
                     <div v-if="booking.studentClass" class="info-item">
-                      <span class="info-label">班级:</span>
+                      <span class="info-label">{{ $t('schedule.mySchedule.class') }}</span>
                       <span class="info-value">{{ booking.studentClass }}</span>
                     </div>
                     <div v-if="booking.parentName" class="info-item">
-                      <span class="info-label">家长:</span>
+                      <span class="info-label">{{ $t('schedule.mySchedule.parent') }}</span>
                       <span class="info-value">{{ booking.parentName }}</span>
                     </div>
                     <div v-if="booking.parentPhone" class="info-item">
-                      <span class="info-label">电话:</span>
+                      <span class="info-label">{{ $t('schedule.mySchedule.phone') }}</span>
                       <span class="info-value">{{ booking.parentPhone }}</span>
                     </div>
                     <div v-if="booking.purpose" class="info-item">
-                      <span class="info-label">目的:</span>
+                      <span class="info-label">{{ $t('schedule.mySchedule.purpose') }}</span>
                       <span class="info-value purpose">{{ booking.purpose }}</span>
                     </div>
                   </div>
@@ -279,7 +279,7 @@
             <div v-else class="session-card-footer">
               <div class="booking-status">
                 <div class="booking-count">
-                  <span>{{ session.currentBookings }} / {{ session.maxBookings }} 可预约</span>
+                  <span>{{ $t('schedule.mySchedule.bookableCount', { current: session.currentBookings, max: session.maxBookings }) }}</span>
                 </div>
               </div>
             </div>
@@ -292,6 +292,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMySessions, updateSession, updateBooking } from '@/api/schedule'
@@ -308,6 +309,7 @@ import {
   VideoCamera
 } from '@element-plus/icons-vue'
 
+const { t } = useI18n()
 const router = useRouter()
 
 // 状态
@@ -319,7 +321,7 @@ const drawerVisible = ref(false)
 const selectedDate = ref(null)
 const expandedSessionId = ref(null)
 
-const weekDays = ['日', '一', '二', '三', '四', '五', '六']
+const weekDays = computed(() => t('schedule.mySchedule.weekdays').split('|'))
 
 // 检测移动端
 const isMobile = computed(() => {
@@ -343,7 +345,8 @@ const bookedSessionsCount = computed(() =>
 const selectedDateTitle = computed(() => {
   if (!selectedDate.value) return ''
   const dateStr = dayjs(selectedDate.value).format('YYYY年MM月DD日')
-  const weekDay = weekDays[dayjs(selectedDate.value).day()]
+  const weekDaysList = t('schedule.mySchedule.weekdays').split('|')
+  const weekDay = weekDaysList[dayjs(selectedDate.value).day()]
   return `${dateStr} 星期${weekDay}`
 })
 
@@ -461,37 +464,37 @@ function getSessionStatusClass(session) {
 
 function getSessionDisplayClass(session) {
   if (!session) return {}
-  const hasBooking = session.currentBookings > 0 || (session.bookings && session.bookings.length > 0)
+  const hasBookingFlag = session.currentBookings > 0 || (session.bookings && session.bookings.length > 0)
   return {
-    'booked': hasBooking,      // 已预约 - 红色
-    'closed': !session.isActive && !hasBooking,  // 已关闭 - 灰色 (且没有预约)
-    'active': session.isActive && !hasBooking    // 开放 - 绿色
+    'booked': hasBookingFlag,
+    'closed': !session.isActive && !hasBookingFlag,
+    'active': session.isActive && !hasBookingFlag
   }
 }
 
 function getSessionCardClass(session, isPast = false) {
-  const hasBooking = session.currentBookings > 0 || (session.bookings && session.bookings.length > 0)
+  const hasBookingFlag = session.currentBookings > 0 || (session.bookings && session.bookings.length > 0)
   return {
-    'booked': hasBooking,      // 已预约卡片样式
-    'closed': !session.isActive && !hasBooking,   // 已关闭卡片样式
-    'expired': isPast && !hasBooking  // 过期样式
+    'booked': hasBookingFlag,
+    'closed': !session.isActive && !hasBookingFlag,
+    'expired': isPast && !hasBookingFlag
   }
 }
 
 function getSessionTagType(session, isPast = false) {
-  const hasBooking = session.currentBookings > 0 || (session.bookings && session.bookings.length > 0)
-  if (isPast && !hasBooking) return 'info'  // 过期无预约 - 灰色
-  if (hasBooking) return 'danger'      // 已预约 - 红色
-  if (!session.isActive) return 'info' // 已关闭 - 灰色
-  return 'success'                     // 开放中 - 绿色
+  const hasBookingFlag = session.currentBookings > 0 || (session.bookings && session.bookings.length > 0)
+  if (isPast && !hasBookingFlag) return 'info'
+  if (hasBookingFlag) return 'danger'
+  if (!session.isActive) return 'info'
+  return 'success'
 }
 
 function getSessionStatusText(session, isPast = false) {
-  const hasBooking = session.currentBookings > 0 || (session.bookings && session.bookings.length > 0)
-  if (isPast && !hasBooking) return '已过期'
-  if (hasBooking) return '已预约'
-  if (!session.isActive) return '已关闭'
-  return '开放中'
+  const hasBookingFlag = session.currentBookings > 0 || (session.bookings && session.bookings.length > 0)
+  if (isPast && !hasBookingFlag) return t('schedule.mySchedule.sessionExpired')
+  if (hasBookingFlag) return t('schedule.mySchedule.sessionBooked')
+  if (!session.isActive) return t('schedule.mySchedule.sessionClosed')
+  return t('schedule.mySchedule.sessionOpen')
 }
 
 function getFirstStudentName(session) {
@@ -512,11 +515,11 @@ async function loadMySessions() {
     const res = await getMySessions({
       dateFrom: startDate,
       dateTo: endDate,
-      includeHistory: true  // 包含历史记录
+      includeHistory: true
     })
     sessions.value = res.data || []
   } catch (error) {
-    ElMessage.error('获取日程失败')
+    ElMessage.error(t('schedule.mySchedule.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -550,7 +553,7 @@ function selectDay(day) {
 
 async function handleToggleSession(session, isActive) {
   if (isSessionExpired(session)) {
-    ElMessage.warning('已过期的时段不能修改状态')
+    ElMessage.warning(t('schedule.mySchedule.expiredCannotToggle'))
     session.isActive = !isActive
     return
   }
@@ -558,11 +561,11 @@ async function handleToggleSession(session, isActive) {
   if (!isActive && session.currentBookings > 0) {
     try {
       await ElMessageBox.confirm(
-        `该时段已有 ${session.currentBookings} 个预约，关闭后新用户将无法预约，但已有预约仍然有效。是否继续？`,
-        '确认关闭',
+        t('schedule.mySchedule.confirmCloseSession', { count: session.currentBookings }),
+        t('schedule.mySchedule.confirmCloseTitle'),
         {
-          confirmButtonText: '确认关闭',
-          cancelButtonText: '取消',
+          confirmButtonText: t('schedule.mySchedule.confirmCloseBtn'),
+          cancelButtonText: t('common.cancel'),
           type: 'warning'
         }
       )
@@ -574,14 +577,14 @@ async function handleToggleSession(session, isActive) {
 
   try {
     await updateSession(session._id, { isActive })
-    ElMessage.success(isActive ? '时段已开放' : '时段已关闭')
+    ElMessage.success(isActive ? t('schedule.mySchedule.sessionOpened') : t('schedule.mySchedule.sessionClosed2'))
 
     const sessionIndex = sessions.value.findIndex(s => s._id === session._id)
     if (sessionIndex !== -1) {
       sessions.value[sessionIndex].isActive = isActive
     }
   } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('schedule.mySchedule.toggleFailed'))
     session.isActive = !isActive
   }
 }
@@ -589,11 +592,11 @@ async function handleToggleSession(session, isActive) {
 async function handleCancelBooking(session, booking) {
   try {
     await ElMessageBox.confirm(
-      `确定要取消 ${booking.studentName || booking.parentName || '该家长'} 的预约吗？`,
-      '取消预约',
+      t('schedule.mySchedule.confirmCancelBooking', { name: booking.studentName || booking.parentName || '' }),
+      t('schedule.mySchedule.confirmCancelTitle'),
       {
-        confirmButtonText: '确定取消',
-        cancelButtonText: '保留预约',
+        confirmButtonText: t('schedule.mySchedule.confirmCancelBtn'),
+        cancelButtonText: t('schedule.mySchedule.keepBooking'),
         type: 'warning'
       }
     )
@@ -609,10 +612,10 @@ async function handleCancelBooking(session, booking) {
     }
     session.currentBookings = Math.max(0, session.currentBookings - 1)
 
-    ElMessage.success('预约已取消')
+    ElMessage.success(t('schedule.mySchedule.bookingCancelled'))
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('取消预约失败')
+      ElMessage.error(t('schedule.mySchedule.cancelBookingFailed'))
     }
   }
 }
@@ -643,10 +646,10 @@ function getStatusType(status) {
 
 function getStatusLabel(status) {
   const labels = {
-    'confirmed': '已确认',
-    'pending': '待确认',
-    'cancelled': '已取消',
-    'completed': '已完成'
+    'confirmed': t('schedule.mySchedule.statusConfirmed'),
+    'pending': t('schedule.mySchedule.statusPending'),
+    'cancelled': t('schedule.mySchedule.statusCancelled'),
+    'completed': t('schedule.mySchedule.statusCompleted')
   }
   return labels[status] || status
 }
@@ -731,8 +734,8 @@ onMounted(() => {
 }
 
 .stat-dot.active { background: #67c23a; }
-.stat-dot.booked { background: #f56c6c; }  /* 已预约 - 红色 */
-.stat-dot.closed { background: #909399; }  /* 已关闭 - 灰色 */
+.stat-dot.booked { background: #f56c6c; }
+.stat-dot.closed { background: #909399; }
 
 .stat-label { color: #606266; }
 .stat-value { font-weight: 600; color: #1a1a2e; }
@@ -933,8 +936,8 @@ onMounted(() => {
 }
 
 .session-item.active { background: #f0f9eb; color: #67c23a; }
-.session-item.booked { background: #fef0f0; color: #f56c6c; }  /* 已预约 - 红色 */
-.session-item.closed { background: #f4f4f5; color: #909399; }  /* 已关闭 - 灰色 */
+.session-item.booked { background: #fef0f0; color: #f56c6c; }
+.session-item.closed { background: #f4f4f5; color: #909399; }
 
 .session-time { font-weight: 500; min-width: 36px; }
 
@@ -1421,8 +1424,8 @@ onMounted(() => {
   }
 
   .indicator-dot.active { background: #67c23a; }
-  .indicator-dot.booked { background: #f56c6c; }  /* 已预约 - 红色 */
-  .indicator-dot.closed { background: #c0c4cc; }  /* 已关闭 - 灰色 */
+  .indicator-dot.booked { background: #f56c6c; }
+  .indicator-dot.closed { background: #c0c4cc; }
 
   .indicator-more {
     font-size: 10px;

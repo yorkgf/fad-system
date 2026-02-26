@@ -5,7 +5,7 @@
       <el-button circle @click="showMySchedule">
         <el-icon><Calendar /></el-icon>
       </el-button>
-      <h1 class="page-title">日程管理</h1>
+      <h1 class="page-title">{{ $t('schedule.manage.title') }}</h1>
       <el-button type="primary" circle @click="scrollToForm">
         <el-icon><Plus /></el-icon>
       </el-button>
@@ -15,11 +15,11 @@
     <el-card class="desktop-header">
       <template #header>
         <div class="card-header">
-          <span>日程管理</span>
+          <span>{{ $t('schedule.manage.title') }}</span>
           <div class="header-actions">
             <el-button type="primary" @click="showMySchedule">
               <el-icon><Calendar /></el-icon>
-              我的日程
+              {{ $t('schedule.manage.mySchedule') }}
             </el-button>
           </div>
         </div>
@@ -31,12 +31,12 @@
       <template #header>
         <div class="section-header">
           <el-icon class="section-icon"><Plus /></el-icon>
-          <span>批量创建可预约时段</span>
+          <span>{{ $t('schedule.manage.batchCreateTitle') }}</span>
         </div>
       </template>
 
       <el-alert
-        title="选择日期和时间段，系统将自动生成可预约时段"
+        :title="$t('schedule.manage.batchCreateHint')"
         type="info"
         show-icon
         :closable="false"
@@ -45,11 +45,11 @@
 
       <el-form :model="batchForm" label-position="top" class="mobile-form">
         <!-- 选择日期 -->
-        <el-form-item label="选择日期">
+        <el-form-item :label="$t('schedule.manage.selectDates')">
           <el-date-picker
             v-model="batchForm.dates"
             type="dates"
-            placeholder="选择多个日期"
+            :placeholder="$t('schedule.manage.selectMultipleDates')"
             value-format="YYYY-MM-DD"
             :disabled-date="disabledDate"
             class="full-width"
@@ -62,21 +62,21 @@
           <div class="time-section" :class="{ active: batchForm.enableMorning }">
             <div class="time-section-header">
               <el-checkbox v-model="batchForm.enableMorning" size="large">
-                上午时段
+                {{ $t('schedule.manage.morning') }}
               </el-checkbox>
             </div>
             <div class="time-pickers" v-show="batchForm.enableMorning">
               <el-time-picker
                 v-model="batchForm.morningStart"
-                placeholder="开始"
+                :placeholder="$t('schedule.manage.startPlaceholder')"
                 format="HH:mm"
                 value-format="HH:mm"
                 class="time-picker"
               />
-              <span class="time-to">至</span>
+              <span class="time-to">{{ $t('schedule.manage.timeTo') }}</span>
               <el-time-picker
                 v-model="batchForm.morningEnd"
-                placeholder="结束"
+                :placeholder="$t('schedule.manage.endPlaceholder')"
                 format="HH:mm"
                 value-format="HH:mm"
                 class="time-picker"
@@ -88,21 +88,21 @@
           <div class="time-section" :class="{ active: batchForm.enableAfternoon }">
             <div class="time-section-header">
               <el-checkbox v-model="batchForm.enableAfternoon" size="large">
-                下午时段
+                {{ $t('schedule.manage.afternoon') }}
               </el-checkbox>
             </div>
             <div class="time-pickers" v-show="batchForm.enableAfternoon">
               <el-time-picker
                 v-model="batchForm.afternoonStart"
-                placeholder="开始"
+                :placeholder="$t('schedule.manage.startPlaceholder')"
                 format="HH:mm"
                 value-format="HH:mm"
                 class="time-picker"
               />
-              <span class="time-to">至</span>
+              <span class="time-to">{{ $t('schedule.manage.timeTo') }}</span>
               <el-time-picker
                 v-model="batchForm.afternoonEnd"
-                placeholder="结束"
+                :placeholder="$t('schedule.manage.endPlaceholder')"
                 format="HH:mm"
                 value-format="HH:mm"
                 class="time-picker"
@@ -112,7 +112,7 @@
         </div>
 
         <!-- 时间分割 -->
-        <el-form-item label="时间分割">
+        <el-form-item :label="$t('schedule.manage.timeSplit')">
           <el-radio-group v-model="batchForm.segmentDuration" class="segment-radio">
             <el-radio-button :label="10">10分</el-radio-button>
             <el-radio-button :label="15">15分</el-radio-button>
@@ -122,29 +122,29 @@
         </el-form-item>
 
         <!-- 地点（必选） -->
-        <el-form-item label="地点" required>
-          <el-select v-model="batchForm.location" placeholder="请选择地点类型" class="full-width">
-            <el-option label="线下" value="线下" />
-            <el-option label="腾讯会议" value="腾讯会议" />
+        <el-form-item :label="$t('schedule.manage.location')" required>
+          <el-select v-model="batchForm.location" :placeholder="$t('schedule.manage.selectLocation')" class="full-width">
+            <el-option :label="$t('schedule.manage.locationOffline')" value="线下" />
+            <el-option :label="$t('schedule.manage.locationOnline')" value="腾讯会议" />
           </el-select>
         </el-form-item>
 
         <!-- 备注 -->
-        <el-form-item label="备注">
+        <el-form-item :label="$t('schedule.manage.note')">
           <el-input
             v-model="batchForm.note"
             type="textarea"
             :rows="2"
-            placeholder="可选填"
+            :placeholder="$t('schedule.manage.notePlaceholder')"
             class="full-width"
           />
         </el-form-item>
 
         <el-form-item class="form-actions">
           <el-button type="primary" :loading="creating" @click="createBatchSessions" class="submit-btn">
-            创建时段
+            {{ $t('schedule.manage.createBtn') }}
           </el-button>
-          <el-button @click="clearForm" class="reset-btn">清空</el-button>
+          <el-button @click="clearForm" class="reset-btn">{{ $t('schedule.manage.clearBtn') }}</el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -154,7 +154,7 @@
       <template #header>
         <div class="section-header">
           <el-icon class="section-icon"><List /></el-icon>
-          <span>我的可预约时段</span>
+          <span>{{ $t('schedule.manage.mySessionsTitle') }}</span>
           <el-tag type="info" size="small" class="count-tag">{{ mySessions.length }}</el-tag>
         </div>
       </template>
@@ -162,22 +162,22 @@
       <!-- 桌面端表格 -->
       <div class="desktop-table">
         <el-table v-loading="mySessionsLoading" :data="mySessions" stripe>
-          <el-table-column prop="date" label="日期" width="120">
+          <el-table-column prop="date" :label="$t('schedule.manage.date')" width="120">
             <template #default="{ row }">
               {{ formatDate(row.date) }}
             </template>
           </el-table-column>
-          <el-table-column prop="startTime" label="开始" width="80" />
-          <el-table-column prop="endTime" label="结束" width="80" />
-          <el-table-column prop="location" label="地点" min-width="120" />
-          <el-table-column label="预约情况" width="120">
+          <el-table-column prop="startTime" :label="$t('schedule.manage.start')" width="80" />
+          <el-table-column prop="endTime" :label="$t('schedule.manage.end')" width="80" />
+          <el-table-column prop="location" :label="$t('schedule.manage.locationCol')" min-width="120" />
+          <el-table-column :label="$t('schedule.manage.bookingStatus')" width="120">
             <template #default="{ row }">
               <el-tag :type="row.currentBookings > 0 ? 'success' : 'info'">
                 {{ row.currentBookings }} / {{ row.maxBookings }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="150" fixed="right">
+          <el-table-column :label="$t('schedule.manage.operation')" width="150" fixed="right">
             <template #default="{ row }">
               <el-button
                 v-if="row.currentBookings === 0"
@@ -185,9 +185,9 @@
                 size="small"
                 @click="handleDeleteSession(row._id)"
               >
-                删除
+                {{ $t('schedule.manage.delete') }}
               </el-button>
-              <el-tag v-else type="info" size="small">已有预约</el-tag>
+              <el-tag v-else type="info" size="small">{{ $t('schedule.manage.hasBooking') }}</el-tag>
             </template>
           </el-table-column>
         </el-table>
@@ -196,7 +196,7 @@
       <!-- 移动端卡片列表 -->
       <div class="mobile-list">
         <div v-if="mySessions.length === 0" class="empty-state">
-          <el-empty description="暂无时段">
+          <el-empty :description="$t('schedule.manage.noSessions')">
             <template #image>
               <el-icon :size="60" color="#dcdfe6"><Calendar /></el-icon>
             </template>
@@ -238,11 +238,11 @@
                 @click="handleDeleteSession(session._id)"
               >
                 <el-icon><Delete /></el-icon>
-                删除
+                {{ $t('schedule.manage.delete') }}
               </el-button>
               <span v-else class="booked-hint">
                 <el-icon><UserFilled /></el-icon>
-                已有{{ session.currentBookings }}人预约
+                {{ $t('schedule.manage.bookedHint', { count: session.currentBookings }) }}
               </span>
             </div>
           </div>
@@ -259,7 +259,7 @@
           class="delete-all-btn"
         >
           <el-icon><Delete /></el-icon>
-          删除全部未预约
+          {{ $t('schedule.manage.deleteAllUnbooked') }}
         </el-button>
       </div>
     </el-card>
@@ -268,6 +268,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
@@ -279,6 +280,7 @@ import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
 import { Calendar, Plus, List, Location, Delete, UserFilled } from '@element-plus/icons-vue'
 
+const { t } = useI18n()
 const router = useRouter()
 const userStore = useUserStore()
 
@@ -345,7 +347,6 @@ function formatTime(minutes) {
 }
 
 function checkTimeConflict(date, startTime, endTime, existingSessions) {
-  // 将时间转换为分钟数进行比较
   const parseTimeToMinutes = (timeStr) => {
     const [hours, minutes] = timeStr.split(':').map(Number)
     return hours * 60 + minutes
@@ -355,13 +356,11 @@ function checkTimeConflict(date, startTime, endTime, existingSessions) {
   const newEnd = parseTimeToMinutes(endTime)
 
   for (const existing of existingSessions) {
-    // 只检查同一天的时段
     if (existing.date !== date) continue
 
     const existingStart = parseTimeToMinutes(existing.startTime)
     const existingEnd = parseTimeToMinutes(existing.endTime)
 
-    // 检查时间是否重叠：新时段的开始时间小于现有时段的结束时间，且新时段的结束时间大于现有时段的开始时间
     if (newStart < existingEnd && newEnd > existingStart) {
       return {
         hasConflict: true,
@@ -375,17 +374,17 @@ function checkTimeConflict(date, startTime, endTime, existingSessions) {
 
 async function createBatchSessions() {
   if (!batchForm.value.dates?.length) {
-    ElMessage.warning('请至少选择一个日期')
+    ElMessage.warning(t('schedule.manage.selectDateRequired'))
     return
   }
 
   if (!batchForm.value.enableMorning && !batchForm.value.enableAfternoon) {
-    ElMessage.warning('请至少启用上午或下午时段')
+    ElMessage.warning(t('schedule.manage.selectTimeRequired'))
     return
   }
 
   if (!batchForm.value.location) {
-    ElMessage.warning('请选择地点')
+    ElMessage.warning(t('schedule.manage.selectLocationRequired'))
     return
   }
 
@@ -404,7 +403,6 @@ async function createBatchSessions() {
           duration
         )
         morningSlots.forEach(slot => {
-          // 检查是否与现有时段冲突
           const conflictCheck = checkTimeConflict(date, slot.startTime, slot.endTime, mySessions.value)
           if (conflictCheck.hasConflict) {
             conflicts.push({
@@ -433,7 +431,6 @@ async function createBatchSessions() {
           duration
         )
         afternoonSlots.forEach(slot => {
-          // 检查是否与现有时段冲突
           const conflictCheck = checkTimeConflict(date, slot.startTime, slot.endTime, mySessions.value)
           if (conflictCheck.hasConflict) {
             conflicts.push({
@@ -459,11 +456,17 @@ async function createBatchSessions() {
     // 如果有冲突，显示警告并停止创建
     if (conflicts.length > 0) {
       const conflictMessages = conflicts.slice(0, 3).map(c =>
-        `${c.date} ${c.startTime}-${c.endTime} 与现有时段 ${c.conflictWith.startTime}-${c.conflictWith.endTime} 冲突`
+        t('schedule.manage.conflictDetail', {
+          date: c.date,
+          start: c.startTime,
+          end: c.endTime,
+          existStart: c.conflictWith.startTime,
+          existEnd: c.conflictWith.endTime
+        })
       )
-      let message = `检测到 ${conflicts.length} 个时段冲突，无法创建。`
+      let message = t('schedule.manage.conflictError', { count: conflicts.length })
       if (conflicts.length > 3) {
-        message += `前3个冲突：\n${conflictMessages.join('\n')}...`
+        message += t('schedule.manage.conflictMore', { details: conflictMessages.join('\n') })
       } else {
         message += conflictMessages.join('\n')
       }
@@ -473,12 +476,12 @@ async function createBatchSessions() {
     }
 
     if (sessions.length === 0) {
-      ElMessage.warning('没有生成任何时段，请检查时间设置')
+      ElMessage.warning(t('schedule.manage.noSlotsGenerated'))
       return
     }
 
     await createSessionsBatch({ sessions })
-    ElMessage.success(`成功创建 ${sessions.length} 个可预约时段`)
+    ElMessage.success(t('schedule.manage.createSuccess', { count: sessions.length }))
 
     batchForm.value.dates = []
     batchForm.value.location = ''
@@ -486,7 +489,7 @@ async function createBatchSessions() {
 
     loadMySessions()
   } catch (error) {
-    ElMessage.error(error.response?.data?.error || '创建失败')
+    ElMessage.error(error.response?.data?.error || t('schedule.manage.createFailed'))
   } finally {
     creating.value = false
   }
@@ -495,11 +498,10 @@ async function createBatchSessions() {
 async function loadMySessions() {
   mySessionsLoading.value = true
   try {
-    // 只获取未来时段，不包含历史记录
     const res = await getMySessions({ includeHistory: false })
     mySessions.value = res.data || []
   } catch (error) {
-    ElMessage.error('获取我的时段失败')
+    ElMessage.error(t('schedule.manage.loadFailed'))
   } finally {
     mySessionsLoading.value = false
   }
@@ -507,17 +509,21 @@ async function loadMySessions() {
 
 async function handleDeleteSession(id) {
   try {
-    await ElMessageBox.confirm('确定要删除这个时段吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(
+      t('schedule.manage.confirmDelete'),
+      t('schedule.manage.confirmDeleteTitle'),
+      {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning'
+      }
+    )
     await deleteSessionAPI(id)
-    ElMessage.success('删除成功')
+    ElMessage.success(t('schedule.manage.deleteSuccess'))
     loadMySessions()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error(error.response?.data?.error || '删除失败')
+      ElMessage.error(error.response?.data?.error || t('schedule.manage.deleteFailed'))
     }
   }
 }
@@ -525,11 +531,11 @@ async function handleDeleteSession(id) {
 async function deleteAllSessions() {
   try {
     await ElMessageBox.confirm(
-      '确定要删除所有未预约的时段吗？此操作不可恢复！',
-      '警告',
+      t('schedule.manage.confirmDeleteAll'),
+      t('schedule.manage.confirmDeleteAllTitle'),
       {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning'
       }
     )
@@ -537,11 +543,11 @@ async function deleteAllSessions() {
     for (const session of unbookedSessions) {
       await deleteSessionAPI(session._id)
     }
-    ElMessage.success('删除成功')
+    ElMessage.success(t('schedule.manage.deleteSuccess'))
     loadMySessions()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error(t('schedule.manage.deleteFailed'))
     }
   }
 }

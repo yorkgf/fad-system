@@ -3,10 +3,10 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>约谈/停课管理</span>
+          <span>{{ $t('stopClass.title') }}</span>
           <el-select
             v-model="filters.semester"
-            placeholder="选择学期"
+            :placeholder="$t('stopClass.selectSemester')"
             style="width: 180px"
             @change="fetchAllData"
           >
@@ -22,19 +22,19 @@
 
       <!-- 规则说明 -->
       <div class="rules-alert">
-        <el-alert title="FAD处罚规则说明" type="warning" :closable="false">
+        <el-alert :title="$t('stopClass.ruleTitle')" type="warning" :closable="false">
           <div class="rules-content">
             <div class="rule-item">
-              <span class="rule-count">3次</span>
-              <span class="rule-desc">学生处约谈家长</span>
+              <span class="rule-count">{{ $t('stopClass.rule3count') }}</span>
+              <span class="rule-desc">{{ $t('stopClass.rule3') }}</span>
             </div>
             <div class="rule-item">
-              <span class="rule-count warning">6次</span>
-              <span class="rule-desc">视情况停课处理</span>
+              <span class="rule-count warning">{{ $t('stopClass.rule6count') }}</span>
+              <span class="rule-desc">{{ $t('stopClass.rule6') }}</span>
             </div>
             <div class="rule-item">
-              <span class="rule-count danger">9次</span>
-              <span class="rule-desc">劝退处理</span>
+              <span class="rule-count danger">{{ $t('stopClass.rule9count') }}</span>
+              <span class="rule-desc">{{ $t('stopClass.rule9') }}</span>
             </div>
           </div>
         </el-alert>
@@ -44,24 +44,24 @@
       <div class="stats-overview">
         <div class="stat-item info" v-if="stats.warning > 0">
           <span class="stat-number">{{ stats.warning }}</span>
-          <span class="stat-label">待约谈</span>
+          <span class="stat-label">{{ $t('stopClass.statWarning') }}</span>
         </div>
         <div class="stat-item warning" v-if="stats.stop > 0">
           <span class="stat-number">{{ stats.stop }}</span>
-          <span class="stat-label">待停课</span>
+          <span class="stat-label">{{ $t('stopClass.statStop') }}</span>
         </div>
         <div class="stat-item danger" v-if="stats.dismiss > 0">
           <span class="stat-number">{{ stats.dismiss }}</span>
-          <span class="stat-label">待劝退</span>
+          <span class="stat-label">{{ $t('stopClass.statDismiss') }}</span>
         </div>
       </div>
 
       <!-- 标签页 -->
       <el-tabs v-model="activeTab" type="border-card">
         <!-- 约谈名单 -->
-        <el-tab-pane label="约谈名单" name="warning">
+        <el-tab-pane :label="$t('stopClass.tabWarning')" name="warning">
           <div class="tab-header">
-            <span class="tab-desc">FAD累计3-5次，需约谈家长</span>
+            <span class="tab-desc">{{ $t('stopClass.descWarning') }}</span>
           </div>
           <el-table v-loading="loading.warning" :data="warningList" stripe class="responsive-table" row-key="学生">
             <el-table-column type="expand" width="40">
@@ -69,20 +69,20 @@
                 <div class="fad-details">
                   <div class="fad-details-header">
                     <el-icon><List /></el-icon>
-                    <span>FAD明细记录 (共{{ row.fadDetails?.length || 0 }}条)</span>
+                    <span>{{ $t('stopClass.fadDetails', { count: row.fadDetails?.length || 0 }) }}</span>
                   </div>
                   <el-table :data="row.fadDetails" size="small" border class="details-table">
-                    <el-table-column prop="记录日期" label="日期" width="100">
+                    <el-table-column prop="记录日期" :label="$t('stopClass.date')" width="100">
                       <template #default="{ row: detail }">
                         {{ formatDate(detail.记录日期) }}
                       </template>
                     </el-table-column>
-                    <el-table-column prop="记录事由" label="事由" min-width="150" show-overflow-tooltip />
-                    <el-table-column prop="记录老师" label="记录老师" width="100" />
-                    <el-table-column prop="来源类型" label="来源" width="80">
+                    <el-table-column prop="记录事由" :label="$t('stopClass.reason')" min-width="150" show-overflow-tooltip />
+                    <el-table-column prop="记录老师" :label="$t('stopClass.recordTeacher')" width="100" />
+                    <el-table-column prop="来源类型" :label="$t('stopClass.source')" width="80">
                       <template #default="{ row: detail }">
                         <el-tag size="small" :type="getSourceTypeTag(detail.来源类型)">
-                          {{ detail.来源类型 || '其他' }}
+                          {{ detail.来源类型 || $t('stopClass.sourceOther') }}
                         </el-tag>
                       </template>
                     </el-table-column>
@@ -90,14 +90,14 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="学生" label="学生" min-width="80" />
-            <el-table-column prop="班级" label="班级" min-width="100" class-name="hide-on-xs" />
-            <el-table-column prop="fadCount" label="FAD" min-width="60">
+            <el-table-column prop="学生" :label="$t('stopClass.student')" min-width="80" />
+            <el-table-column prop="班级" :label="$t('stopClass.class')" min-width="100" class-name="hide-on-xs" />
+            <el-table-column prop="fadCount" :label="$t('stopClass.fadCount')" min-width="60">
               <template #default="{ row }">
                 <el-tag type="warning" size="small">{{ row.fadCount }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" min-width="160">
+            <el-table-column :label="$t('stopClass.operation')" min-width="160">
               <template #default="{ row }">
                 <el-button
                   v-if="!row.约谈记录"
@@ -105,10 +105,10 @@
                   size="small"
                   @click="handleWarning(row)"
                 >
-                  已约谈
+                  {{ $t('stopClass.interviewed') }}
                 </el-button>
                 <el-tag v-else type="success" size="small">
-                  已约谈 {{ formatDate(row.约谈记录.约谈日期) }}
+                  {{ $t('stopClass.interviewedDate', { date: formatDate(row.约谈记录.约谈日期) }) }}
                 </el-tag>
                 <el-button
                   type="info"
@@ -116,20 +116,20 @@
                   circle
                   class="print-btn"
                   @click="printFADRecords(row)"
-                  title="打印FAD记录"
+                  :title="$t('stopClass.printFAD')"
                 >
                   <el-icon><Printer /></el-icon>
                 </el-button>
               </template>
             </el-table-column>
           </el-table>
-          <el-empty v-if="warningList.length === 0 && !loading.warning" description="暂无待约谈学生" />
+          <el-empty v-if="warningList.length === 0 && !loading.warning" :description="$t('stopClass.noWarning')" />
         </el-tab-pane>
 
         <!-- 停课名单 -->
-        <el-tab-pane label="停课名单" name="stop">
+        <el-tab-pane :label="$t('stopClass.tabStop')" name="stop">
           <div class="tab-header">
-            <span class="tab-desc">FAD累计6-8次，需停课处理</span>
+            <span class="tab-desc">{{ $t('stopClass.descStop') }}</span>
           </div>
           <el-table v-loading="loading.stop" :data="stopList" stripe class="responsive-table" row-key="学生">
             <el-table-column type="expand" width="40">
@@ -137,20 +137,20 @@
                 <div class="fad-details">
                   <div class="fad-details-header">
                     <el-icon><List /></el-icon>
-                    <span>FAD明细记录 (共{{ row.fadDetails?.length || 0 }}条)</span>
+                    <span>{{ $t('stopClass.fadDetails', { count: row.fadDetails?.length || 0 }) }}</span>
                   </div>
                   <el-table :data="row.fadDetails" size="small" border class="details-table">
-                    <el-table-column prop="记录日期" label="日期" width="100">
+                    <el-table-column prop="记录日期" :label="$t('stopClass.date')" width="100">
                       <template #default="{ row: detail }">
                         {{ formatDate(detail.记录日期) }}
                       </template>
                     </el-table-column>
-                    <el-table-column prop="记录事由" label="事由" min-width="150" show-overflow-tooltip />
-                    <el-table-column prop="记录老师" label="记录老师" width="100" />
-                    <el-table-column prop="来源类型" label="来源" width="80">
+                    <el-table-column prop="记录事由" :label="$t('stopClass.reason')" min-width="150" show-overflow-tooltip />
+                    <el-table-column prop="记录老师" :label="$t('stopClass.recordTeacher')" width="100" />
+                    <el-table-column prop="来源类型" :label="$t('stopClass.source')" width="80">
                       <template #default="{ row: detail }">
                         <el-tag size="small" :type="getSourceTypeTag(detail.来源类型)">
-                          {{ detail.来源类型 || '其他' }}
+                          {{ detail.来源类型 || $t('stopClass.sourceOther') }}
                         </el-tag>
                       </template>
                     </el-table-column>
@@ -158,14 +158,14 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="学生" label="学生" min-width="80" />
-            <el-table-column prop="班级" label="班级" min-width="100" class-name="hide-on-xs" />
-            <el-table-column prop="fadCount" label="FAD" min-width="60">
+            <el-table-column prop="学生" :label="$t('stopClass.student')" min-width="80" />
+            <el-table-column prop="班级" :label="$t('stopClass.class')" min-width="100" class-name="hide-on-xs" />
+            <el-table-column prop="fadCount" :label="$t('stopClass.fadCount')" min-width="60">
               <template #default="{ row }">
                 <el-tag type="danger" size="small">{{ row.fadCount }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" min-width="180">
+            <el-table-column :label="$t('stopClass.operation')" min-width="180">
               <template #default="{ row }">
                 <el-button
                   v-if="!row.停课记录 || !isInStop(row.停课记录)"
@@ -173,10 +173,10 @@
                   size="small"
                   @click="handleStop(row)"
                 >
-                  已停课
+                  {{ $t('stopClass.stopped') }}
                 </el-button>
                 <el-tag v-else type="danger" size="small" effect="dark">
-                  停课中
+                  {{ $t('stopClass.inStop') }}
                 </el-tag>
                 <el-button
                   type="info"
@@ -184,13 +184,13 @@
                   circle
                   class="print-btn"
                   @click="printFADRecords(row)"
-                  title="打印FAD记录"
+                  :title="$t('stopClass.printFAD')"
                 >
                   <el-icon><Printer /></el-icon>
                 </el-button>
               </template>
             </el-table-column>
-            <el-table-column label="历史记录" min-width="150" class-name="hide-on-sm">
+            <el-table-column :label="$t('stopClass.historyRecord')" min-width="150" class-name="hide-on-sm">
               <template #default="{ row }">
                 <div v-if="row.历史记录 && row.历史记录.length > 0" class="history-list">
                   <el-tag
@@ -207,13 +207,13 @@
               </template>
             </el-table-column>
           </el-table>
-          <el-empty v-if="stopList.length === 0 && !loading.stop" description="暂无待停课学生" />
+          <el-empty v-if="stopList.length === 0 && !loading.stop" :description="$t('stopClass.noStop')" />
         </el-tab-pane>
 
         <!-- 劝退名单 -->
-        <el-tab-pane label="劝退名单" name="dismiss">
+        <el-tab-pane :label="$t('stopClass.tabDismiss')" name="dismiss">
           <div class="tab-header">
-            <span class="tab-desc">FAD累计9次及以上，需劝退处理</span>
+            <span class="tab-desc">{{ $t('stopClass.descDismiss') }}</span>
           </div>
           <el-table v-loading="loading.dismiss" :data="dismissList" stripe class="responsive-table" row-key="学生">
             <el-table-column type="expand" width="40">
@@ -221,20 +221,20 @@
                 <div class="fad-details">
                   <div class="fad-details-header">
                     <el-icon><List /></el-icon>
-                    <span>FAD明细记录 (共{{ row.fadDetails?.length || 0 }}条)</span>
+                    <span>{{ $t('stopClass.fadDetails', { count: row.fadDetails?.length || 0 }) }}</span>
                   </div>
                   <el-table :data="row.fadDetails" size="small" border class="details-table">
-                    <el-table-column prop="记录日期" label="日期" width="100">
+                    <el-table-column prop="记录日期" :label="$t('stopClass.date')" width="100">
                       <template #default="{ row: detail }">
                         {{ formatDate(detail.记录日期) }}
                       </template>
                     </el-table-column>
-                    <el-table-column prop="记录事由" label="事由" min-width="150" show-overflow-tooltip />
-                    <el-table-column prop="记录老师" label="记录老师" width="100" />
-                    <el-table-column prop="来源类型" label="来源" width="80">
+                    <el-table-column prop="记录事由" :label="$t('stopClass.reason')" min-width="150" show-overflow-tooltip />
+                    <el-table-column prop="记录老师" :label="$t('stopClass.recordTeacher')" width="100" />
+                    <el-table-column prop="来源类型" :label="$t('stopClass.source')" width="80">
                       <template #default="{ row: detail }">
                         <el-tag size="small" :type="getSourceTypeTag(detail.来源类型)">
-                          {{ detail.来源类型 || '其他' }}
+                          {{ detail.来源类型 || $t('stopClass.sourceOther') }}
                         </el-tag>
                       </template>
                     </el-table-column>
@@ -242,14 +242,14 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="学生" label="学生" min-width="80" />
-            <el-table-column prop="班级" label="班级" min-width="100" class-name="hide-on-xs" />
-            <el-table-column prop="fadCount" label="FAD" min-width="60">
+            <el-table-column prop="学生" :label="$t('stopClass.student')" min-width="80" />
+            <el-table-column prop="班级" :label="$t('stopClass.class')" min-width="100" class-name="hide-on-xs" />
+            <el-table-column prop="fadCount" :label="$t('stopClass.fadCount')" min-width="60">
               <template #default="{ row }">
                 <el-tag type="danger" size="small" effect="dark">{{ row.fadCount }}</el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" min-width="160">
+            <el-table-column :label="$t('stopClass.operation')" min-width="160">
               <template #default="{ row }">
                 <el-button
                   v-if="!row.已劝退"
@@ -257,73 +257,73 @@
                   size="small"
                   @click="handleDismiss(row)"
                 >
-                  已劝退
+                  {{ $t('stopClass.dismissed') }}
                 </el-button>
-                <el-tag v-else type="info" size="small">已劝退</el-tag>
+                <el-tag v-else type="info" size="small">{{ $t('stopClass.dismissed') }}</el-tag>
                 <el-button
                   type="info"
                   size="small"
                   circle
                   class="print-btn"
                   @click="printFADRecords(row)"
-                  title="打印FAD记录"
+                  :title="$t('stopClass.printFAD')"
                 >
                   <el-icon><Printer /></el-icon>
                 </el-button>
               </template>
             </el-table-column>
           </el-table>
-          <el-empty v-if="dismissList.length === 0 && !loading.dismiss" description="暂无待劝退学生" />
+          <el-empty v-if="dismissList.length === 0 && !loading.dismiss" :description="$t('stopClass.noDismiss')" />
         </el-tab-pane>
 
         <!-- 历史记录 -->
-        <el-tab-pane label="历史记录" name="history">
+        <el-tab-pane :label="$t('stopClass.tabHistory')" name="history">
           <div class="tab-header">
-            <span class="tab-desc">所有约谈和停课记录</span>
+            <span class="tab-desc">{{ $t('stopClass.descHistory') }}</span>
           </div>
           <el-table v-loading="loading.history" :data="historyList" stripe class="responsive-table">
-            <el-table-column prop="学生" label="学生" min-width="80" />
-            <el-table-column prop="班级" label="班级" min-width="100" class-name="hide-on-xs" />
-            <el-table-column prop="类型" label="类型" min-width="70">
+            <el-table-column prop="学生" :label="$t('stopClass.student')" min-width="80" />
+            <el-table-column prop="班级" :label="$t('stopClass.class')" min-width="100" class-name="hide-on-xs" />
+            <el-table-column prop="类型" :label="$t('stopClass.type')" min-width="70">
               <template #default="{ row }">
                 <el-tag :type="row.类型 === '约谈' ? 'success' : row.类型 === '停课' ? 'danger' : 'info'" size="small">
                   {{ row.类型 }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="日期" label="日期" min-width="100">
+            <el-table-column prop="日期" :label="$t('stopClass.historyDate')" min-width="100">
               <template #default="{ row }">
                 {{ formatDate(row.日期 || row.停课开始日期) }}
               </template>
             </el-table-column>
-            <el-table-column prop="停课天数" label="天数" min-width="60" class-name="hide-on-xs">
+            <el-table-column prop="停课天数" :label="$t('stopClass.stopDays')" min-width="60" class-name="hide-on-xs">
               <template #default="{ row }">
-                {{ row.停课天数 ? row.停课天数 + '天' : '-' }}
+                {{ row.停课天数 ? $t('stopClass.stopDaysUnit', { days: row.停课天数 }) : '-' }}
               </template>
             </el-table-column>
-            <el-table-column prop="记录人" label="记录人" min-width="80" class-name="hide-on-sm" />
+            <el-table-column prop="记录人" :label="$t('stopClass.recorder')" min-width="80" class-name="hide-on-sm" />
           </el-table>
-          <el-empty v-if="historyList.length === 0 && !loading.history" description="暂无历史记录" />
+          <el-empty v-if="historyList.length === 0 && !loading.history" :description="$t('stopClass.noHistory')" />
         </el-tab-pane>
       </el-tabs>
     </el-card>
 
     <!-- 停课对话框 -->
-    <el-dialog v-model="stopDialog.visible" title="停课处理" width="400px">
+    <el-dialog v-model="stopDialog.visible" :title="$t('stopClass.stopDialogTitle')" width="400px">
       <el-form :model="stopDialog.form" label-width="100px">
-        <el-form-item label="学生">
+        <el-form-item :label="$t('stopClass.stopStudent')">
           <span>{{ stopDialog.form.student }}</span>
         </el-form-item>
-        <el-form-item label="停课开始">
-          <el-date-picker v-model="stopDialog.form.startDate" type="date" placeholder="选择开始日期" style="width: 100%" />
+        <el-form-item :label="$t('stopClass.stopStart')">
+          <el-date-picker v-model="stopDialog.form.startDate" type="date" :placeholder="$t('stopClass.stopStartPlaceholder')" style="width: 100%" />
         </el-form-item>
-        <el-form-item label="停课天数">
-          <el-input-number v-model="stopDialog.form.days" :min="1" :max="30" label="天数" />
+        <el-form-item :label="$t('stopClass.stopDayLabel')">
+          <el-input-number v-model="stopDialog.form.days" :min="1" :max="30" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="stopDialog.visible = false">取消</el-button>
-        <el-button type="danger" :loading="stopDialog.loading" @click="confirmStop">确认停课</el-button>
+        <el-button @click="stopDialog.visible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="danger" :loading="stopDialog.loading" @click="confirmStop">{{ $t('stopClass.confirmStop') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -331,6 +331,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useCommonStore } from '@/stores/common'
 import { useUserStore } from '@/stores/user'
 import { getWarningList, getStopClassList, getStopClassHistory, recordWarning, recordStopClass, recordDismiss } from '@/api/other'
@@ -340,6 +341,7 @@ import { PDFDocument, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import dayjs from 'dayjs'
 
+const { t } = useI18n()
 const commonStore = useCommonStore()
 const userStore = useUserStore()
 
@@ -458,11 +460,15 @@ async function fetchHistoryList() {
 // 处理约谈
 async function handleWarning(row) {
   try {
-    await ElMessageBox.confirm(`确认已约谈 ${row.学生} 的家长？`, '确认约谈', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'warning'
-    })
+    await ElMessageBox.confirm(
+      t('stopClass.confirmWarning', { student: row.学生 }),
+      t('stopClass.confirmWarningTitle'),
+      {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'warning'
+      }
+    )
 
     await recordWarning({
       student: row.学生,
@@ -471,12 +477,12 @@ async function handleWarning(row) {
       teacher: userStore.username
     })
 
-    ElMessage.success('约谈记录已保存')
+    ElMessage.success(t('stopClass.warningSuccess'))
     fetchWarningList()
     fetchHistoryList()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('记录失败')
+      ElMessage.error(t('stopClass.recordFailed'))
     }
   }
 }
@@ -493,7 +499,7 @@ function handleStop(row) {
 // 确认停课
 async function confirmStop() {
   if (!stopDialog.form.startDate) {
-    ElMessage.warning('请选择停课开始日期')
+    ElMessage.warning(t('stopClass.selectStartDate'))
     return
   }
 
@@ -510,12 +516,12 @@ async function confirmStop() {
       teacher: userStore.username
     })
 
-    ElMessage.success('停课记录已保存')
+    ElMessage.success(t('stopClass.stopSuccess'))
     stopDialog.visible = false
     fetchStopList()
     fetchHistoryList()
   } catch (error) {
-    ElMessage.error('记录失败')
+    ElMessage.error(t('stopClass.recordFailed'))
   } finally {
     stopDialog.loading = false
   }
@@ -524,11 +530,15 @@ async function confirmStop() {
 // 处理劝退
 async function handleDismiss(row) {
   try {
-    await ElMessageBox.confirm(`确认 ${row.学生} 已劝退？此操作不可撤销！`, '确认劝退', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'danger'
-    })
+    await ElMessageBox.confirm(
+      t('stopClass.confirmDismiss', { student: row.学生 }),
+      t('stopClass.confirmDismissTitle'),
+      {
+        confirmButtonText: t('common.confirm'),
+        cancelButtonText: t('common.cancel'),
+        type: 'danger'
+      }
+    )
 
     await recordDismiss({
       student: row.学生,
@@ -537,12 +547,12 @@ async function handleDismiss(row) {
       teacher: userStore.username
     })
 
-    ElMessage.success('劝退记录已保存')
+    ElMessage.success(t('stopClass.dismissSuccess'))
     fetchDismissList()
     fetchHistoryList()
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('记录失败')
+      ElMessage.error(t('stopClass.recordFailed'))
     }
   }
 }
@@ -572,11 +582,11 @@ function getSourceTypeTag(sourceType) {
 async function printFADRecords(row) {
   try {
     if (!row.fadDetails || row.fadDetails.length === 0) {
-      ElMessage.warning('该学生暂无FAD记录')
+      ElMessage.warning(t('stopClass.noFadRecords'))
       return
     }
 
-    ElMessage.info('正在生成PDF...')
+    ElMessage.info(t('stopClass.generatingPdf'))
 
     // 创建PDF文档
     const pdfDoc = await PDFDocument.create()
@@ -751,9 +761,6 @@ async function printFADRecords(row) {
         y = drawTableHeader(page, y)
       }
 
-      // 记录起始Y位置
-      const recordStartY = y
-
       // 日期
       page.drawText(formatDate(record.记录日期), {
         x: colX[0],
@@ -862,10 +869,10 @@ async function printFADRecords(row) {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
 
-    ElMessage.success('PDF下载成功')
+    ElMessage.success(t('stopClass.pdfSuccess'))
   } catch (error) {
     console.error('生成PDF失败:', error)
-    ElMessage.error('生成PDF失败: ' + error.message)
+    ElMessage.error(t('stopClass.pdfFailed', { msg: error.message }))
   }
 }
 </script>

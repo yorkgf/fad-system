@@ -2,46 +2,46 @@
   <div class="change-password">
     <el-card style="max-width: 500px">
       <template #header>
-        <span>修改密码</span>
+        <span>{{ $t('changePassword.title') }}</span>
       </template>
 
       <el-form
         ref="formRef"
         :model="form"
         :rules="rules"
-        label-width="100px"
+        label-width="120px"
         @submit.prevent="handleSubmit"
       >
-        <el-form-item label="当前密码" prop="oldPassword">
+        <el-form-item :label="$t('changePassword.currentPassword')" prop="oldPassword">
           <el-input
             v-model="form.oldPassword"
             type="password"
-            placeholder="请输入当前密码"
+            :placeholder="$t('changePassword.currentPasswordPlaceholder')"
             show-password
           />
         </el-form-item>
 
-        <el-form-item label="新密码" prop="newPassword">
+        <el-form-item :label="$t('changePassword.newPassword')" prop="newPassword">
           <el-input
             v-model="form.newPassword"
             type="password"
-            placeholder="请输入新密码"
+            :placeholder="$t('changePassword.newPasswordPlaceholder')"
             show-password
           />
         </el-form-item>
 
-        <el-form-item label="确认新密码" prop="confirmPassword">
+        <el-form-item :label="$t('changePassword.confirmPassword')" prop="confirmPassword">
           <el-input
             v-model="form.confirmPassword"
             type="password"
-            placeholder="请再次输入新密码"
+            :placeholder="$t('changePassword.confirmPasswordPlaceholder')"
             show-password
           />
         </el-form-item>
 
         <el-form-item>
           <el-button type="primary" :loading="loading" @click="handleSubmit">
-            确认修改
+            {{ $t('changePassword.confirmChange') }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -50,12 +50,14 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { changePassword } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 
+const { t } = useI18n()
 const router = useRouter()
 const userStore = useUserStore()
 
@@ -70,25 +72,25 @@ const form = reactive({
 
 const validateConfirmPassword = (rule, value, callback) => {
   if (value !== form.newPassword) {
-    callback(new Error('两次输入的密码不一致'))
+    callback(new Error(t('changePassword.passwordMismatch')))
   } else {
     callback()
   }
 }
 
-const rules = {
+const rules = computed(() => ({
   oldPassword: [
-    { required: true, message: '请输入当前密码', trigger: 'blur' }
+    { required: true, message: t('changePassword.currentPasswordRequired'), trigger: 'blur' }
   ],
   newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+    { required: true, message: t('changePassword.newPasswordRequired'), trigger: 'blur' },
+    { min: 6, message: t('changePassword.newPasswordMinLength'), trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    { required: true, message: t('changePassword.confirmPasswordRequired'), trigger: 'blur' },
     { validator: validateConfirmPassword, trigger: 'blur' }
   ]
-}
+}))
 
 async function handleSubmit() {
   const valid = await formRef.value.validate().catch(() => false)
@@ -101,7 +103,7 @@ async function handleSubmit() {
       newPassword: form.newPassword
     })
 
-    ElMessage.success('密码修改成功，请重新登录')
+    ElMessage.success(t('changePassword.changeSuccess'))
     userStore.logout()
     router.push('/login')
   } catch (error) {

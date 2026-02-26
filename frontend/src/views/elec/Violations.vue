@@ -2,33 +2,33 @@
   <div class="elec-violations">
     <el-card>
       <template #header>
-        <span>暂停网课资格名单</span>
+        <span>{{ $t('elec.title') }}</span>
       </template>
 
       <el-table v-loading="loading" :data="records" stripe>
-        <el-table-column prop="学生" label="学生" width="120" />
-        <el-table-column prop="班级" label="班级" width="150" />
-        <el-table-column prop="记录日期" label="违规日期" width="120">
+        <el-table-column prop="学生" :label="$t('elec.student')" width="120" />
+        <el-table-column prop="班级" :label="$t('elec.class')" width="150" />
+        <el-table-column prop="记录日期" :label="$t('elec.violationDate')" width="120">
           <template #default="{ row }">
             {{ formatDate(row.记录日期) }}
           </template>
         </el-table-column>
-        <el-table-column prop="取消上课资格至" label="取消资格至" width="150">
+        <el-table-column prop="取消上课资格至" :label="$t('elec.cancelUntil')" width="150">
           <template #default="{ row }">
             <el-tag :type="isExpired(row.取消上课资格至) ? 'info' : 'danger'">
               {{ row.取消上课资格至 }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="记录事由" label="违规事由" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="记录老师" label="记录老师" width="120" />
-        <el-table-column label="状态" width="100">
+        <el-table-column prop="记录事由" :label="$t('elec.violationReason')" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="记录老师" :label="$t('elec.recordTeacher')" width="120" />
+        <el-table-column :label="$t('elec.status')" width="100">
           <template #default="{ row }">
             <el-tag v-if="isExpired(row.取消上课资格至)" type="success">
-              已恢复
+              {{ $t('elec.restored') }}
             </el-tag>
             <el-tag v-else type="danger">
-              禁止上课
+              {{ $t('elec.suspended') }}
             </el-tag>
           </template>
         </el-table-column>
@@ -50,8 +50,11 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { getCancelledStudents } from '@/api/other'
 import dayjs from 'dayjs'
+
+const { t } = useI18n()
 
 const loading = ref(false)
 const records = ref([])
