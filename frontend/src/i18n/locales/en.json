@@ -196,7 +196,9 @@
     "exportFailed": "Failed to export",
     "importSuccess": "Imported successfully",
     "importFailed": "Failed to import",
-    "noRecordsSelected": "Please select records first"
+    "noRecordsSelected": "Please select records first",
+    "springTerm": "Spring Semester",
+    "fallTerm": "Fall Semester"
   },
   "recordTypes": {
     "title": "Record Type Management",
@@ -213,7 +215,21 @@
     "hasRecords": "This type has related records and cannot be deleted.",
     "typeNameRequired": "Type name is required",
     "typeCodeRequired": "Type code is required",
-    "typeCodeExists": "Type code already exists"
+    "typeCodeExists": "Type code already exists",
+    "FAD": "FAD",
+    "Reward": "Reward",
+    "morningLate": "Morning Roll Call Late",
+    "dormLateExit": "Dorm Late Exit",
+    "returnViolation": "Return to School Violation",
+    "meetingRoomViolation": "Unauthorized Entry to Meeting Room",
+    "dormPraise": "Dorm Praise",
+    "dormCriticism": "Dorm Criticism",
+    "dormTrashNotDumped": "Dorm Trash Not Dumped",
+    "onlineClassViolation": "Online Class Electronics Violation",
+    "phoneLate2130": "Phone Return After 21:30 (Before 22:00)",
+    "phoneLate2200": "Phone Return After 22:00",
+    "teachingFADTicket": "Teaching FAD Ticket",
+    "teachingRewardTicket": "Teaching Reward Ticket"
   },
   "fad": {
     "title": "FAD Management",
@@ -394,7 +410,11 @@
     "hasFadRecords": "This source has FAD records and cannot be deleted.",
     "sourceNameRequired": "Source name is required",
     "sourceCodeRequired": "Source code is required",
-    "sourceCodeExists": "Source code already exists"
+    "sourceCodeExists": "Source code already exists",
+    "dorm": "Dorm",
+    "teach": "Teaching",
+    "elec": "Electronics",
+    "other": "Other"
   },
   "reward": {
     "title": "Reward & Punishment Management",

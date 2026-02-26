@@ -196,7 +196,9 @@
     "exportFailed": "导出失败",
     "importSuccess": "导入成功",
     "importFailed": "导入失败",
-    "noRecordsSelected": "请先选择要操作的档案"
+    "noRecordsSelected": "请先选择要操作的档案",
+    "springTerm": "春季(Spring)",
+    "fallTerm": "秋季(Fall)"
   },
   "recordTypes": {
     "title": "档案类型管理",
@@ -213,7 +215,21 @@
     "hasRecords": "该类型下存在档案记录，无法删除",
     "typeNameRequired": "请输入类型名称",
     "typeCodeRequired": "请输入类型编码",
-    "typeCodeExists": "类型编码已存在"
+    "typeCodeExists": "类型编码已存在",
+    "FAD": "FAD",
+    "Reward": "Reward",
+    "morningLate": "早点名迟到",
+    "dormLateExit": "寝室迟出",
+    "returnViolation": "未按规定返校",
+    "meetingRoomViolation": "擅自进入会议室或接待室",
+    "dormPraise": "寝室表扬",
+    "dormCriticism": "寝室批评",
+    "dormTrashNotDumped": "寝室垃圾未倒",
+    "onlineClassViolation": "上网课违规使用电子产品",
+    "phoneLate2130": "21:30后交还手机(22:00前)",
+    "phoneLate2200": "22:00后交还手机",
+    "teachingFADTicket": "Teaching FAD Ticket",
+    "teachingRewardTicket": "Teaching Reward Ticket"
   },
   "fad": {
     "title": "FAD管理",
@@ -394,7 +410,11 @@
     "hasFadRecords": "该来源下存在FAD记录，无法删除",
     "sourceNameRequired": "请输入来源名称",
     "sourceCodeRequired": "请输入来源编码",
-    "sourceCodeExists": "来源编码已存在"
+    "sourceCodeExists": "来源编码已存在",
+    "dorm": "宿舍",
+    "teach": "教学",
+    "elec": "电子产品",
+    "other": "其他"
   },
   "reward": {
     "title": "奖惩管理",
