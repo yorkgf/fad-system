@@ -18,15 +18,15 @@
             <el-dropdown-menu>
               <el-dropdown-item command="profile">
                 <el-icon><UserFilled /></el-icon>
-                教师信息
+                {{ $t('nav.teacherInfo') }}
               </el-dropdown-item>
               <el-dropdown-item command="password">
                 <el-icon><Key /></el-icon>
-                修改密码
+                {{ $t('nav.changePassword') }}
               </el-dropdown-item>
               <el-dropdown-item command="logout" divided>
                 <el-icon><SwitchButton /></el-icon>
-                退出登录
+                {{ $t('nav.logout') }}
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
@@ -38,7 +38,7 @@
     <el-main class="main">
       <!-- 首页：显示功能卡片 -->
       <div v-if="isHomePage" class="dashboard">
-        <h2 class="dashboard-title">功能导航</h2>
+        <h2 class="dashboard-title">{{ $t('nav.functionNavigation') }}</h2>
         <div class="function-cards">
           <div
             v-for="item in functionCards"
@@ -51,8 +51,8 @@
                 <component :is="item.icon" />
               </el-icon>
             </div>
-            <div class="card-title">{{ item.title }}</div>
-            <div class="card-subtitle">{{ item.subtitle }}</div>
+            <div class="card-title">{{ $t(item.titleKey) }}</div>
+            <div class="card-subtitle">{{ $t(item.subtitleKey) }}</div>
           </div>
         </div>
       </div>
@@ -66,7 +66,7 @@
             @click="goHome"
             class="back-btn"
           >
-            返回首页
+            {{ $t('nav.backToHome') }}
           </el-button>
           <h2 class="page-title">{{ $route.meta.title }}</h2>
         </div>
@@ -82,11 +82,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useI18n } from 'vue-i18n'
 import LangSwitch from '@/components/LangSwitch.vue'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const { t } = useI18n()
 
 // 是否为首页
 const isHomePage = computed(() => route.path === '/')
@@ -114,120 +116,120 @@ onMounted(async () => {
 const functionCards = computed(() => {
   const baseCards = [
     {
-      title: '录入记录',
-      subtitle: '添加学生行为记录',
+      titleKey: 'nav.insertRecord',
+      subtitleKey: 'nav.insertRecordSubtitle',
       path: '/records/insert',
       icon: 'Edit',
       color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       groups: ['S', 'F', 'C', 'T', 'B', 'A'] // 所有用户可见
     },
     {
-      title: '我的记录',
-      subtitle: '查看已录入的记录',
+      titleKey: 'nav.myRecords',
+      subtitleKey: 'nav.myRecordsSubtitle',
       path: '/records/my',
       icon: 'List',
       color: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
       groups: ['S', 'F', 'C', 'T', 'B', 'A'] // 所有用户可见
     },
     {
-      title: 'FAD执行',
-      subtitle: '管理FAD执行状态',
+      titleKey: 'nav.fadExecution',
+      subtitleKey: 'nav.fadExecutionSubtitle',
       path: '/fad/execution',
       icon: 'Check',
       color: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
       groups: ['S', 'T', 'B', 'A'] // S组、T组、B组、A组可见
     },
     {
-      title: 'FAD通知单发放',
-      subtitle: '发放纸质通知单',
+      titleKey: 'nav.fadDelivery',
+      subtitleKey: 'nav.fadDeliverySubtitle',
       path: '/fad/deliver',
       icon: 'Promotion',
       color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
       groups: ['S']
     },
     {
-      title: '学校FAD统计',
-      subtitle: '查看全校FAD数据统计',
+      titleKey: 'nav.schoolFadStats',
+      subtitleKey: 'nav.schoolFadStatsSubtitle',
       path: '/fad/school-stats',
       icon: 'DataLine',
       color: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
       groups: ['S', 'A'] // S、A组可见
     },
     {
-      title: '班级FAD统计',
-      subtitle: '查看本班FAD数据统计',
+      titleKey: 'nav.classFadStats',
+      subtitleKey: 'nav.classFadStatsSubtitle',
       path: '/fad/class-stats',
       icon: 'DataLine',
       color: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
       groups: ['B', 'T', 'S', 'A'] // B、T、S、A组班主任可见（需班主任权限）
     },
     {
-      title: '寝室表扬兑奖',
-      subtitle: '兑换寝室表扬奖励',
+      titleKey: 'nav.roomPraiseReward',
+      subtitleKey: 'nav.roomPraiseRewardSubtitle',
       path: '/room/praise-reward',
       icon: 'Star',
       color: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%)',
       groups: ['S']
     },
     {
-      title: '寝室清扫',
-      subtitle: '记录寝室清扫情况',
+      titleKey: 'nav.roomClean',
+      subtitleKey: 'nav.roomCleanSubtitle',
       path: '/room/clean',
       icon: 'Brush',
       color: 'linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%)',
       groups: ['S', 'A']
     },
     {
-      title: '最佳寝室排名',
-      subtitle: '查看优秀寝室排行',
+      titleKey: 'nav.bestDorm',
+      subtitleKey: 'nav.bestDormSubtitle',
       path: '/room/best-dorm',
       icon: 'TrophyBase',
       color: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
       groups: ['S', 'A']
     },
     {
-      title: '网课违规使用电子产品',
-      subtitle: '暂停网课资格名单',
+      titleKey: 'nav.elecViolations',
+      subtitleKey: 'nav.elecViolationsSubtitle',
       path: '/elec/violations',
       icon: 'Monitor',
       color: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
       groups: ['S', 'T', 'B', 'A'] // S组、T组、B组、A组可见
     },
     {
-      title: '未交手机名单',
-      subtitle: '查看未交手机学生',
+      titleKey: 'nav.noPhoneList',
+      subtitleKey: 'nav.noPhoneListSubtitle',
       path: '/phone/no-phone-list',
       icon: 'Iphone',
       color: 'linear-gradient(135deg, #96fbc4 0%, #f9f586 100%)',
       groups: ['S', 'T', 'B', 'A'] // S组、T组、B组、A组可见
     },
     {
-      title: '约谈/停课管理',
-      subtitle: '管理约谈和停课记录',
+      titleKey: 'nav.stopClass',
+      subtitleKey: 'nav.stopClassSubtitle',
       path: '/stop-class',
       icon: 'CircleClose',
       color: 'linear-gradient(135deg, #cd9cf2 0%, #f6f3ff 100%)',
       groups: ['S', 'A']
     },
     {
-      title: '教学票兑奖',
-      subtitle: '兑换教学奖励',
+      titleKey: 'nav.teachingTickets',
+      subtitleKey: 'nav.teachingTicketsSubtitle',
       path: '/teaching-tickets',
       icon: 'Ticket',
       color: 'linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%)',
       groups: ['S']
     },
     {
-      title: '数据查询',
-      subtitle: '查询所有数据',
+      titleKey: 'nav.dataQuery',
+      subtitleKey: 'nav.dataQuerySubtitle',
       path: '/data/all',
       icon: 'Search',
       color: 'linear-gradient(135deg, #5ee7df 0%, #b490ca 100%)',
       groups: ['S', 'A']
     },
     {
-      title: '日程管理',
-      subtitle: '预约教师面谈时间',
+      titleKey: 'nav.schedule',
+      subtitleKey: 'nav.scheduleSubtitle',
       path: '/schedule',
       icon: 'Calendar',
       color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
