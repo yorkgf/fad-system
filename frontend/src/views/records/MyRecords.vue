@@ -3,11 +3,11 @@
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>{{ userStore.isAdmin ? '所有记录' : '我的记录' }}</span>
+          <span>{{ userStore.isAdmin ? $t('myRecords.allRecords') : $t('myRecords.myRecords') }}</span>
           <div class="filters">
             <el-select
               v-model="filters.collection"
-              placeholder="记录类型"
+              :placeholder="$t('myRecords.recordType')"
               style="width: 200px"
               @change="fetchData"
             >
@@ -21,34 +21,34 @@
             <el-select
               v-if="filters.collection === 'FAD_Records'"
               v-model="filters.fadSourceType"
-              placeholder="FAD来源"
+              :placeholder="$t('myRecords.fadSource')"
               style="width: 140px"
               clearable
               @change="updatePagination"
             >
-              <el-option label="教学类" value="teach" />
-              <el-option label="寝室类" value="dorm" />
-              <el-option label="电子产品违规" value="elec" />
-              <el-option label="其他类" value="other" />
-              <el-option label="未分类" value="_empty" />
+              <el-option :label="$t('myRecords.fadSourceTeach')" value="teach" />
+              <el-option :label="$t('myRecords.fadSourceDorm')" value="dorm" />
+              <el-option :label="$t('myRecords.fadSourceElec')" value="elec" />
+              <el-option :label="$t('myRecords.fadSourceOther')" value="other" />
+              <el-option :label="$t('myRecords.fadSourceEmpty')" value="_empty" />
             </el-select>
             <el-select
               v-model="filters.semester"
-              placeholder="选择学期"
+              :placeholder="$t('myRecords.selectSemester')"
               style="width: 150px"
               @change="fetchData"
             >
               <el-option
-                v-for="item in commonStore.semesters"
-                :key="item"
-                :label="item"
-                :value="item"
+                v-for="item in localizedSemesters"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
               />
             </el-select>
             <el-select
               v-if="userStore.isAdmin"
               v-model="filters.teacher"
-              placeholder="筛选老师"
+              :placeholder="$t('myRecords.filterTeacher')"
               style="width: 120px"
               clearable
               filterable
@@ -63,14 +63,14 @@
             </el-select>
             <el-input
               v-model="filters.student"
-              placeholder="输入学生姓名"
+              :placeholder="$t('myRecords.enterStudentName')"
               style="width: 120px"
               clearable
               @input="updatePagination"
             />
             <el-select
               v-model="filters.studentClass"
-              placeholder="选择班级"
+              :placeholder="$t('myRecords.selectClass')"
               style="width: 150px"
               filterable
               clearable
@@ -86,73 +86,71 @@
             <el-date-picker
               v-model="filters.dateRange"
               type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
+              :range-separator="$t('myRecords.dateTo')"
+              :start-placeholder="$t('common.startDate')"
+              :end-placeholder="$t('common.endDate')"
               value-format="YYYY-MM-DD"
               style="width: 240px"
               @change="updatePagination"
             />
-            <el-button type="success" @click="exportData">导出</el-button>
+            <el-button type="success" @click="exportData">{{ $t('myRecords.exportCsv') }}</el-button>
           </div>
         </div>
       </template>
 
       <el-table v-loading="loading" :data="paginatedRecords" stripe>
-        <el-table-column prop="学生" label="学生" width="100" />
-        <el-table-column prop="班级" label="班级" width="120" />
-        <el-table-column prop="记录类型" label="记录类型" width="150" />
-        <el-table-column v-if="filters.collection === 'FAD_Records'" label="FAD来源" width="100">
+        <el-table-column prop="学生" :label="$t('myRecords.student')" width="100" />
+        <el-table-column prop="班级" :label="$t('myRecords.class')" width="120" />
+        <el-table-column prop="记录类型" :label="$t('myRecords.recordType')" width="150" />
+        <el-table-column v-if="filters.collection === 'FAD_Records'" :label="$t('myRecords.fadSource')" width="100">
           <template #default="{ row }">
             {{ getFadSourceLabel(row.FAD来源类型) }}
           </template>
         </el-table-column>
-        <el-table-column prop="记录日期" label="记录日期" width="120">
+        <el-table-column prop="记录日期" :label="$t('myRecords.recordDate')" width="120">
           <template #default="{ row }">
             {{ formatDate(row.记录日期) }}
           </template>
         </el-table-column>
-        <el-table-column prop="记录事由" label="记录事由" min-width="180" show-overflow-tooltip />
-        <el-table-column prop="记录老师" label="记录老师" width="120" />
-        <el-table-column label="状态" width="140">
+        <el-table-column prop="记录事由" :label="$t('myRecords.recordReason')" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="记录老师" :label="$t('myRecords.recordTeacher')" width="120" />
+        <el-table-column :label="$t('myRecords.status')" width="140">
           <template #default="{ row }">
             <template v-if="row.记录类型 === '寝室批评'">
-              <el-tag v-if="row.fadStatus === '已累计FAD，已发放'" type="danger" size="small">已累计FAD</el-tag>
-              <el-tag v-else-if="row.fadStatus === '已累计FAD，未发放'" type="warning" size="small">已累计FAD</el-tag>
-              <el-tag v-else-if="row.fadStatus === '未累计FAD'" type="primary" size="small">未累计FAD</el-tag>
-              <el-tag v-else-if="row.是否已累计FAD" type="danger" size="small">已累计FAD</el-tag>
-              <el-tag v-else type="primary" size="small">未累计FAD</el-tag>
+              <el-tag v-if="row.fadStatus === '已累计FAD，已发放'" type="danger" size="small">{{ $t('myRecords.accumulatedFadDelivered') }}</el-tag>
+              <el-tag v-else-if="row.fadStatus === '已累计FAD，未发放'" type="warning" size="small">{{ $t('myRecords.accumulatedFadNotDelivered') }}</el-tag>
+              <el-tag v-else-if="row.fadStatus === '未累计FAD'" type="primary" size="small">{{ $t('myRecords.notAccumulatedFad') }}</el-tag>
+              <el-tag v-else-if="row.是否已累计FAD" type="danger" size="small">{{ $t('myRecords.accumulatedFad') }}</el-tag>
+              <el-tag v-else type="primary" size="small">{{ $t('myRecords.notAccumulatedFad') }}</el-tag>
             </template>
             <template v-else-if="row.记录类型 === '寝室表扬'">
-              <el-tag v-if="row.是否已累计Reward" type="danger" size="small">已累计Reward</el-tag>
-              <el-tag v-else type="primary" size="small">未累计Reward</el-tag>
+              <el-tag v-if="row.是否已累计Reward" type="danger" size="small">{{ $t('myRecords.accumulatedReward') }}</el-tag>
+              <el-tag v-else type="primary" size="small">{{ $t('myRecords.notAccumulatedReward') }}</el-tag>
             </template>
             <template v-else-if="row.记录类型 === 'Teaching Reward Ticket'">
-              <el-tag v-if="row.是否已累计Reward" type="success" size="small">已兑换Reward</el-tag>
-              <el-tag v-else type="primary" size="small">未兑换Reward</el-tag>
+              <el-tag v-if="row.是否已累计Reward" type="success" size="small">{{ $t('myRecords.exchangedReward') }}</el-tag>
+              <el-tag v-else type="primary" size="small">{{ $t('myRecords.notExchangedReward') }}</el-tag>
             </template>
             <template v-else-if="row.记录类型 === '寝室垃圾未倒'">
-              <el-tag v-if="row.是否已累计寝室批评" type="danger" size="small">已累计批评</el-tag>
-              <el-tag v-else type="primary" size="small">未累计批评</el-tag>
+              <el-tag v-if="row.是否已累计寝室批评" type="danger" size="small">{{ $t('myRecords.accumulatedCriticism') }}</el-tag>
+              <el-tag v-else type="primary" size="small">{{ $t('myRecords.notAccumulatedCriticism') }}</el-tag>
             </template>
             <template v-else-if="row.记录类型 === 'FAD'">
-              <el-tag v-if="row.是否已冲销记录" type="success" size="small">已冲销</el-tag>
-              <el-tag v-else-if="row.是否已执行或冲抵" type="warning" size="small">已执行未冲销</el-tag>
-              <el-tag v-else type="danger" size="small">未执行</el-tag>
+              <el-tag v-if="row.是否已冲销记录" type="success" size="small">{{ $t('myRecords.offsetDone') }}</el-tag>
+              <el-tag v-else-if="row.是否已执行或冲抵" type="warning" size="small">{{ $t('myRecords.executedNotOffset') }}</el-tag>
+              <el-tag v-else type="danger" size="small">{{ $t('myRecords.notExecuted') }}</el-tag>
             </template>
             <template v-else-if="hasFADStatus(row)">
-              <!-- 早点名迟到、Teaching FAD Ticket、寝室迟出、未按规定返校、擅自进入会议室 -->
-              <el-tag v-if="row.fadStatus === '已累计FAD，已发放'" type="danger" size="small">已累计FAD，已发放</el-tag>
-              <el-tag v-else-if="row.fadStatus === '已累计FAD，未发放'" type="warning" size="small">已累计FAD，未发放</el-tag>
-              <el-tag v-else type="primary" size="small">未累计FAD</el-tag>
+              <el-tag v-if="row.fadStatus === '已累计FAD，已发放'" type="danger" size="small">{{ $t('myRecords.accumulatedFadDelivered') }}</el-tag>
+              <el-tag v-else-if="row.fadStatus === '已累计FAD，未发放'" type="warning" size="small">{{ $t('myRecords.accumulatedFadNotDelivered') }}</el-tag>
+              <el-tag v-else type="primary" size="small">{{ $t('myRecords.notAccumulatedFad') }}</el-tag>
             </template>
             <template v-else>
-              <!-- 其他记录类型（如电子产品违规、晚交手机等） -->
-              <el-tag type="primary" size="small">有效</el-tag>
+              <el-tag type="primary" size="small">{{ $t('myRecords.valid') }}</el-tag>
             </template>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
+        <el-table-column :label="$t('myRecords.operation')" width="180" fixed="right">
           <template #default="{ row }">
             <el-button
               v-if="filters.collection === 'FAD_Records' && userStore.userGroup === 'S'"
@@ -161,7 +159,7 @@
               plain
               @click="handleEditSourceType(row)"
             >
-              修改来源
+              {{ $t('myRecords.editSource') }}
             </el-button>
             <el-tooltip
               v-if="!isWithdrawable(row)"
@@ -174,7 +172,7 @@
                 plain
                 disabled
               >
-                撤回
+                {{ $t('myRecords.withdraw') }}
               </el-button>
             </el-tooltip>
             <el-button
@@ -184,14 +182,14 @@
               plain
               @click="handleWithdraw(row)"
             >
-              撤回
+              {{ $t('myRecords.withdraw') }}
             </el-button>
           </template>
         </el-table-column>
       </el-table>
 
       <div class="table-footer">
-        <el-button type="success" @click="exportData">导出 CSV</el-button>
+        <el-button type="success" @click="exportData">{{ $t('myRecords.exportCsv') }}</el-button>
         <el-pagination
           v-model:current-page="pagination.page"
           v-model:page-size="pagination.pageSize"
@@ -205,38 +203,38 @@
     <!-- 撤回确认对话框 -->
     <el-dialog
       v-model="withdrawDialog.visible"
-      title="撤回记录"
+      :title="$t('myRecords.withdrawRecord')"
       width="500px"
     >
       <div v-loading="withdrawDialog.checking">
         <template v-if="withdrawDialog.withdrawable">
           <el-alert
-            title="确定要撤回这条记录吗？"
+            :title="$t('myRecords.confirmWithdraw')"
             type="warning"
             :closable="false"
             show-icon
           />
 
           <div v-if="withdrawDialog.chainRecords.length > 0" class="chain-records">
-            <p class="chain-title">以下关联记录也将被撤回：</p>
+            <p class="chain-title">{{ $t('myRecords.chainRecordsTitle') }}</p>
             <el-table :data="withdrawDialog.chainRecords" size="small">
-              <el-table-column prop="collection" label="记录表" width="180">
+              <el-table-column prop="collection" :label="$t('myRecords.recordTable')" width="180">
                 <template #default="{ row }">
                   {{ getCollectionLabel(row.collection) }}
                 </template>
               </el-table-column>
-              <el-table-column prop="type" label="类型" />
-              <el-table-column prop="student" label="学生" />
+              <el-table-column prop="type" :label="$t('myRecords.type')" />
+              <el-table-column prop="student" :label="$t('myRecords.student')" />
             </el-table>
           </div>
 
           <el-form label-width="80px" style="margin-top: 20px">
-            <el-form-item label="撤回原因">
+            <el-form-item :label="$t('myRecords.withdrawReason')">
               <el-input
                 v-model="withdrawDialog.reason"
                 type="textarea"
                 :rows="2"
-                placeholder="可选：输入撤回原因"
+                :placeholder="$t('myRecords.withdrawReasonPlaceholder')"
               />
             </el-form-item>
           </el-form>
@@ -253,27 +251,27 @@
       </div>
 
       <template #footer>
-        <el-button @click="withdrawDialog.visible = false">取消</el-button>
+        <el-button @click="withdrawDialog.visible = false">{{ $t('common.cancel') }}</el-button>
         <el-button
           v-if="withdrawDialog.withdrawable"
           type="danger"
           :loading="withdrawDialog.submitting"
           @click="confirmWithdraw"
         >
-          确认撤回
+          {{ $t('myRecords.confirmWithdrawBtn') }}
         </el-button>
       </template>
     </el-dialog>
 
     <!-- 修改FAD来源类型对话框（仅S组可用） -->
-    <el-dialog v-model="editSourceTypeDialog.visible" title="修改FAD来源类型" width="400px">
+    <el-dialog v-model="editSourceTypeDialog.visible" :title="$t('myRecords.editFadSourceType')" width="400px">
       <el-form label-width="100px">
-        <el-form-item label="学生">{{ editSourceTypeDialog.record?.学生 }}</el-form-item>
-        <el-form-item label="班级">{{ editSourceTypeDialog.record?.班级 }}</el-form-item>
-        <el-form-item label="来源类型">
+        <el-form-item :label="$t('myRecords.student')">{{ editSourceTypeDialog.record?.学生 }}</el-form-item>
+        <el-form-item :label="$t('myRecords.class')">{{ editSourceTypeDialog.record?.班级 }}</el-form-item>
+        <el-form-item :label="$t('myRecords.sourceType')">
           <el-select v-model="editSourceTypeDialog.sourceType" style="width: 100%">
             <el-option
-              v-for="item in commonStore.fadSourceTypes"
+              v-for="item in localizedFadSourceTypes"
               :key="item.value"
               :label="item.label"
               :value="item.value"
@@ -282,8 +280,8 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="editSourceTypeDialog.visible = false">取消</el-button>
-        <el-button type="primary" :loading="editSourceTypeDialog.loading" @click="submitEditSourceType">确定</el-button>
+        <el-button @click="editSourceTypeDialog.visible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" :loading="editSourceTypeDialog.loading" @click="submitEditSourceType">{{ $t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -292,6 +290,7 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '@/stores/user'
 import { useCommonStore } from '@/stores/common'
@@ -299,6 +298,7 @@ import { getMyRecords, checkWithdrawable, withdrawRecord } from '@/api/records'
 import { updateFADSourceType } from '@/api/fad'
 import dayjs from 'dayjs'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const commonStore = useCommonStore()
 
@@ -320,50 +320,59 @@ const recordTypeToCollection = {
   'Teaching Reward Ticket': 'Teaching_Reward_Ticket'
 }
 
-// 集合名到标签的映射（用于筛选器显示）
-const collectionToLabel = {
-  'FAD_Records': 'FAD记录',
-  'Reward_Records': 'Reward记录',
-  'Late_Records': '早点名迟到',
-  'Leave_Room_Late_Records': '寝室迟出',
-  'Back_School_Late_Records': '未按规定返校',
-  'MeetingRoom_Violation_Records': '擅自进入会议室',
-  'Room_Praise_Records': '寝室表扬',
-  'Room_Warning_Records': '寝室批评',
-  'Room_Trash_Records': '寝室垃圾未倒',
-  'Elec_Products_Violation_Records': '电子产品违规',
-  'Phone_Late_Records': '晚交手机',
-  'Teaching_FAD_Ticket': 'Teaching FAD Ticket',
-  'Teaching_Reward_Ticket': 'Teaching Reward Ticket'
+// 集合名到 i18n key 的映射（用于筛选器显示）
+const collectionToLabelKey = {
+  'FAD_Records': 'myRecords.collectionFadRecords',
+  'Reward_Records': 'myRecords.collectionRewardRecords',
+  'Late_Records': 'myRecords.collectionLateRecords',
+  'Leave_Room_Late_Records': 'myRecords.collectionLeaveRoomLate',
+  'Back_School_Late_Records': 'myRecords.collectionBackSchoolLate',
+  'MeetingRoom_Violation_Records': 'myRecords.collectionMeetingRoom',
+  'Room_Praise_Records': 'myRecords.collectionRoomPraise',
+  'Room_Warning_Records': 'myRecords.collectionRoomWarning',
+  'Room_Trash_Records': 'myRecords.collectionRoomTrash',
+  'Elec_Products_Violation_Records': 'myRecords.collectionElecProducts',
+  'Phone_Late_Records': 'myRecords.collectionPhoneLate',
+  'Teaching_FAD_Ticket': 'myRecords.collectionTeachingFadTicket',
+  'Teaching_Reward_Ticket': 'myRecords.collectionTeachingRewardTicket'
 }
 
+// Localized semesters
+const localizedSemesters = computed(() =>
+  commonStore.semesters.map(s => ({ ...s, label: t(s.labelKey) }))
+)
+
+// Localized FAD source types
+const localizedFadSourceTypes = computed(() =>
+  commonStore.fadSourceTypes.map(s => ({ ...s, label: t(s.labelKey) }))
+)
+
 // 根据用户权限生成可用的筛选选项（与 InsertRecord.vue 中的 availableRecordTypes 逻辑一致）
-const availableFilterOptions = computed(() => {
-  // C组用户只能看到寝室相关记录
+const availableFilterOptions = computed(() => {  // C组用户只能看到寝室相关记录
   if (userStore.isCleaner) {
     return [
-      { label: '寝室表扬', value: 'Room_Praise_Records' },
-      { label: '寝室批评', value: 'Room_Warning_Records' },
-      { label: '寝室垃圾未倒', value: 'Room_Trash_Records' }
+      { label: t('myRecords.collectionRoomPraise'), value: 'Room_Praise_Records' },
+      { label: t('myRecords.collectionRoomWarning'), value: 'Room_Warning_Records' },
+      { label: t('myRecords.collectionRoomTrash'), value: 'Room_Trash_Records' }
     ]
   }
   // F组用户只能看到Teaching Ticket记录
   if (userStore.isFaculty) {
     return [
-      { label: 'Teaching Reward Ticket', value: 'Teaching_Reward_Ticket' },
-      { label: 'Teaching FAD Ticket', value: 'Teaching_FAD_Ticket' }
+      { label: t('myRecords.collectionTeachingRewardTicket'), value: 'Teaching_Reward_Ticket' },
+      { label: t('myRecords.collectionTeachingFadTicket'), value: 'Teaching_FAD_Ticket' }
     ]
   }
   // 其他用户（包括B组）根据 userStore.recordTypes 生成选项
   if (userStore.recordTypes.length > 0) {
     return userStore.recordTypes.map(type => ({
-      label: type.label,
+      label: type.labelKey ? t(type.labelKey) : type.label,
       value: recordTypeToCollection[type.value] || type.value
     }))
   }
   // 默认显示所有记录类型（S组管理员）
-  return Object.entries(collectionToLabel).map(([value, label]) => ({
-    label,
+  return Object.entries(collectionToLabelKey).map(([value, labelKey]) => ({
+    label: t(labelKey),
     value
   }))
 })
@@ -539,10 +548,10 @@ async function handleWithdraw(row) {
     if (res.withdrawable) {
       withdrawDialog.chainRecords = res.chainRecords || []
     } else {
-      withdrawDialog.error = res.reason || '该记录无法撤回'
+      withdrawDialog.error = res.reason || t('myRecords.cannotWithdraw')
     }
   } catch (error) {
-    withdrawDialog.error = '检查撤回条件失败'
+    withdrawDialog.error = t('myRecords.checkWithdrawFailed')
   } finally {
     withdrawDialog.checking = false
   }
@@ -558,11 +567,11 @@ async function confirmWithdraw() {
       withdrawDialog.record._id,
       withdrawDialog.reason
     )
-    ElMessage.success('撤回成功')
+    ElMessage.success(t('myRecords.withdrawSuccess'))
     withdrawDialog.visible = false
     fetchData()
   } catch (error) {
-    ElMessage.error('撤回失败')
+    ElMessage.error(t('myRecords.withdrawFailed'))
   } finally {
     withdrawDialog.submitting = false
   }
@@ -579,11 +588,11 @@ async function submitEditSourceType() {
   editSourceTypeDialog.loading = true
   try {
     await updateFADSourceType(editSourceTypeDialog.record._id, editSourceTypeDialog.sourceType)
-    ElMessage.success('FAD来源类型修改成功')
+    ElMessage.success(t('myRecords.fadSourceUpdateSuccess'))
     editSourceTypeDialog.visible = false
     fetchData()
   } catch (error) {
-    ElMessage.error('修改失败')
+    ElMessage.error(t('myRecords.fadSourceUpdateFailed'))
   } finally {
     editSourceTypeDialog.loading = false
   }
@@ -591,39 +600,38 @@ async function submitEditSourceType() {
 
 function exportData() {
   if (filteredRecords.value.length === 0) {
-    ElMessage.warning('没有数据可导出')
+    ElMessage.warning(t('myRecords.noDataToExport'))
     return
   }
 
-  // 确定CSV表的表头和字段映射
-  const headers = ['学生', '班级', '记录类型', '记录日期', '记录事由', '记录老师', '状态']
+  const headers = [t('myRecords.student'), t('myRecords.class'), t('myRecords.recordType'), t('myRecords.recordDate'), t('myRecords.recordReason'), t('myRecords.recordTeacher'), t('myRecords.status')]
   const getField = (row) => {
     let status = ''
 
     // Teaching Reward Ticket 特殊处理
     if (row.记录类型 === 'Teaching Reward Ticket') {
-      status = row.是否已累计Reward ? '已兑换Reward' : '未兑换Reward'
+      status = row.是否已累计Reward ? t('myRecords.exchangedReward') : t('myRecords.notExchangedReward')
     }
     // 使用后端返回的 fadStatus（如果存在）
-    else if (row.fadStatus) {
-      status = row.fadStatus
-    }
-    // 否则根据字段计算状态
-    else if (row.是否已发放) {
-      status = '已发放'
+    else if (row.fadStatus === '已累计FAD，已发放') {
+      status = t('myRecords.accumulatedFadDelivered')
+    } else if (row.fadStatus === '已累计FAD，未发放') {
+      status = t('myRecords.accumulatedFadNotDelivered')
+    } else if (row.fadStatus === '未累计FAD') {
+      status = t('myRecords.notAccumulatedFad')
+    } else if (row.是否已发放) {
+      status = t('myRecords.accumulatedFadDelivered')
     } else if (row.是否已冲销记录) {
-      status = '已冲销'
+      status = t('myRecords.offsetDone')
     } else if (row.是否已执行或冲抵) {
-      status = '已执行未冲销'
+      status = t('myRecords.executedNotOffset')
     } else if (row.是否已累计FAD) {
-      // 如果已累计FAD但没有 fadStatus（兼容旧数据）
-      status = '已累计FAD'
-    } else if (row.是否已累计寝室批评) {
-      status = '已累计寝室批评'
+      status = t('myRecords.accumulatedFad')
+      status = t('myRecords.accumulatedCriticism')
     } else if (row.是否已累计Reward) {
-      status = '已累计Reward'
+      status = t('myRecords.accumulatedReward')
     } else {
-      status = '有效'
+      status = t('myRecords.valid')
     }
 
     return [row.学生, row.班级, row.记录类型, formatDate(row.记录日期), row.记录事由 || '', row.记录老师, status]
@@ -638,7 +646,7 @@ function exportData() {
   a.click()
   URL.revokeObjectURL(url)
 
-  ElMessage.success('导出成功')
+  ElMessage.success(t('myRecords.exportSuccess'))
 }
 
 function formatDate(date) {
@@ -649,12 +657,12 @@ function formatDate(date) {
 // 获取FAD来源类型的显示标签
 function getFadSourceLabel(sourceType) {
   const map = {
-    'teach': '教学类',
-    'dorm': '寝室类',
-    'elec': '电子产品违规',
-    'other': '其他类'
+    'teach': t('myRecords.fadSourceTeach'),
+    'dorm': t('myRecords.fadSourceDorm'),
+    'elec': t('myRecords.fadSourceElec'),
+    'other': t('myRecords.fadSourceOther')
   }
-  return map[sourceType] || '未分类'
+  return map[sourceType] || t('myRecords.fadSourceEmpty')
 }
 
 // 根据记录类型获取对应的 collection
@@ -679,22 +687,7 @@ function getCollectionFromRecordType(recordType) {
 }
 
 function getCollectionLabel(collection) {
-  const map = {
-    FAD_Records: 'FAD记录',
-    Reward_Records: 'Reward记录',
-    Late_Records: '早点名迟到',
-    Leave_Room_Late_Records: '寝室迟出',
-    Back_School_Late_Records: '未按规定返校',
-    MeetingRoom_Violation_Records: '擅自进入会议室',
-    Room_Praise_Records: '寝室表扬',
-    Room_Warning_Records: '寝室批评',
-    Room_Trash_Records: '寝室垃圾未倒',
-    Elec_Products_Violation_Records: '电子产品违规',
-    Phone_Late_Records: '晚交手机',
-    Teaching_FAD_Ticket: 'Teaching FAD Ticket',
-    Teaching_Reward_Ticket: 'Teaching Reward Ticket'
-  }
-  return map[collection] || collection
+  return t(collectionToLabelKey[collection] || 'myRecords.collectionFadRecords')
 }
 
 // 判断记录是否可撤回（前端预判断）
@@ -748,39 +741,38 @@ function isWithdrawable(row) {
 // 获取不可撤回的原因
 function getWithdrawDisabledReason(row) {
   if (row.记录类型 === 'Reward') {
-    return 'Reward记录不可撤回'
+    return t('myRecords.rewardCannotWithdraw')
   }
   if (row.记录类型 === '寝室表扬' && row.是否已累计Reward) {
-    return '该寝室表扬已生成Reward，不可撤回'
+    return t('myRecords.roomPraiseRewardCannotWithdraw')
   }
   if (row.记录类型 === 'Teaching Reward Ticket' && row.是否已累计Reward) {
-    return '该Teaching Reward Ticket已兑换Reward，不可撤回'
+    return t('myRecords.teachingRewardCannotWithdraw')
   }
   if (hasFADStatus(row) && row.fadStatus === '已累计FAD，已发放') {
-    return '该记录累计产生的FAD已发放纸质通知单，无法撤回'
+    return t('myRecords.fadDeliveredCannotWithdraw')
   }
-  // FAD记录已执行或已冲销的不可撤回
   if (row.记录类型 === 'FAD') {
     if (row.是否已冲销记录) {
-      return 'FAD已冲销，无法撤回'
+      return t('myRecords.fadOffsetCannotWithdraw')
     }
     if (row.是否已执行或冲抵) {
-      return 'FAD已执行，无法撤回'
+      return t('myRecords.fadExecutedCannotWithdraw')
     }
   }
   if (row.是否已发放) {
-    return '已发放纸质通知单，无法撤回'
+    return t('myRecords.deliveredCannotWithdraw')
   }
   if (row.记录类型 === 'FAD' && row.记录老师 && row.记录老师.startsWith('已发:')) {
-    return '已发放纸质通知单，无法撤回'
+    return t('myRecords.deliveredCannotWithdraw')
   }
   if (!userStore.isAdmin) {
     const teacherName = row.记录老师?.replace('系统: ', '').split(':')[0] || ''
     if (teacherName !== userStore.username) {
-      return '只能撤回自己发出的记录'
+      return t('myRecords.onlyOwnRecordsWithdraw')
     }
   }
-  return '无法撤回'
+  return t('myRecords.cannotWithdrawGeneric')
 }
 
 // 判断记录类型是否有 FAD 状态显示

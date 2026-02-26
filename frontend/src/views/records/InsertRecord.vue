@@ -2,7 +2,7 @@
   <div class="insert-record">
     <el-card>
       <template #header>
-        <span>录入记录</span>
+        <span>{{ $t('insertRecord.title') }}</span>
       </template>
 
       <el-form
@@ -13,17 +13,17 @@
         :label-position="isMobile ? 'top' : 'right'"
         @submit.prevent="handleSubmit"
       >
-        <!-- 记录类型 -->
-        <el-form-item label="记录类型" prop="recordType">
+        <!-- Record Type -->
+        <el-form-item :label="$t('insertRecord.recordType')" prop="recordType">
           <el-select
             v-model="form.recordType"
-            placeholder="请选择记录类型"
+            :placeholder="$t('insertRecord.selectRecordType')"
             style="width: 100%"
             :teleported="false"
             @change="handleRecordTypeChange"
           >
             <el-option
-              v-for="item in availableRecordTypes"
+              v-for="item in localizedRecordTypes"
               :key="item.value"
               :label="item.label"
               :value="item.value"
@@ -31,15 +31,15 @@
           </el-select>
         </el-form-item>
 
-        <!-- FAD来源类型（仅当选择FAD时显示） -->
+        <!-- FAD Source Type (only shown when FAD is selected) -->
         <el-form-item
           v-if="form.recordType === 'FAD'"
-          label="FAD来源类型"
+          :label="$t('insertRecord.fadSourceType')"
           prop="sourceType"
         >
           <el-radio-group v-model="form.sourceType" class="radio-group-wrap">
             <el-radio
-              v-for="item in commonStore.fadSourceTypes"
+              v-for="item in localizedFadSourceTypes"
               :key="item.value"
               :value="item.value"
             >
@@ -48,32 +48,32 @@
           </el-radio-group>
         </el-form-item>
 
-        <!-- 学期 -->
-        <el-form-item label="学期" prop="semester">
+        <!-- Semester -->
+        <el-form-item :label="$t('insertRecord.semester')" prop="semester">
           <el-select
             v-model="form.semester"
-            placeholder="请选择学期"
+            :placeholder="$t('insertRecord.selectSemester')"
             style="width: 100%"
             :teleported="false"
           >
             <el-option
-              v-for="item in commonStore.semesters"
-              :key="item"
-              :label="item"
-              :value="item"
+              v-for="item in localizedSemesters"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
             />
           </el-select>
         </el-form-item>
 
-        <!-- 寝室选择（仅寝室相关记录类型显示） -->
+        <!-- Dorm Selection (only for dorm-related record types) -->
         <el-form-item
           v-if="isDormRelatedRecord"
-          label="寝室"
+          :label="$t('insertRecord.dorm')"
           prop="dorm"
         >
           <el-select
             v-model="form.dorm"
-            placeholder="请选择寝室"
+            :placeholder="$t('insertRecord.selectDorm')"
             style="width: 100%"
             filterable
             clearable
@@ -89,11 +89,11 @@
           </el-select>
         </el-form-item>
 
-        <!-- 学生选择 -->
-        <el-form-item :label="isDormRelatedRecord && form.dorm ? '寝室学生' : '学生'" prop="selectedStudents">
+        <!-- Student Selection -->
+        <el-form-item :label="isDormRelatedRecord && form.dorm ? $t('insertRecord.dormStudents') : $t('insertRecord.student')" prop="selectedStudents">
           <el-select
             v-model="form.selectedStudents"
-            :placeholder="isDormRelatedRecord && form.dorm ? '该寝室的学生' : '请输入学生姓名搜索（可多选）'"
+            :placeholder="isDormRelatedRecord && form.dorm ? $t('insertRecord.dormStudentsPlaceholder') : $t('insertRecord.studentSearchPlaceholder')"
             style="width: 100%"
             multiple
             filterable
@@ -118,8 +118,8 @@
           </el-select>
         </el-form-item>
 
-        <!-- 已选学生列表（显示班级信息） -->
-        <el-form-item v-if="form.selectedStudents.length > 0" label="已选学生">
+        <!-- Selected Students List (showing class info) -->
+        <el-form-item v-if="form.selectedStudents.length > 0" :label="$t('insertRecord.selectedStudents')">
           <el-tag
             v-for="studentName in form.selectedStudents"
             :key="studentName"
@@ -131,72 +131,72 @@
           </el-tag>
         </el-form-item>
 
-        <!-- 记录日期 -->
-        <el-form-item label="记录日期" prop="date">
+        <!-- Record Date -->
+        <el-form-item :label="$t('insertRecord.recordDate')" prop="date">
           <el-date-picker
             v-model="form.date"
             type="date"
-            placeholder="请选择日期"
+            :placeholder="$t('insertRecord.selectDate')"
             style="width: 100%"
             value-format="YYYY-MM-DD"
           />
         </el-form-item>
 
-        <!-- 记录事由（部分类型需要） -->
+        <!-- Record Reason (required for certain types) -->
         <el-form-item
           v-if="needsDescription"
-          label="记录事由"
+          :label="$t('insertRecord.recordReason')"
           prop="description"
         >
           <el-input
             v-model="form.description"
             type="textarea"
             :rows="3"
-            placeholder="请输入记录事由"
+            :placeholder="$t('insertRecord.enterRecordReason')"
           />
         </el-form-item>
 
-        <!-- 是否优先冲抵执行（仅Reward） -->
+        <!-- Priority Offset Execution (Reward only) -->
         <el-form-item
           v-if="form.recordType === 'Reward'"
-          label="优先冲抵执行"
+          :label="$t('insertRecord.priorityOffset')"
         >
           <div class="switch-with-tip">
             <el-switch v-model="form.priorityOffset" />
-            <span class="tip">开启后优先冲抵未执行的FAD</span>
+            <span class="tip">{{ $t('insertRecord.priorityOffsetTip') }}</span>
           </div>
         </el-form-item>
 
-        <!-- 票据数量（Reward/Teaching Reward Ticket/Teaching FAD Ticket） -->
+        <!-- Ticket Quantity (Reward/Teaching Reward Ticket/Teaching FAD Ticket) -->
         <el-form-item
           v-if="isTicketRecord"
-          label="数量"
+          :label="$t('insertRecord.quantity')"
         >
           <div class="select-with-tip">
             <el-select
               v-model="form.ticketCount"
-              placeholder="请选择数量"
+              :placeholder="$t('insertRecord.selectQuantity')"
               class="ticket-count-select"
             >
               <el-option
                 v-for="n in 6"
                 :key="n"
-                :label="`${n}张`"
+                :label="$t('insertRecord.ticketUnit', { n })"
                 :value="n"
               />
             </el-select>
-            <span class="tip">一次录入多张相同记录</span>
+            <span class="tip">{{ $t('insertRecord.quantityTip') }}</span>
           </div>
         </el-form-item>
 
-        <!-- 取消上课资格至（仅电子产品违规） -->
+        <!-- Cancel Qualification Until (Electronics Violation only) -->
         <el-form-item
           v-if="form.recordType === '上网课违规使用电子产品'"
-          label="取消资格至"
+          :label="$t('insertRecord.cancelQualificationUntil')"
         >
           <el-radio-group v-model="form.cancelUntil" class="radio-group-wrap">
-            <el-radio value="一个月">一个月后</el-radio>
-            <el-radio value="学期结束">学期结束</el-radio>
+            <el-radio value="一个月">{{ $t('insertRecord.oneMonth') }}</el-radio>
+            <el-radio value="学期结束">{{ $t('insertRecord.semesterEnd') }}</el-radio>
           </el-radio-group>
         </el-form-item>
 
@@ -208,9 +208,9 @@
               @click="handleSubmit"
               class="submit-btn"
             >
-              提交记录
+              {{ $t('insertRecord.submitRecord') }}
             </el-button>
-            <el-button @click="resetForm" class="reset-btn">重置</el-button>
+            <el-button @click="resetForm" class="reset-btn">{{ $t('common.reset') }}</el-button>
           </div>
         </el-form-item>
       </el-form>
@@ -221,12 +221,14 @@
 <script setup>
 import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { useCommonStore } from '@/stores/common'
 import { getStudents } from '@/api/students'
 import { insertRecord } from '@/api/records'
 import dayjs from 'dayjs'
 
+const { t } = useI18n()
 const userStore = useUserStore()
 const commonStore = useCommonStore()
 
@@ -277,38 +279,49 @@ const isTicketRecord = computed(() => {
 const descriptionTypes = ['FAD', 'Reward', 'Teaching FAD Ticket', 'Teaching Reward Ticket', '上网课违规使用电子产品']
 const needsDescription = computed(() => descriptionTypes.includes(form.recordType))
 
-// 可用的记录类型（根据用户权限）
-const availableRecordTypes = computed(() => {
+// Localized record types (mapping labelKey to translated label)
+const localizedRecordTypes = computed(() => {
   // C组用户只能录入寝室相关记录
   if (userStore.isCleaner) {
     return [
-      { value: '寝室表扬', label: '寝室表扬', group: 'C' },
-      { value: '寝室批评', label: '寝室批评', group: 'C' },
-      { value: '寝室垃圾未倒', label: '寝室垃圾未倒', group: 'C' }
+      { value: '寝室表扬', label: t('recordTypeLabels.dormPraise'), group: 'C' },
+      { value: '寝室批评', label: t('recordTypeLabels.dormCriticism'), group: 'C' },
+      { value: '寝室垃圾未倒', label: t('recordTypeLabels.dormTrashNotDumped'), group: 'C' }
     ]
   }
   // F组用户只能录入Teaching Ticket
   if (userStore.isFaculty) {
     return [
-      { value: 'Teaching Reward Ticket', label: 'Teaching Reward Ticket', group: 'F' },
-      { value: 'Teaching FAD Ticket', label: 'Teaching FAD Ticket', group: 'F' }
+      { value: 'Teaching Reward Ticket', label: t('recordTypeLabels.teachingRewardTicket'), group: 'F' },
+      { value: 'Teaching FAD Ticket', label: t('recordTypeLabels.teachingFADTicket'), group: 'F' }
     ]
   }
   if (userStore.recordTypes.length > 0) {
-    return userStore.recordTypes
+    return userStore.recordTypes.map(r => ({ ...r, label: t(r.labelKey) }))
   }
   // S组管理员可以看到所有记录类型
-  return commonStore.allRecordTypes
+  return commonStore.allRecordTypes.map(r => ({ ...r, label: t(r.labelKey) }))
 })
 
-const rules = {
-  recordType: [{ required: true, message: '请选择记录类型', trigger: 'change' }],
-  semester: [{ required: true, message: '请选择学期', trigger: 'change' }],
-  selectedStudents: [{ required: true, message: '请选择学生', trigger: 'change' }],
-  date: [{ required: true, message: '请选择日期', trigger: 'change' }],
-  sourceType: [{ required: true, message: '请选择FAD来源类型', trigger: 'change' }],
-  description: [{ required: true, message: '请输入记录事由', trigger: 'blur' }]
-}
+// Localized FAD source types
+const localizedFadSourceTypes = computed(() =>
+  commonStore.fadSourceTypes.map(s => ({ ...s, label: t(s.labelKey) }))
+)
+
+// Localized semesters
+const localizedSemesters = computed(() =>
+  commonStore.semesters.map(s => ({ ...s, label: t(s.labelKey) }))
+)
+
+// Computed validation rules with i18n
+const rules = computed(() => ({
+  recordType: [{ required: true, message: t('insertRecord.validation.recordTypeRequired'), trigger: 'change' }],
+  semester: [{ required: true, message: t('insertRecord.validation.semesterRequired'), trigger: 'change' }],
+  selectedStudents: [{ required: true, message: t('insertRecord.validation.studentsRequired'), trigger: 'change' }],
+  date: [{ required: true, message: t('insertRecord.validation.dateRequired'), trigger: 'change' }],
+  sourceType: [{ required: true, message: t('insertRecord.validation.sourceTypeRequired'), trigger: 'change' }],
+  description: [{ required: true, message: t('insertRecord.validation.descriptionRequired'), trigger: 'blur' }]
+}))
 
 onMounted(async () => {
   commonStore.generateSemesters()
@@ -435,7 +448,7 @@ function handleStudentsChange(selectedNames) {
 
 // 获取学生班级
 function getStudentClass(studentName) {
-  return studentClassMap.value[studentName] || '未知班级'
+  return studentClassMap.value[studentName] || t('insertRecord.unknownClass')
 }
 
 // 移除学生
@@ -453,7 +466,7 @@ async function handleSubmit() {
 
   // 检查事由是否必填
   if (needsDescription.value && !form.description) {
-    ElMessage.warning('请输入记录事由')
+    ElMessage.warning(t('insertRecord.enterReasonRequired'))
     return
   }
 
@@ -504,23 +517,23 @@ async function handleSubmit() {
 
     if (failedCount === 0) {
       // 使用弹窗提示成功
-      let message = `成功为 ${successCount} 名学生创建了记录`
+      let message = t('insertRecord.submitSuccess', { count: successCount })
       if (accumulatedFAD > 0) {
-        message += `\n已触发 ${accumulatedFAD} 条FAD累计`
+        message += `\n${t('insertRecord.fadAccumulatedTip', { count: accumulatedFAD })}`
       }
       if (accumulatedWarning > 0) {
-        message += `\n已触发 ${accumulatedWarning} 条寝室批评累计`
+        message += `\n${t('insertRecord.warningAccumulatedTip', { count: accumulatedWarning })}`
       }
       if (warningMessages.size > 0) {
         message += `\n${Array.from(warningMessages).join('\n')}`
       }
-      ElMessageBox.alert(message, '提交成功', {
-        confirmButtonText: '确定',
+      ElMessageBox.alert(message, t('insertRecord.submitSuccessTitle'), {
+        confirmButtonText: t('common.confirm'),
         type: 'success'
       })
     } else {
-      ElMessageBox.alert(`${successCount} 条成功，${failedCount} 条失败`, '提交失败', {
-        confirmButtonText: '确定',
+      ElMessageBox.alert(t('insertRecord.submitPartialResult', { success: successCount, failed: failedCount }), t('insertRecord.submitFailedTitle'), {
+        confirmButtonText: t('common.confirm'),
         type: 'error'
       })
     }
@@ -534,8 +547,8 @@ async function handleSubmit() {
     studentClassMap.value = {}
     students.value = []
   } catch (error) {
-    ElMessageBox.alert('提交失败，请重试', '提交失败', {
-      confirmButtonText: '确定',
+    ElMessageBox.alert(t('insertRecord.submitError'), t('insertRecord.submitFailedTitle'), {
+      confirmButtonText: t('common.confirm'),
       type: 'error'
     })
     // 清空表单
