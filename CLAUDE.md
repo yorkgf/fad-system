@@ -209,6 +209,26 @@ cd frontend && npm run build:prod
 ### Deploy Package Rebuild
 After modifying backend source: copy `backend/src/` to `deploy-package/src/` and reinstall production dependencies in `deploy-package/`.
 
+## Internationalization (i18n)
+
+The frontend supports bilingual UI (Chinese/English) via `vue-i18n` v9.
+
+### Key Files
+- `frontend/src/i18n/index.js` - i18n instance, locale storage (`localStorage` key `fad-locale`, default `zh-CN`), Element Plus locale integration
+- `frontend/src/i18n/locales/zh-CN.json` - Chinese translations
+- `frontend/src/i18n/locales/en.json` - English translations
+- `frontend/src/components/LangSwitch.vue` - Language toggle dropdown (triggers page reload to apply Element Plus locale)
+
+### i18n Patterns
+- **Record types** use `labelKey` in `stores/common.js` (e.g., `'recordTypes.morningLate'`) instead of hardcoded Chinese labels; computed properties resolve these to translated strings
+- **Route titles** use `meta.titleKey` instead of `meta.title`
+- Translation keys are organized by section: `common`, `nav`, `login`, `records`, `recordTypes`, `validation`, `messages`, `fadSource`, etc.
+- Fallback locale is `zh-CN` — missing English keys fall back to Chinese
+- Language switch reloads the page (`window.location.reload()`) to fully apply Element Plus locale changes
+
+### Adding Translations
+When adding new UI text, add keys to **both** `zh-CN.json` and `en.json`. Use `$t('section.key')` in templates or `t('section.key')` from `useI18n()` in script setup.
+
 ## Gotchas
 
 - `deploy-package/` is a pre-bundled SCF package - source changes require manual rebuild (see above)
