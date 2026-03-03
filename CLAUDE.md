@@ -51,7 +51,7 @@ This is deployed independently and uses the GHS database.
 1. Backend: `cd backend && cp .env.example .env` (configure env vars), then `npm install && npm run dev`
 2. Frontend: `cd frontend && npm install && npm run dev`
 
-**No test framework or linting/formatting tools are configured.** There are no unit tests, no ESLint, no Prettier.
+**No test framework or linting/formatting tools are configured.** There are no unit tests, no ESLint, no Prettier. Ad-hoc validation scripts exist in `backend/` root (`test-*.js`, `check-*.js`, `migrate-*.js`) for manual testing and data migration.
 
 ### Dev Proxy
 Frontend dev server proxies `/api` to `http://localhost:8080` by default (configured in `frontend/vite.config.js`). To proxy to the production SCF backend instead, comment out the localhost target and uncomment the SCF URL in the proxy config.
@@ -94,12 +94,14 @@ Six user groups defined in `backend/src/utils/userGroups.js`:
 See `frontend/src/router/index.js` for the complete route permission matrix.
 
 ### Key Architectural Patterns
+- **Unified record insertion**: `POST /api/records` is a single endpoint that dispatches to different MongoDB collections based on the `recordType` field in the request body (mapped via `RECORD_TYPE_TO_COLLECTION` in `constants.js`)
 - **Record accumulation**: Records accumulate per `ACCUMULATE_RULES` in `constants.js`, auto-triggering FAD/Reward creation at thresholds
 - **FAD source tracking**: Every FAD has a `FAD来源类型` field (dorm/teach/elec/other) for analytics
 - **Reward offset logic**: 2 Rewards offset FAD execution; 3 Rewards offset the entire FAD record. Operates on **academic year** scope (Fall + following Spring), not single semester
 - **Duplicate prevention**: `寝室表扬`, `寝室批评`, `寝室垃圾未倒` cannot be duplicated for same student on same day
 - **Dual database**: GHA (main FAD data) + GHS (meeting arrangement); see `db.js` for `getCollection()` vs `getGHSCollection()`
 - **Teacher profile sync**: GHS teacher profiles auto-created from GHA data when accessing schedule features
+- **Frontend API mirroring**: `frontend/src/api/` files mirror backend route files 1:1 (auth.js, records.js, fad.js, reward.js, room.js, students.js, other.js, schedule.js), with `request.js` as the shared Axios instance
 
 ### Key Files for Business Logic
 - `backend/src/utils/constants.js` - Accumulation rules, record type→collection mappings, FAD source types, threshold constants, `DB_FIELDS` for standardized field names
@@ -107,6 +109,12 @@ See `frontend/src/router/index.js` for the complete route permission matrix.
 - `backend/src/routes/records.js` - Core record insertion with accumulation, duplicate prevention, reward offset logic (~1000 lines, largest route file)
 - `frontend/src/stores/common.js` - Record type definitions (must stay in sync with backend), semester utilities
 - `frontend/src/router/index.js` - Route permission matrix by user group
+- `frontend/src/api/request.js` - Axios instance with auth interceptor and error handling (401→auto logout)
+
+### AI Navigation Files
+- `AGENTS.md` (root) - Top-level project map with code symbols and conventions
+- `backend/src/routes/AGENTS.md` - Detailed backend route documentation
+- `frontend/src/views/AGENTS.md` - Frontend view component documentation
 
 **DB_FIELDS Usage**: Use constants from `DB_FIELDS` (e.g., `DB_FIELDS.STUDENT`, `DB_FIELDS.SEMESTER`, `DB_FIELDS.WITHDRAWN`) instead of hardcoding Chinese field names in queries to ensure consistency.
 

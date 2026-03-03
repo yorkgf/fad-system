@@ -185,8 +185,8 @@ router.beforeEach(async (to, from, next) => {
     next('/login')
   } else if (to.path === '/login' && userStore.isLoggedIn) {
     next('/')
-  } else if ((userStore.userGroup === UserGroup.CLEANING || userStore.userGroup === UserGroup.FACULTY) && !limitedAllowedRoutes.includes(to.path)) {
-    // C组和F组用户尝试访问未授权页面，重定向到首页
+  } else if ((userStore.userGroup === UserGroup.CLEANING || userStore.userGroup === UserGroup.FACULTY) && !limitedAllowedRoutes.includes(to.path) && !to.path.startsWith('/schedule')) {
+    // C组和F组用户尝试访问未授权页面，重定向到首页（日程管理路由由后续的schedule检查处理）
     next('/')
   } else if (to.path === '/fad/school-stats') {
     // 学校FAD统计页面：S组、A组可以访问
