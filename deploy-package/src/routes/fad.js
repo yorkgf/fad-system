@@ -459,4 +459,73 @@ router.put('/:id/source-type', authMiddleware, async (req, res) => {
   }
 })
 
+// 最佳班级排名（公开接口，无需登录）
+// 按班级人均FAD升序排名，人均FAD最少的为最佳班级
+router.get('/public-best-class', async (req, res) => {
+  try {
+    const { semester, semesters } = req.query
+
+    const filter = {
+      是否已撤回: { $ne: true }
+    }
+
+    if (semesters) {
+      const semesterArray = Array.isArray(semesters) ? semesters : [semesters]
+      filter.学期 = { $in: semesterArray }
+    } else if (semester) {
+      filter.学期 = semester
+    }
+
+    // 按班级统计FAD总数
+    const classFADData = await getCollection(Collections.FADRecords).aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: '$班级',
+          fadCount: { $sum: 1 }
+        }
+      }
+    ]).toArray()
+
+    // 获取每个班级的学生人数
+    const classStudentCount = await getCollection(Collections.Students).aggregate([
+      {
+        $group: {
+          _id: '$班级',
+          studentCount: { $sum: 1 }
+        }
+      }
+    ]).toArray()
+
+    const classStudentMap = new Map(
+      classStudentCount.map(c => [c._id, c.studentCount])
+    )
+
+    // 获取有FAD的班级列表
+    const fadClassSet = new Set(classFADData.map(c => c._id))
+    const fadClassMap = new Map(classFADData.map(c => [c._id, c.fadCount]))
+
+    // 合并：包含所有有学生的班级（FAD为0的班级也要显示）
+    const allClasses = classStudentCount
+      .filter(c => c._id !== null && c._id !== undefined)
+      .map(c => {
+        const fadCount = fadClassMap.get(c._id) || 0
+        const studentCount = c.studentCount
+        const avgFAD = studentCount > 0 ? (fadCount / studentCount).toFixed(2) : 0
+        return {
+          class: c._id,
+          fadCount,
+          studentCount,
+          avgFAD: parseFloat(avgFAD)
+        }
+      })
+      .sort((a, b) => a.avgFAD - b.avgFAD) // 升序：人均FAD最少的排前面
+
+    res.json({ success: true, data: allClasses })
+  } catch (error) {
+    console.error('Get public best class error:', error)
+    res.status(500).json({ success: false, error: '获取最佳班级排名失败' })
+  }
+})
+
 module.exports = router

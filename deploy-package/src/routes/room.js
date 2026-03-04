@@ -184,7 +184,97 @@ router.post('/clean', authMiddleware, async (req, res) => {
   }
 })
 
-// 最佳寝室排名
+// 最佳寝室排名（公开接口，无需登录）
+router.get('/public-best-dorm', async (req, res) => {
+  try {
+    const { semester, semesters } = req.query
+
+    const filter = {
+      是否已撤回: { $ne: true }
+    }
+
+    if (semesters) {
+      const semesterArray = Array.isArray(semesters) ? semesters : [semesters]
+      filter.学期 = { $in: semesterArray }
+    } else if (semester) {
+      filter.学期 = semester
+    }
+
+    const dormPraiseData = await getCollection(Collections.RoomPraiseRecords).aggregate([
+      { $match: filter },
+      {
+        $lookup: {
+          from: 'Students',
+          localField: '学生',
+          foreignField: '学生姓名',
+          as: 'studentInfo'
+        }
+      },
+      { $unwind: '$studentInfo' },
+      {
+        $group: {
+          _id: '$studentInfo.寝室',
+          praiseCount: { $sum: 1 },
+          students: { $addToSet: '$学生' }
+        }
+      }
+    ]).toArray()
+
+    const dormStudentCounts = await getCollection(Collections.Students).aggregate([
+      {
+        $group: {
+          _id: '$寝室',
+          studentCount: { $sum: 1 }
+        }
+      }
+    ]).toArray()
+
+    const dormCountMap = new Map(
+      dormStudentCounts.map(d => [d._id, d.studentCount])
+    )
+
+    const dormStats = dormPraiseData
+      .filter(d => d._id !== null && d._id !== undefined)
+      .map(d => {
+        const dormNumber = d._id
+        const studentCount = dormCountMap.get(dormNumber) || d.students.length
+        const avgPraise = studentCount > 0 ? (d.praiseCount / studentCount).toFixed(2) : 0
+        const floorNumber = getFloorNumber(dormNumber)
+
+        return {
+          dormNumber,
+          praiseCount: d.praiseCount,
+          studentCount,
+          avgPraise: parseFloat(avgPraise),
+          floor: floorNumber
+        }
+      })
+
+    const floorMap = new Map()
+    for (const dorm of dormStats) {
+      if (!floorMap.has(dorm.floor)) {
+        floorMap.set(dorm.floor, [])
+      }
+      floorMap.get(dorm.floor).push(dorm)
+    }
+
+    const bestDorms = []
+    const sortedFloors = Array.from(floorMap.keys()).sort((a, b) => a - b)
+
+    for (const floor of sortedFloors) {
+      const floorDorms = floorMap.get(floor)
+      floorDorms.sort((a, b) => b.avgPraise - a.avgPraise)
+      bestDorms.push({ floor, dorms: floorDorms.slice(0, 3) })
+    }
+
+    res.json({ success: true, data: bestDorms })
+  } catch (error) {
+    console.error('Get public best dorm error:', error)
+    res.status(500).json({ success: false, error: '获取最佳寝室排名失败' })
+  }
+})
+
+// 最佳寝室排名（需登录）
 router.get('/best-dorm', authMiddleware, async (req, res) => {
   try {
     const { semester, semesters } = req.query

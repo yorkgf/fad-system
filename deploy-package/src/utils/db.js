@@ -88,7 +88,8 @@ const Collections = {
   PhoneLateRecords: 'Phone_Late_Records',
   TeachingFADTicket: 'Teaching_FAD_Ticket',
   TeachingRewardTicket: 'Teaching_Reward_Ticket',
-  StopClassRecords: 'Stop_Class_Records'
+  StopClassRecords: 'Stop_Class_Records',
+  CompetitionEvents: 'Competition_Events'
 }
 
 // GHS 集合名称常量（日程管理系统）

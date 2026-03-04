@@ -1,19 +1,24 @@
+// 加载环境变量（仅在开发环境）
+if (process.env.NODE_ENV !== 'production') {
+  require('dotenv').config()
+}
+
 const express = require('express')
 const cors = require('cors')
 const helmet = require('helmet')
 const serverless = require('serverless-http')
-const { connectDB } = require('./src/utils/db.js')
+const { connectDB } = require('./utils/db.js')
 
 // 路由
-const authRoutes = require('./src/routes/auth.js')
-const studentsRoutes = require('./src/routes/students.js')
-const recordsRoutes = require('./src/routes/records.js')
-const fadRoutes = require('./src/routes/fad.js')
-const rewardRoutes = require('./src/routes/reward.js')
-const roomRoutes = require('./src/routes/room.js')
-const otherRoutes = require('./src/routes/other.js')
-const scheduleRoutes = require('./src/routes/schedule.js')
-const competitionRoutes = require('./src/routes/competition.js')
+const authRoutes = require('./routes/auth.js')
+const studentsRoutes = require('./routes/students.js')
+const recordsRoutes = require('./routes/records.js')
+const fadRoutes = require('./routes/fad.js')
+const rewardRoutes = require('./routes/reward.js')
+const roomRoutes = require('./routes/room.js')
+const otherRoutes = require('./routes/other.js')
+const scheduleRoutes = require('./routes/schedule.js')
+const competitionRoutes = require('./routes/competition.js')
 
 const app = express()
 
