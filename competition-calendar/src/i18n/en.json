@@ -1,0 +1,70 @@
+{
+  "common": {
+    "failed": "Failed",
+    "year": " ",
+    "month": "",
+    "today": "Today",
+    "monday": "Mon",
+    "tuesday": "Tue",
+    "wednesday": "Wed",
+    "thursday": "Thu",
+    "friday": "Fri",
+    "saturday": "Sat",
+    "sunday": "Sun"
+  },
+  "competition": {
+    "title": "Competition Calendar",
+    "eventName": "Competition Name",
+    "category": "Category",
+    "registrationStart": "Registration Start",
+    "registrationEnd": "Registration Deadline",
+    "eventStart": "Start Date",
+    "eventEnd": "End Date",
+    "participants": "Participants",
+    "location": "Location",
+    "registrationLink": "Registration Link",
+    "description": "Description",
+    "monthView": "Month",
+    "weekView": "Week",
+    "thisWeek": "This Week",
+    "nextWeek": "Next Week",
+    "noEvents": "No competitions",
+    "eventDetail": "Competition Details",
+    "registrationPeriod": "Registration Period",
+    "eventPeriod": "Competition Period"
+  },
+  "bestDorm": {
+    "title": "Best Dorm Ranking",
+    "selectSemester": "Select Semester (multiple)",
+    "ruleInfo": "Calculation: Total Room Praises / Room Occupants (ranked by floor, Top 3 per floor)",
+    "noData": "No data",
+    "floor": "Floor {floor}",
+    "rank": "Rank",
+    "dormNumber": "Dorm Number",
+    "praiseCount": "Total Praises",
+    "studentCount": "Occupants",
+    "avgPraise": "Avg Praise",
+    "times": "",
+    "spring": "Spring Semester",
+    "fall": "Fall Semester"
+  },
+  "bestClass": {
+    "title": "Best Class Ranking",
+    "selectSemester": "Select Semester (multiple)",
+    "ruleInfo": "Calculation: Total FADs / Class Size. Lowest per-capita FAD = Best Class",
+    "noData": "No data",
+    "rank": "Rank",
+    "className": "Class",
+    "fadCount": "Total FADs",
+    "studentCount": "Students",
+    "avgFAD": "Avg FAD",
+    "spring": "Spring Semester",
+    "fall": "Fall Semester"
+  },
+  "app": {
+    "navCalendar": "Calendar",
+    "navBestDorm": "Best Dorm",
+    "navBestClass": "Best Class",
+    "langSwitch": "中文"
+  }
+}

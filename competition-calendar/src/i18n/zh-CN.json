@@ -1,0 +1,70 @@
+{
+  "common": {
+    "failed": "失败",
+    "year": "年",
+    "month": "月",
+    "today": "今天",
+    "monday": "周一",
+    "tuesday": "周二",
+    "wednesday": "周三",
+    "thursday": "周四",
+    "friday": "周五",
+    "saturday": "周六",
+    "sunday": "周日"
+  },
+  "competition": {
+    "title": "竞赛日历",
+    "eventName": "竞赛名称",
+    "category": "竞赛类别",
+    "registrationStart": "报名开始日期",
+    "registrationEnd": "报名截止日期",
+    "eventStart": "竞赛开始日期",
+    "eventEnd": "竞赛结束日期",
+    "participants": "参与对象",
+    "location": "地点",
+    "registrationLink": "报名链接",
+    "description": "描述",
+    "monthView": "月视图",
+    "weekView": "周视图",
+    "thisWeek": "本周竞赛",
+    "nextWeek": "下周竞赛",
+    "noEvents": "暂无竞赛",
+    "eventDetail": "竞赛详情",
+    "registrationPeriod": "报名时间",
+    "eventPeriod": "竞赛时间"
+  },
+  "bestDorm": {
+    "title": "最佳寝室排名",
+    "selectSemester": "选择学期（可多选）",
+    "ruleInfo": "计算方式：寝室表扬总数 ÷ 寝室人数（按楼层排名，每层Top 3）",
+    "noData": "暂无数据",
+    "floor": "{floor}楼",
+    "rank": "排名",
+    "dormNumber": "寝室号",
+    "praiseCount": "表扬总数",
+    "studentCount": "寝室人数",
+    "avgPraise": "人均表扬",
+    "times": "次",
+    "spring": "春季(Spring)",
+    "fall": "秋季(Fall)"
+  },
+  "bestClass": {
+    "title": "最佳班级排名",
+    "selectSemester": "选择学期（可多选）",
+    "ruleInfo": "计算方式：班级FAD总数 ÷ 班级人数，人均FAD最少的为最佳班级",
+    "noData": "暂无数据",
+    "rank": "排名",
+    "className": "班级",
+    "fadCount": "FAD总数",
+    "studentCount": "班级人数",
+    "avgFAD": "人均FAD",
+    "spring": "春季(Spring)",
+    "fall": "秋季(Fall)"
+  },
+  "app": {
+    "navCalendar": "竞赛日历",
+    "navBestDorm": "最佳寝室",
+    "navBestClass": "最佳班级",
+    "langSwitch": "English"
+  }
+}
