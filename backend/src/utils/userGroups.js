@@ -42,6 +42,23 @@ const FAD_EXECUTION_GROUPS = [
 // 管理员权限组 (可查看统计数据、管理停课等)
 const ADMIN_GROUPS = [UserGroup.SYSTEM, UserGroup.ADMIN_A]
 
+// 竞赛日历访问权限组 (查看日历)
+const COMPETITION_ACCESS_GROUPS = [
+  UserGroup.SYSTEM,
+  UserGroup.ADMIN_A,
+  UserGroup.ADMIN_B,
+  UserGroup.TEACHER,
+  UserGroup.FACULTY
+]
+
+// 竞赛管理权限组 (创建/编辑/删除)
+const COMPETITION_MANAGE_GROUPS = [
+  UserGroup.SYSTEM,
+  UserGroup.ADMIN_B,
+  UserGroup.TEACHER,
+  UserGroup.FACULTY
+]
+
 // 检查是否有完整访问权限
 function hasFullAccess(userGroup) {
   return FULL_ACCESS_GROUPS.includes(userGroup)
@@ -62,6 +79,16 @@ function hasFADExecutionAccess(userGroup) {
   return FAD_EXECUTION_GROUPS.includes(userGroup)
 }
 
+// 检查是否有竞赛日历访问权限
+function hasCompetitionAccess(userGroup) {
+  return COMPETITION_ACCESS_GROUPS.includes(userGroup)
+}
+
+// 检查是否有竞赛管理权限
+function hasCompetitionManageAccess(userGroup) {
+  return COMPETITION_MANAGE_GROUPS.includes(userGroup)
+}
+
 module.exports = {
   UserGroup,
   FULL_ACCESS_GROUPS,
@@ -70,8 +97,12 @@ module.exports = {
   SCHEDULE_ACCESS_GROUPS,
   FAD_EXECUTION_GROUPS,
   ADMIN_GROUPS,
+  COMPETITION_ACCESS_GROUPS,
+  COMPETITION_MANAGE_GROUPS,
   hasFullAccess,
   hasScheduleAccess,
   isAdmin,
-  hasFADExecutionAccess
+  hasFADExecutionAccess,
+  hasCompetitionAccess,
+  hasCompetitionManageAccess
 }
