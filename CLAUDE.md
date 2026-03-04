@@ -8,6 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Build for deploy**: `cd frontend && npm run build:prod`
 - **Add record type**: Update both `backend/src/utils/constants.js` AND `frontend/src/stores/common.js`
 - **Deploy backend**: Copy `backend/src/` to `deploy-package/src/`, upload to SCF
+- **Build standalone calendar**: `cd competition-calendar && npm run build`
 
 ## Project Overview
 
@@ -17,6 +18,7 @@ FAD (学生纪律与奖励管理系统) - Student discipline and reward manageme
 - **FAD Core**: Student discipline/reward management (GHA database)
 - **Meeting Arrangement (日程管理)**: Parent-teacher conference booking system (GHS database) - Teacher portal integrated into FAD
 - **Parent Portal**: Standalone parent-facing booking interface in `meeting arrangement/` folder (separate Vue app, not part of main FAD build)
+- **Competition Calendar (公开展示站)**: Standalone public-facing Vue app in `competition-calendar/` folder (separate build, deployed to separate EdgeOne Pages site, uses `/public-*` API endpoints without auth)
 
 ## Development Commands
 
@@ -76,6 +78,7 @@ Frontend dev server proxies `/api` to `http://localhost:8080` by default (config
 | `/api/room-praise` | `room.js` | Dorm praise/warning (shared router) |
 | `/api/room-warning` | `room.js` | Dorm praise/warning (shared router) |
 | `/api/schedule` | `schedule.js` | Meeting scheduling (GHS) |
+| `/api/competition` | `competition.js` | Competition calendar CRUD |
 | `/api` | `other.js` | Elec violations, phone lists, tickets |
 | `/api/health` | inline | Health check endpoint |
 
@@ -115,6 +118,7 @@ See `frontend/src/router/index.js` for the complete route permission matrix.
 - `AGENTS.md` (root) - Top-level project map with code symbols and conventions
 - `backend/src/routes/AGENTS.md` - Detailed backend route documentation
 - `frontend/src/views/AGENTS.md` - Frontend view component documentation
+- `docs/user-guides/` - Per-role user guides (系统管理员, 班主任, 任课老师, Foreign Faculty, 保洁阿姨, etc.)
 
 **DB_FIELDS Usage**: Use constants from `DB_FIELDS` (e.g., `DB_FIELDS.STUDENT`, `DB_FIELDS.SEMESTER`, `DB_FIELDS.WITHDRAWN`) instead of hardcoding Chinese field names in queries to ensure consistency.
 
@@ -214,6 +218,15 @@ cd frontend && npm run build:prod
 ```
 - Production API URL configured in `frontend/.env.production` as `VITE_API_BASE_URL`
 
+### Competition Calendar Standalone (EdgeOne Pages)
+```bash
+cd competition-calendar && npm run build
+# Deploy dist/ folder to a separate EdgeOne Pages site
+```
+- Separate Vue 3 + Vite + Element Plus app (no Pinia, no auth)
+- Uses public API endpoints (`/public-events`, `/public-best-dorm`, `/public-best-class`) that require no JWT
+- Production API URL in `competition-calendar/.env.production`
+
 ### Deploy Package Rebuild
 After modifying backend source: copy `backend/src/` to `deploy-package/src/` and reinstall production dependencies in `deploy-package/`.
 
@@ -240,6 +253,9 @@ When adding new UI text, add keys to **both** `zh-CN.json` and `en.json`. Use `$
 ## Gotchas
 
 - `deploy-package/` is a pre-bundled SCF package - source changes require manual rebuild (see above)
+- `deploy-package/index.js` (root) is the **actual SCF entry point** (via `scf_bootstrap`), separate from `deploy-package/src/index.js`. When adding new routes, update BOTH files — root `index.js` uses `./src/routes/*` paths
+- `commonStore.semesters` contains objects `{ value, labelKey }`, not plain strings. Use `item.value` for `:key`/`:value` and `$t(item.labelKey)` for `:label` in `<el-option>`
+- When creating public-facing standalone sites, add `/public-*` route variants without `authMiddleware` (e.g., `/public-events`, `/public-best-dorm`)
 - Backend uses `dotenv` in dev mode (`index.js`) but it's not in `backend/package.json` - it relies on a hoisted install or must be installed separately
 - Email notifications use Brevo API - `NO_EMAIL_TYPES` in `constants.js` lists excluded record types (`寝室表扬`, `Teaching Reward Ticket`, `Reward`)
 - Teacher login data is initialized via the "教职工" page in the "其他" module
