@@ -208,12 +208,29 @@
           {{ detailEvent.地点 }}
         </el-descriptions-item>
         <el-descriptions-item
-          v-if="detailEvent.报名链接"
-          :label="$t('competition.registrationLink')"
+          v-if="detailEvent.报名方式或链接"
+          :label="$t('competition.registrationMethod')"
         >
-          <a :href="detailEvent.报名链接" target="_blank" rel="noopener noreferrer">
-            {{ detailEvent.报名链接 }}
+          <a
+            v-if="detailEvent.报名方式或链接.startsWith('http')"
+            :href="detailEvent.报名方式或链接"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {{ detailEvent.报名方式或链接 }}
           </a>
+          <img
+            v-else-if="detailEvent.报名方式或链接.startsWith('data:image')"
+            :src="detailEvent.报名方式或链接"
+            style="max-width: 200px; max-height: 200px;"
+          />
+          <span v-else>{{ detailEvent.报名方式或链接 }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item
+          v-if="detailEvent.考试范围"
+          :label="$t('competition.examScope')"
+        >
+          {{ detailEvent.考试范围 }}
         </el-descriptions-item>
         <el-descriptions-item
           v-if="detailEvent.描述"
@@ -239,10 +256,12 @@ const { t } = useI18n()
 
 // --- Constants ---
 const categoryTagMap = {
-  '学术': '',
+  '数学': '',
+  '理科': 'success',
+  '文科': 'danger',
   '体育': 'success',
   '艺术': 'warning',
-  '科技': 'danger',
+  '科技': 'warning',
   '其他': 'info'
 }
 
@@ -549,7 +568,9 @@ onMounted(() => {
   opacity: 0.85;
 }
 
-.event-bar.cat-\5B66\672F { background: #409eff; }
+.event-bar.cat-\6570\5B66 { background: #409eff; }
+.event-bar.cat-\7406\79D1 { background: #2ecc71; }
+.event-bar.cat-\6587\79D1 { background: #e74c3c; }
 .event-bar.cat-\4F53\80B2 { background: #67c23a; }
 .event-bar.cat-\827A\672F { background: #9b59b6; }
 .event-bar.cat-\79D1\6280 { background: #e6a23c; }
@@ -613,7 +634,9 @@ onMounted(() => {
   opacity: 0.85;
 }
 
-.event-card.cat-\5B66\672F { background: #409eff; }
+.event-card.cat-\6570\5B66 { background: #409eff; }
+.event-card.cat-\7406\79D1 { background: #2ecc71; }
+.event-card.cat-\6587\79D1 { background: #e74c3c; }
 .event-card.cat-\4F53\80B2 { background: #67c23a; }
 .event-card.cat-\827A\672F { background: #9b59b6; }
 .event-card.cat-\79D1\6280 { background: #e6a23c; }

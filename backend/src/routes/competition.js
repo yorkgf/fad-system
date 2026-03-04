@@ -94,7 +94,7 @@ router.post('/events', authMiddleware, async (req, res) => {
 
     const {
       竞赛名称, 竞赛类别, 竞赛开始日期, 竞赛结束日期,
-      报名开始日期, 报名截止日期, 参与对象, 地点, 报名链接, 描述
+      报名开始日期, 报名截止日期, 参与对象, 地点, 报名方式或链接, 考试范围, 描述
     } = req.body
 
     // 必填字段验证
@@ -128,7 +128,8 @@ router.post('/events', authMiddleware, async (req, res) => {
       报名截止日期: 报名截止日期 ? new Date(报名截止日期) : null,
       参与对象: 参与对象 || null,
       地点: 地点 || null,
-      报名链接: 报名链接 || null,
+      报名方式或链接: 报名方式或链接 || null,
+      考试范围: 考试范围 || null,
       描述: 描述 || null,
       创建人: req.user.name,
       创建人组别: req.user.group,
@@ -175,7 +176,7 @@ router.put('/events/:id', authMiddleware, async (req, res) => {
 
     const {
       竞赛名称, 竞赛类别, 竞赛开始日期, 竞赛结束日期,
-      报名开始日期, 报名截止日期, 参与对象, 地点, 报名链接, 描述
+      报名开始日期, 报名截止日期, 参与对象, 地点, 报名方式或链接, 考试范围, 描述
     } = req.body
 
     // 必填字段验证
@@ -208,7 +209,8 @@ router.put('/events/:id', authMiddleware, async (req, res) => {
       报名截止日期: 报名截止日期 ? new Date(报名截止日期) : null,
       参与对象: 参与对象 || null,
       地点: 地点 || null,
-      报名链接: 报名链接 || null,
+      报名方式或链接: 报名方式或链接 || null,
+      考试范围: 考试范围 || null,
       描述: 描述 || null,
       更新时间: new Date()
     }

@@ -115,8 +115,39 @@
         <el-form-item :label="$t('competition.location')">
           <el-input v-model="form.地点" />
         </el-form-item>
-        <el-form-item :label="$t('competition.registrationLink')">
-          <el-input v-model="form.报名链接" placeholder="https://" />
+        <el-form-item :label="$t('competition.registrationMethod')">
+          <el-radio-group v-model="registrationMode" style="margin-bottom: 8px">
+            <el-radio value="text">{{ $t('competition.registrationModeText') }}</el-radio>
+            <el-radio value="link">{{ $t('competition.registrationModeLink') }}</el-radio>
+            <el-radio value="image">{{ $t('competition.registrationModeImage') }}</el-radio>
+          </el-radio-group>
+          <el-input
+            v-if="registrationMode === 'text'"
+            v-model="form.报名方式或链接"
+          />
+          <el-input
+            v-else-if="registrationMode === 'link'"
+            v-model="form.报名方式或链接"
+            placeholder="https://"
+          />
+          <div v-else>
+            <el-upload
+              :auto-upload="false"
+              :show-file-list="false"
+              accept="image/*"
+              :on-change="handleImageUpload"
+            >
+              <el-button type="primary" size="small">{{ $t('competition.registrationModeImage') }}</el-button>
+            </el-upload>
+            <img
+              v-if="form.报名方式或链接 && form.报名方式或链接.startsWith('data:image')"
+              :src="form.报名方式或链接"
+              style="max-width: 200px; max-height: 200px; margin-top: 8px; border: 1px solid #ebeef5; border-radius: 4px;"
+            />
+          </div>
+        </el-form-item>
+        <el-form-item :label="$t('competition.examScope')">
+          <el-input v-model="form.考试范围" type="textarea" :rows="3" />
         </el-form-item>
         <el-form-item :label="$t('competition.description')">
           <el-input v-model="form.描述" type="textarea" :rows="3" />
@@ -149,7 +180,9 @@ const userStore = useUserStore()
 
 // --- Constants ---
 const categories = [
-  { value: '学术', labelKey: 'competition.categoryAcademic' },
+  { value: '数学', labelKey: 'competition.categoryMath' },
+  { value: '理科', labelKey: 'competition.categoryScience' },
+  { value: '文科', labelKey: 'competition.categoryLiberalArts' },
   { value: '体育', labelKey: 'competition.categorySports' },
   { value: '艺术', labelKey: 'competition.categoryArts' },
   { value: '科技', labelKey: 'competition.categoryTech' },
@@ -157,10 +190,12 @@ const categories = [
 ]
 
 const categoryTagMap = {
-  '学术': '',
+  '数学': '',
+  '理科': 'success',
+  '文科': 'danger',
   '体育': 'success',
   '艺术': 'warning',
-  '科技': 'danger',
+  '科技': 'warning',
   '其他': 'info'
 }
 
@@ -177,13 +212,15 @@ const submitting = ref(false)
 const formRef = ref(null)
 const eventDateRange = ref(null)
 const regDateRange = ref(null)
+const registrationMode = ref('text')
 
 const form = ref({
   竞赛名称: '',
   竞赛类别: '',
   参与对象: '',
   地点: '',
-  报名链接: '',
+  报名方式或链接: '',
+  考试范围: '',
   描述: ''
 })
 
@@ -256,11 +293,13 @@ function resetForm() {
     竞赛类别: '',
     参与对象: '',
     地点: '',
-    报名链接: '',
+    报名方式或链接: '',
+    考试范围: '',
     描述: ''
   }
   eventDateRange.value = null
   regDateRange.value = null
+  registrationMode.value = 'text'
   editingId.value = null
   isEdit.value = false
 }
@@ -278,8 +317,18 @@ function openEditDialog(row) {
     竞赛类别: row.竞赛类别 || '',
     参与对象: row.参与对象 || '',
     地点: row.地点 || '',
-    报名链接: row.报名链接 || '',
+    报名方式或链接: row.报名方式或链接 || '',
+    考试范围: row.考试范围 || '',
     描述: row.描述 || ''
+  }
+  // Auto-detect registration mode from existing data
+  const regValue = row.报名方式或链接 || ''
+  if (regValue.startsWith('data:image')) {
+    registrationMode.value = 'image'
+  } else if (regValue.startsWith('http')) {
+    registrationMode.value = 'link'
+  } else {
+    registrationMode.value = 'text'
   }
   eventDateRange.value = (row.竞赛开始日期 && row.竞赛结束日期)
     ? [row.竞赛开始日期, row.竞赛结束日期]
@@ -288,6 +337,14 @@ function openEditDialog(row) {
     ? [row.报名开始日期, row.报名截止日期]
     : null
   dialogVisible.value = true
+}
+
+function handleImageUpload(file) {
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    form.value.报名方式或链接 = e.target.result
+  }
+  reader.readAsDataURL(file.raw)
 }
 
 async function handleSubmit() {

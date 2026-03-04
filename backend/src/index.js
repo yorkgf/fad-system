@@ -63,7 +63,7 @@ app.use(helmet({
   hidePoweredBy: true
 }))
 
-app.use(express.json())
+app.use(express.json({ limit: '5mb' }))
 
 // 健康检查
 app.get('/api/health', (req, res) => {
