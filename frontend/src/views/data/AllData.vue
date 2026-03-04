@@ -39,9 +39,9 @@
           >
             <el-option
               v-for="item in commonStore.semesters"
-              :key="item"
-              :label="item"
-              :value="item"
+              :key="item.value"
+              :label="$t(item.labelKey)"
+              :value="item.value"
             />
           </el-select>
         </el-form-item>

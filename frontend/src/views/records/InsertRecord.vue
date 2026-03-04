@@ -297,7 +297,10 @@ const localizedRecordTypes = computed(() => {
     ]
   }
   if (userStore.recordTypes.length > 0) {
-    return userStore.recordTypes.map(r => ({ ...r, label: t(r.labelKey) }))
+    return userStore.recordTypes.map(r => {
+      const known = commonStore.allRecordTypes.find(rt => rt.value === r.value)
+      return { ...r, label: known ? t(known.labelKey) : (r.label || r.value) }
+    })
   }
   // S组管理员可以看到所有记录类型
   return commonStore.allRecordTypes.map(r => ({ ...r, label: t(r.labelKey) }))
