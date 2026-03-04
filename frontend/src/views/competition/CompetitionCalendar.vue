@@ -7,6 +7,12 @@
         <div class="toolbar-left">
           <el-button-group>
             <el-button
+              :type="viewMode === 'year' ? 'primary' : ''"
+              @click="viewMode = 'year'"
+            >
+              {{ $t('competition.yearView') }}
+            </el-button>
+            <el-button
               :type="viewMode === 'month' ? 'primary' : ''"
               @click="viewMode = 'month'"
             >
@@ -65,9 +71,20 @@
               :key="event._id"
               class="event-bar"
               :class="'cat-' + event.竞赛类别"
+              :title="eventTooltip(event)"
               @click="showDetail(event)"
             >
               {{ event.竞赛名称 }}
+            </div>
+            <div
+              v-for="event in cell.regEvents"
+              :key="'reg-' + event._id"
+              class="event-bar reg-bar"
+              :class="'cat-' + event.竞赛类别"
+              :title="eventTooltip(event)"
+              @click="showDetail(event)"
+            >
+              {{ $t('competition.registration') }}: {{ event.竞赛名称 }}
             </div>
           </div>
         </div>
@@ -87,7 +104,7 @@
               <div class="week-date-label">{{ day.dateLabel }}</div>
             </div>
             <div class="week-col-body">
-              <template v-if="day.events.length > 0">
+              <template v-if="day.events.length > 0 || day.regEvents.length > 0">
                 <div
                   v-for="event in day.events"
                   :key="event._id"
@@ -96,6 +113,24 @@
                   @click="showDetail(event)"
                 >
                   <div class="event-card-name">{{ event.竞赛名称 }}</div>
+                  <div v-if="hasRegistration(event)" class="event-card-reg">
+                    {{ $t('competition.registration') }}: {{ formatRegRange(event) }}
+                  </div>
+                  <el-tag
+                    size="small"
+                    :type="categoryTagMap[event.竞赛类别] || 'info'"
+                  >
+                    {{ event.竞赛类别 }}
+                  </el-tag>
+                </div>
+                <div
+                  v-for="event in day.regEvents"
+                  :key="'reg-' + event._id"
+                  class="event-card reg-card"
+                  :class="'cat-' + event.竞赛类别"
+                  @click="showDetail(event)"
+                >
+                  <div class="event-card-name">{{ $t('competition.registration') }}: {{ event.竞赛名称 }}</div>
                   <el-tag
                     size="small"
                     :type="categoryTagMap[event.竞赛类别] || 'info'"
@@ -109,11 +144,76 @@
           </div>
         </div>
       </template>
+
+      <!-- Year View -->
+      <template v-if="viewMode === 'year'">
+        <div class="year-grid">
+          <div v-for="m in yearMonths" :key="m.month" class="year-month-card">
+            <div class="year-month-title" @click="goToMonth(m.month)">
+              {{ m.label }}
+            </div>
+            <div class="year-month-events">
+              <template v-if="m.events.length > 0">
+                <div
+                  v-for="event in m.events"
+                  :key="event._id"
+                  class="year-event-item"
+                  @click="showDetail(event)"
+                >
+                  <div class="year-event-name">{{ event.竞赛名称 }}</div>
+                  <div class="year-event-tags">
+                    <el-tag size="small" :type="categoryTagMap[event.竞赛类别] || 'info'">{{ event.竞赛类别 }}</el-tag>
+                    <el-tag v-if="event._isCompeting" size="small" type="danger">{{ $t('competition.competing') }}</el-tag>
+                    <el-tag v-if="event._isRegistering" size="small" type="warning">{{ $t('competition.registering') }}</el-tag>
+                  </div>
+                </div>
+              </template>
+              <div v-else class="year-month-empty">{{ $t('competition.noEvents') }}</div>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
     <!-- Right: Collapsible Sidebar -->
     <transition name="sidebar">
       <div v-if="sidebarVisible" class="sidebar">
+        <!-- Today -->
+        <div class="sidebar-section">
+          <div class="sidebar-title">{{ $t('competition.today') }}</div>
+          <template v-if="todayEvents.length > 0">
+            <div
+              v-for="event in todayEvents"
+              :key="'today-' + event._id"
+              class="sidebar-card"
+              @click="showDetail(event)"
+            >
+              <div class="sidebar-card-name">{{ event.竞赛名称 }}</div>
+              <div class="sidebar-card-meta">
+                <el-tag
+                  size="small"
+                  :type="categoryTagMap[event.竞赛类别] || 'info'"
+                >
+                  {{ event.竞赛类别 }}
+                </el-tag>
+                <el-tag v-if="event._isCompeting" size="small" type="danger">
+                  {{ $t('competition.competing') }}
+                </el-tag>
+                <el-tag v-if="event._isRegistering" size="small" type="warning">
+                  {{ $t('competition.registering') }}
+                </el-tag>
+              </div>
+              <div class="sidebar-card-date">
+                {{ formatDate(event.竞赛开始日期) }} ~ {{ formatDate(event.竞赛结束日期) }}
+              </div>
+              <div v-if="hasRegistration(event)" class="sidebar-card-reg">
+                {{ $t('competition.registration') }}: {{ formatRegRange(event) }}
+              </div>
+            </div>
+          </template>
+          <div v-else class="empty-section">{{ $t('competition.noEvents') }}</div>
+        </div>
+
         <!-- This Week -->
         <div class="sidebar-section">
           <div class="sidebar-title">{{ $t('competition.thisWeek') }}</div>
@@ -132,9 +232,18 @@
                 >
                   {{ event.竞赛类别 }}
                 </el-tag>
-                <span class="sidebar-card-date">
-                  {{ formatDate(event.竞赛开始日期) }} ~ {{ formatDate(event.竞赛结束日期) }}
-                </span>
+                <el-tag v-if="event._isCompeting" size="small" type="danger">
+                  {{ $t('competition.competing') }}
+                </el-tag>
+                <el-tag v-if="event._isRegistering" size="small" type="warning">
+                  {{ $t('competition.registering') }}
+                </el-tag>
+              </div>
+              <div class="sidebar-card-date">
+                {{ formatDate(event.竞赛开始日期) }} ~ {{ formatDate(event.竞赛结束日期) }}
+              </div>
+              <div v-if="hasRegistration(event)" class="sidebar-card-reg">
+                {{ $t('competition.registration') }}: {{ formatRegRange(event) }}
               </div>
             </div>
           </template>
@@ -159,9 +268,18 @@
                 >
                   {{ event.竞赛类别 }}
                 </el-tag>
-                <span class="sidebar-card-date">
-                  {{ formatDate(event.竞赛开始日期) }} ~ {{ formatDate(event.竞赛结束日期) }}
-                </span>
+                <el-tag v-if="event._isCompeting" size="small" type="danger">
+                  {{ $t('competition.competing') }}
+                </el-tag>
+                <el-tag v-if="event._isRegistering" size="small" type="warning">
+                  {{ $t('competition.registering') }}
+                </el-tag>
+              </div>
+              <div class="sidebar-card-date">
+                {{ formatDate(event.竞赛开始日期) }} ~ {{ formatDate(event.竞赛结束日期) }}
+              </div>
+              <div v-if="hasRegistration(event)" class="sidebar-card-reg">
+                {{ $t('competition.registration') }}: {{ formatRegRange(event) }}
               </div>
             </div>
           </template>
@@ -324,6 +442,40 @@ function formatDate(dateStr) {
   return dateStr.slice(0, 10)
 }
 
+function hasRegistration(event) {
+  return event.报名开始日期 || event.报名截止日期
+}
+
+function formatRegRange(event) {
+  if (!event.报名开始日期 && !event.报名截止日期) return ''
+  return `${formatDate(event.报名开始日期)} ~ ${formatDate(event.报名截止日期)}`
+}
+
+function regOnDay(event, date) {
+  if (!event.报名开始日期 && !event.报名截止日期) return false
+  const dateStr = toDateStr(date)
+  const start = (event.报名开始日期 || event.报名截止日期 || '').slice(0, 10)
+  const end = (event.报名截止日期 || event.报名开始日期 || '').slice(0, 10)
+  return dateStr >= start && dateStr <= end
+}
+
+function regOverlapRange(event, rangeStart, rangeEnd) {
+  if (!event.报名开始日期 && !event.报名截止日期) return false
+  const start = (event.报名开始日期 || event.报名截止日期 || '').slice(0, 10)
+  const end = (event.报名截止日期 || event.报名开始日期 || '').slice(0, 10)
+  const rs = toDateStr(rangeStart)
+  const re = toDateStr(rangeEnd)
+  return start <= re && end >= rs
+}
+
+function eventTooltip(event) {
+  let tip = event.竞赛名称
+  if (hasRegistration(event)) {
+    tip += `\n${t('competition.registration')}: ${formatRegRange(event)}`
+  }
+  return tip
+}
+
 // --- Computed ---
 const weekdayNames = computed(() => [
   t('common.monday'),
@@ -337,7 +489,9 @@ const weekdayNames = computed(() => [
 
 const currentLabel = computed(() => {
   const d = currentDate.value
-  if (viewMode.value === 'month') {
+  if (viewMode.value === 'year') {
+    return `${d.getFullYear()}${t('common.year')}`
+  } else if (viewMode.value === 'month') {
     return `${d.getFullYear()}${t('common.year')}${d.getMonth() + 1}${t('common.month')}`
   } else {
     const monday = getMonday(d)
@@ -366,12 +520,14 @@ const monthCells = computed(() => {
     const isCurrentMonth = cellDate.getMonth() === month
     const isToday = isSameDay(cellDate, today)
     const dayEvents = events.value.filter(e => eventOnDay(e, cellDate))
+    const dayRegEvents = events.value.filter(e => regOnDay(e, cellDate) && !eventOnDay(e, cellDate))
     cells.push({
       date: cellDate,
       day: cellDate.getDate(),
       currentMonth: isCurrentMonth,
       isToday,
-      events: dayEvents
+      events: dayEvents,
+      regEvents: dayRegEvents
     })
   }
   return cells
@@ -384,22 +540,41 @@ const weekDays = computed(() => {
   for (let i = 0; i < 7; i++) {
     const d = addDays(monday, i)
     const dayEvents = events.value.filter(e => eventOnDay(e, d))
+    const dayRegEvents = events.value.filter(e => regOnDay(e, d) && !eventOnDay(e, d))
     days.push({
       date: toDateStr(d),
       name: weekdayNames.value[i],
       dateLabel: `${d.getMonth() + 1}/${d.getDate()}`,
       isToday: isSameDay(d, today),
-      events: dayEvents
+      events: dayEvents,
+      regEvents: dayRegEvents
     })
   }
   return days
+})
+
+const todayEvents = computed(() => {
+  const today = new Date()
+  return events.value
+    .filter(e => eventOnDay(e, today) || regOnDay(e, today))
+    .map(e => ({
+      ...e,
+      _isCompeting: eventOnDay(e, today),
+      _isRegistering: regOnDay(e, today)
+    }))
 })
 
 const thisWeekEvents = computed(() => {
   const today = new Date()
   const monday = getMonday(today)
   const sunday = addDays(monday, 6)
-  return events.value.filter(e => eventsOverlapRange(e, monday, sunday))
+  return events.value
+    .filter(e => eventsOverlapRange(e, monday, sunday) || regOverlapRange(e, monday, sunday))
+    .map(e => ({
+      ...e,
+      _isCompeting: eventsOverlapRange(e, monday, sunday),
+      _isRegistering: regOverlapRange(e, monday, sunday)
+    }))
 })
 
 const nextWeekEvents = computed(() => {
@@ -407,13 +582,39 @@ const nextWeekEvents = computed(() => {
   const monday = getMonday(today)
   const nextMonday = addDays(monday, 7)
   const nextSunday = addDays(nextMonday, 6)
-  return events.value.filter(e => eventsOverlapRange(e, nextMonday, nextSunday))
+  return events.value
+    .filter(e => eventsOverlapRange(e, nextMonday, nextSunday) || regOverlapRange(e, nextMonday, nextSunday))
+    .map(e => ({
+      ...e,
+      _isCompeting: eventsOverlapRange(e, nextMonday, nextSunday),
+      _isRegistering: regOverlapRange(e, nextMonday, nextSunday)
+    }))
+})
+
+const yearMonths = computed(() => {
+  const year = currentDate.value.getFullYear()
+  const months = []
+  for (let m = 0; m < 12; m++) {
+    const monthStart = new Date(year, m, 1)
+    const monthEnd = new Date(year, m + 1, 0)
+    const monthEvents = events.value
+      .filter(e => eventsOverlapRange(e, monthStart, monthEnd) || regOverlapRange(e, monthStart, monthEnd))
+      .map(e => ({
+        ...e,
+        _isCompeting: eventsOverlapRange(e, monthStart, monthEnd),
+        _isRegistering: regOverlapRange(e, monthStart, monthEnd)
+      }))
+    months.push({ month: m, label: `${m + 1}${t('common.month')}`, events: monthEvents })
+  }
+  return months
 })
 
 // --- Navigation ---
 function navigatePrev() {
   const d = new Date(currentDate.value)
-  if (viewMode.value === 'month') {
+  if (viewMode.value === 'year') {
+    d.setFullYear(d.getFullYear() - 1)
+  } else if (viewMode.value === 'month') {
     d.setMonth(d.getMonth() - 1)
   } else {
     d.setDate(d.getDate() - 7)
@@ -423,7 +624,9 @@ function navigatePrev() {
 
 function navigateNext() {
   const d = new Date(currentDate.value)
-  if (viewMode.value === 'month') {
+  if (viewMode.value === 'year') {
+    d.setFullYear(d.getFullYear() + 1)
+  } else if (viewMode.value === 'month') {
     d.setMonth(d.getMonth() + 1)
   } else {
     d.setDate(d.getDate() + 7)
@@ -433,6 +636,13 @@ function navigateNext() {
 
 function goToday() {
   currentDate.value = new Date()
+}
+
+function goToMonth(month) {
+  const d = new Date(currentDate.value)
+  d.setMonth(month)
+  currentDate.value = d
+  viewMode.value = 'month'
 }
 
 // --- Detail Dialog ---
@@ -716,11 +926,6 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
-.sidebar-card-date {
-  font-size: 12px;
-  color: #909399;
-}
-
 .empty-section {
   text-align: center;
   color: #c0c4cc;
@@ -753,6 +958,123 @@ onMounted(() => {
   text-decoration: underline;
 }
 
+/* Registration date in week card */
+.event-card-reg {
+  font-size: 11px;
+  opacity: 0.85;
+  margin-bottom: 4px;
+}
+
+/* Registration bars (month view) — dashed outline */
+.event-bar.reg-bar {
+  background: transparent !important;
+  color: #606266;
+  border: 1.5px dashed;
+}
+.event-bar.reg-bar.cat-\6570\5B66 { border-color: #409eff; }
+.event-bar.reg-bar.cat-\7406\79D1 { border-color: #2ecc71; }
+.event-bar.reg-bar.cat-\6587\79D1 { border-color: #e74c3c; }
+.event-bar.reg-bar.cat-\4F53\80B2 { border-color: #67c23a; }
+.event-bar.reg-bar.cat-\827A\672F { border-color: #9b59b6; }
+.event-bar.reg-bar.cat-\79D1\6280 { border-color: #e6a23c; }
+.event-bar.reg-bar.cat-\5176\4ED6 { border-color: #909399; }
+
+/* Registration cards (week view) — dashed outline */
+.event-card.reg-card {
+  background: transparent !important;
+  color: #606266;
+  border: 1.5px dashed;
+}
+.event-card.reg-card.cat-\6570\5B66 { border-color: #409eff; }
+.event-card.reg-card.cat-\7406\79D1 { border-color: #2ecc71; }
+.event-card.reg-card.cat-\6587\79D1 { border-color: #e74c3c; }
+.event-card.reg-card.cat-\4F53\80B2 { border-color: #67c23a; }
+.event-card.reg-card.cat-\827A\672F { border-color: #9b59b6; }
+.event-card.reg-card.cat-\79D1\6280 { border-color: #e6a23c; }
+.event-card.reg-card.cat-\5176\4ED6 { border-color: #909399; }
+
+/* Registration date in sidebar */
+.sidebar-card-date {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+}
+
+.sidebar-card-reg {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 2px;
+}
+
+/* Year View */
+.year-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.year-month-card {
+  border: 1px solid #ebeef5;
+  border-radius: 6px;
+  padding: 8px;
+  background: #fff;
+}
+
+.year-month-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #3870a0;
+  text-align: center;
+  padding: 4px 0 8px;
+  cursor: pointer;
+}
+
+.year-month-title:hover {
+  text-decoration: underline;
+}
+
+.year-month-events {
+  padding: 4px 0;
+}
+
+.year-event-item {
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border-radius: 4px;
+  background: #f5f7fa;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.year-event-item:hover {
+  background: #ecf5ff;
+}
+
+.year-event-item:last-child {
+  margin-bottom: 0;
+}
+
+.year-event-name {
+  font-size: 12px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 4px;
+  word-break: break-all;
+}
+
+.year-event-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.year-month-empty {
+  text-align: center;
+  color: #c0c4cc;
+  font-size: 12px;
+  padding: 8px 0;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .calendar-layout {
@@ -775,6 +1097,18 @@ onMounted(() => {
 
   .calendar-toolbar {
     justify-content: center;
+  }
+
+  .year-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .year-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
   }
 }
 </style>

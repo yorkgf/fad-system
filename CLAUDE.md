@@ -226,6 +226,7 @@ cd competition-calendar && npm run build
 - Separate Vue 3 + Vite + Element Plus app (no Pinia, no auth)
 - Uses public API endpoints (`/public-events`, `/public-best-dorm`, `/public-best-class`) that require no JWT
 - Production API URL in `competition-calendar/.env.production`
+- i18n files at `competition-calendar/src/i18n/{zh-CN,en}.json` — must be kept in sync with `frontend/src/i18n/locales/` for shared keys
 
 ### Deploy Package Rebuild
 After modifying backend source: copy `backend/src/` to `deploy-package/src/` and reinstall production dependencies in `deploy-package/`.
@@ -249,6 +250,26 @@ The frontend supports bilingual UI (Chinese/English) via `vue-i18n` v9.
 
 ### Adding Translations
 When adding new UI text, add keys to **both** `zh-CN.json` and `en.json`. Use `$t('section.key')` in templates or `t('section.key')` from `useI18n()` in script setup.
+
+## Competition Calendar Architecture
+
+Both `frontend/src/views/competition/CompetitionCalendar.vue` (FAD main) and `competition-calendar/src/CompetitionCalendar.vue` (standalone) implement the same calendar UI with three views:
+
+- **Month view**: 7-column grid with event bars (solid = competition, dashed = registration-only)
+- **Week view**: 7-column layout with event cards (same solid/dashed distinction)
+- **Year view**: 4×3 grid of month cards, each listing events with category/status tags (no date grid)
+- **Sidebar**: Today / This Week / Next Week event lists with status tags (`报名`/`比赛`)
+
+Key patterns:
+- `eventOnDay()` / `eventsOverlapRange()` — check competition period overlap
+- `regOnDay()` / `regOverlapRange()` — check registration period overlap
+- `regEvents` in month/week cells = events in registration period but NOT competition period (dedup)
+- Sidebar events have `_isCompeting` / `_isRegistering` flags (can both be true)
+- CSS uses Unicode escapes for Chinese category class names (e.g., `.cat-\6570\5B66` for 数学)
+- Registration bars/cards use `dashed` border style, competition uses solid background
+- Category colors: 数学=#409eff, 理科=#2ecc71, 文科=#e74c3c, 体育=#67c23a, 艺术=#9b59b6, 科技=#e6a23c, 其他=#909399
+
+When modifying one calendar file, apply the same changes to the other to keep them in sync.
 
 ## Gotchas
 
