@@ -43,6 +43,23 @@ export const FAD_EXECUTION_GROUPS = [
 // 管理员权限组 (可查看统计数据、管理停课等)
 export const ADMIN_GROUPS = [UserGroup.SYSTEM, UserGroup.ADMIN_A]
 
+// 竞赛日历访问权限组 (查看日历)
+export const COMPETITION_ACCESS_GROUPS = [
+  UserGroup.SYSTEM,
+  UserGroup.ADMIN_A,
+  UserGroup.ADMIN_B,
+  UserGroup.TEACHER,
+  UserGroup.FACULTY
+]
+
+// 竞赛管理权限组 (创建/编辑/删除)
+export const COMPETITION_MANAGE_GROUPS = [
+  UserGroup.SYSTEM,
+  UserGroup.ADMIN_B,
+  UserGroup.TEACHER,
+  UserGroup.FACULTY
+]
+
 // 检查是否有完整访问权限
 export function hasFullAccess(userGroup) {
   return FULL_ACCESS_GROUPS.includes(userGroup)
@@ -61,6 +78,16 @@ export function isAdmin(userGroup) {
 // 检查是否有FAD执行权限
 export function hasFADExecutionAccess(userGroup) {
   return FAD_EXECUTION_GROUPS.includes(userGroup)
+}
+
+// 检查是否有竞赛日历访问权限
+export function hasCompetitionAccess(userGroup) {
+  return COMPETITION_ACCESS_GROUPS.includes(userGroup)
+}
+
+// 检查是否有竞赛管理权限
+export function hasCompetitionManageAccess(userGroup) {
+  return COMPETITION_MANAGE_GROUPS.includes(userGroup)
 }
 
 // LocalStorage 键常量
