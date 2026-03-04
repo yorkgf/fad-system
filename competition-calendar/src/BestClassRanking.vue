@@ -8,7 +8,7 @@
             v-model="selectedSemesters"
             :placeholder="$t('bestClass.selectSemester')"
             multiple
-            style="width: 300px"
+            style="width: 100%; max-width: 300px"
             @change="fetchData"
           >
             <el-option

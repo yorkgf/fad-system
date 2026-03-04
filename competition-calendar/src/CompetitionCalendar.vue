@@ -173,78 +173,80 @@
     <!-- Detail Dialog -->
     <el-dialog
       v-model="detailVisible"
-      :title="$t('competition.eventDetail')"
-      width="520px"
+      :title="detailEvent ? detailEvent.竞赛名称 : $t('competition.eventDetail')"
+      :width="isMobile ? '100%' : '520px'"
+      :fullscreen="isMobile"
       destroy-on-close
     >
-      <el-descriptions v-if="detailEvent" :column="1" border>
-        <el-descriptions-item :label="$t('competition.eventName')">
-          {{ detailEvent.竞赛名称 }}
-        </el-descriptions-item>
-        <el-descriptions-item :label="$t('competition.category')">
-          <el-tag :type="categoryTagMap[detailEvent.竞赛类别] || 'info'">
+      <div v-if="detailEvent" class="detail-body">
+        <div class="detail-cat">
+          <el-tag :type="categoryTagMap[detailEvent.竞赛类别] || 'info'" size="large">
             {{ detailEvent.竞赛类别 }}
           </el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item :label="$t('competition.eventPeriod')">
-          {{ formatDate(detailEvent.竞赛开始日期) }} ~ {{ formatDate(detailEvent.竞赛结束日期) }}
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="detailEvent.报名开始日期 || detailEvent.报名截止日期"
-          :label="$t('competition.registrationPeriod')"
-        >
-          {{ formatDate(detailEvent.报名开始日期) }} ~ {{ formatDate(detailEvent.报名截止日期) }}
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="detailEvent.参与对象"
-          :label="$t('competition.participants')"
-        >
-          {{ detailEvent.参与对象 }}
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="detailEvent.地点"
-          :label="$t('competition.location')"
-        >
-          {{ detailEvent.地点 }}
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="detailEvent.报名方式或链接"
-          :label="$t('competition.registrationMethod')"
-        >
-          <a
-            v-if="detailEvent.报名方式或链接.startsWith('http')"
-            :href="detailEvent.报名方式或链接"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {{ detailEvent.报名方式或链接 }}
-          </a>
-          <img
-            v-else-if="detailEvent.报名方式或链接.startsWith('data:image')"
-            :src="detailEvent.报名方式或链接"
-            style="max-width: 200px; max-height: 200px;"
-          />
-          <span v-else>{{ detailEvent.报名方式或链接 }}</span>
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="detailEvent.考试范围"
-          :label="$t('competition.examScope')"
-        >
-          {{ detailEvent.考试范围 }}
-        </el-descriptions-item>
-        <el-descriptions-item
-          v-if="detailEvent.描述"
-          :label="$t('competition.description')"
-        >
-          {{ detailEvent.描述 }}
-        </el-descriptions-item>
-      </el-descriptions>
+        </div>
+
+        <div class="detail-fields">
+          <div class="detail-field">
+            <div class="detail-field-label">{{ $t('competition.eventPeriod') }}</div>
+            <div class="detail-field-value">
+              {{ formatDate(detailEvent.竞赛开始日期) }} ~ {{ formatDate(detailEvent.竞赛结束日期) }}
+            </div>
+          </div>
+
+          <div v-if="detailEvent.报名开始日期 || detailEvent.报名截止日期" class="detail-field">
+            <div class="detail-field-label">{{ $t('competition.registrationPeriod') }}</div>
+            <div class="detail-field-value">
+              {{ formatDate(detailEvent.报名开始日期) }} ~ {{ formatDate(detailEvent.报名截止日期) }}
+            </div>
+          </div>
+
+          <div v-if="detailEvent.参与对象" class="detail-field">
+            <div class="detail-field-label">{{ $t('competition.participants') }}</div>
+            <div class="detail-field-value">{{ detailEvent.参与对象 }}</div>
+          </div>
+
+          <div v-if="detailEvent.地点" class="detail-field">
+            <div class="detail-field-label">{{ $t('competition.location') }}</div>
+            <div class="detail-field-value">{{ detailEvent.地点 }}</div>
+          </div>
+
+          <div v-if="detailEvent.报名方式或链接" class="detail-field">
+            <div class="detail-field-label">{{ $t('competition.registrationMethod') }}</div>
+            <div class="detail-field-value">
+              <a
+                v-if="detailEvent.报名方式或链接.startsWith('http')"
+                :href="detailEvent.报名方式或链接"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {{ detailEvent.报名方式或链接 }}
+              </a>
+              <img
+                v-else-if="detailEvent.报名方式或链接.startsWith('data:image')"
+                :src="detailEvent.报名方式或链接"
+                class="detail-qrcode"
+              />
+              <span v-else>{{ detailEvent.报名方式或链接 }}</span>
+            </div>
+          </div>
+
+          <div v-if="detailEvent.考试范围" class="detail-field">
+            <div class="detail-field-label">{{ $t('competition.examScope') }}</div>
+            <div class="detail-field-value detail-field-text">{{ detailEvent.考试范围 }}</div>
+          </div>
+
+          <div v-if="detailEvent.描述" class="detail-field">
+            <div class="detail-field-label">{{ $t('competition.description') }}</div>
+            <div class="detail-field-value detail-field-text">{{ detailEvent.描述 }}</div>
+          </div>
+        </div>
+      </div>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import axios from 'axios'
@@ -271,6 +273,11 @@ const currentDate = ref(new Date())
 const sidebarVisible = ref(true)
 const detailVisible = ref(false)
 const detailEvent = ref(null)
+const isMobile = ref(false)
+
+function checkMobile() {
+  isMobile.value = window.innerWidth < 640
+}
 
 // --- Helpers ---
 function getMonday(d) {
@@ -447,9 +454,15 @@ async function loadEvents() {
 // --- Init ---
 onMounted(() => {
   loadEvents()
-  if (window.innerWidth < 768) {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+  if (isMobile.value) {
     sidebarVisible.value = false
   }
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
 })
 </script>
 
@@ -735,14 +748,61 @@ onMounted(() => {
   border: none;
 }
 
-/* Detail Dialog Link */
-.el-descriptions a {
-  color: #409eff;
-  text-decoration: none;
+/* Detail Dialog */
+.detail-body {
+  padding: 0 4px;
 }
 
-.el-descriptions a:hover {
+.detail-cat {
+  margin-bottom: 20px;
+}
+
+.detail-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-field {
+  background: #f8f9fc;
+  border-radius: 10px;
+  padding: 12px 16px;
+}
+
+.detail-field-label {
+  font-size: 12px;
+  color: #909399;
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+
+.detail-field-value {
+  font-size: 15px;
+  color: #303133;
+  line-height: 1.5;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.detail-field-text {
+  white-space: pre-wrap;
+}
+
+.detail-field-value a {
+  color: #409eff;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.detail-field-value a:hover {
   text-decoration: underline;
+}
+
+.detail-qrcode {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 6px;
+  border: 1px solid #ebeef5;
 }
 
 /* Responsive */
@@ -767,6 +827,78 @@ onMounted(() => {
 
   .calendar-toolbar {
     justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .calendar-toolbar {
+    gap: 6px;
+  }
+
+  .current-label {
+    font-size: 14px;
+    min-width: 120px;
+  }
+
+  .weekday-cell {
+    font-size: 12px;
+  }
+
+  .month-cell {
+    min-height: 48px;
+    padding: 2px;
+  }
+
+  .day-number {
+    font-size: 11px;
+  }
+
+  /* Event bars become thin colored lines on mobile (text unreadable at this width) */
+  .event-bar {
+    font-size: 0;
+    height: 4px;
+    line-height: 4px;
+    padding: 0;
+    margin-bottom: 1px;
+    border-radius: 2px;
+  }
+
+  /* Week view: vertical stack instead of 7 columns */
+  .week-grid {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .week-col {
+    border-left: 1px solid #ebeef5;
+  }
+
+  .week-col-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-align: left;
+    padding: 10px 12px;
+  }
+
+  .week-col-body {
+    padding: 4px 12px 8px;
+  }
+
+  .detail-qrcode {
+    max-width: 160px;
+    max-height: 160px;
+  }
+}
+
+@media (max-width: 380px) {
+  .current-label {
+    font-size: 13px;
+    min-width: 90px;
+  }
+
+  .month-cell {
+    min-height: 40px;
   }
 }
 </style>

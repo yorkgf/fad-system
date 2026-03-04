@@ -158,18 +158,31 @@ body {
 }
 
 @media (max-width: 480px) {
+  .header-left {
+    gap: 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
   .logo {
     height: 28px;
+    flex-shrink: 0;
+  }
+
+  .header-nav {
+    flex-shrink: 0;
   }
 
   .nav-link {
     font-size: 12px;
     padding: 4px 8px;
+    white-space: nowrap;
   }
 
   .lang-btn {
     padding: 4px 10px;
     font-size: 12px;
+    flex-shrink: 0;
   }
 }
 </style>
