@@ -1,7 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { getMyClassAsHomeTeacher } from '@/api/students'
-import { UserGroup, FAD_EXECUTION_GROUPS, ADMIN_GROUPS, SCHEDULE_ACCESS_GROUPS } from '@/utils/userGroups'
+import { UserGroup, FAD_EXECUTION_GROUPS, ADMIN_GROUPS, SCHEDULE_ACCESS_GROUPS, COMPETITION_ACCESS_GROUPS, COMPETITION_MANAGE_GROUPS } from '@/utils/userGroups'
 
 const routes = [
   {
@@ -164,6 +164,25 @@ const routes = [
           titleKey: 'nav.myBookings',
           allowedGroups: ['S', 'A', 'B', 'T', 'F']
         }
+      },
+      // 竞赛日历模块
+      {
+        path: 'competition/calendar',
+        name: 'CompetitionCalendar',
+        component: () => import('@/views/competition/CompetitionCalendar.vue'),
+        meta: {
+          titleKey: 'nav.competitionCalendar',
+          allowedGroups: ['S', 'A', 'B', 'T', 'F']
+        }
+      },
+      {
+        path: 'competition/manage',
+        name: 'CompetitionManage',
+        component: () => import('@/views/competition/CompetitionManage.vue'),
+        meta: {
+          titleKey: 'nav.competitionManage',
+          allowedGroups: ['S', 'B', 'T', 'F']
+        }
       }
     ]
   }
@@ -175,7 +194,7 @@ const router = createRouter({
 })
 
 // C组和F组用户可访问的路由
-const limitedAllowedRoutes = ['/', '/records/insert', '/records/my', '/settings/password', '/settings/profile', '/login']
+const limitedAllowedRoutes = ['/', '/records/insert', '/records/my', '/settings/password', '/settings/profile', '/login', '/competition/calendar']
 
 // 路由守卫
 router.beforeEach(async (to, from, next) => {
@@ -185,8 +204,8 @@ router.beforeEach(async (to, from, next) => {
     next('/login')
   } else if (to.path === '/login' && userStore.isLoggedIn) {
     next('/')
-  } else if ((userStore.userGroup === UserGroup.CLEANING || userStore.userGroup === UserGroup.FACULTY) && !limitedAllowedRoutes.includes(to.path) && !to.path.startsWith('/schedule')) {
-    // C组和F组用户尝试访问未授权页面，重定向到首页（日程管理路由由后续的schedule检查处理）
+  } else if ((userStore.userGroup === UserGroup.CLEANING || userStore.userGroup === UserGroup.FACULTY) && !limitedAllowedRoutes.includes(to.path) && !to.path.startsWith('/schedule') && !to.path.startsWith('/competition')) {
+    // C组和F组用户尝试访问未授权页面，重定向到首页（日程管理和竞赛路由由后续检查处理）
     next('/')
   } else if (to.path === '/fad/school-stats') {
     // 学校FAD统计页面：S组、A组可以访问
@@ -240,6 +259,20 @@ router.beforeEach(async (to, from, next) => {
       next()
     } else {
       next('/')
+    }
+  } else if (to.path.startsWith('/competition')) {
+    if (to.path === '/competition/manage') {
+      if (COMPETITION_MANAGE_GROUPS.includes(userStore.userGroup)) {
+        next()
+      } else {
+        next('/')
+      }
+    } else {
+      if (COMPETITION_ACCESS_GROUPS.includes(userStore.userGroup)) {
+        next()
+      } else {
+        next('/')
+      }
     }
   } else if (to.path.startsWith('/schedule')) {
     // 日程管理页面：S组、A组、B组、T组、F组可以访问（排除C组）
