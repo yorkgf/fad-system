@@ -234,6 +234,22 @@ const functionCards = computed(() => {
       icon: 'Calendar',
       color: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       groups: ['S', 'A', 'B', 'T', 'F']
+    },
+    {
+      titleKey: 'nav.competitionCalendar',
+      subtitleKey: 'nav.competitionCalendarSubtitle',
+      path: '/competition/calendar',
+      icon: 'Trophy',
+      color: 'linear-gradient(135deg, #ffd89b 0%, #f28410 100%)',
+      groups: ['S', 'A', 'B', 'T', 'F']
+    },
+    {
+      titleKey: 'nav.competitionManage',
+      subtitleKey: 'nav.competitionManageSubtitle',
+      path: '/competition/manage',
+      icon: 'SetUp',
+      color: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)',
+      groups: ['S', 'B', 'T', 'F']
     }
   ]
 
