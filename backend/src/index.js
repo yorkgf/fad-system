@@ -18,6 +18,7 @@ const rewardRoutes = require('./routes/reward.js')
 const roomRoutes = require('./routes/room.js')
 const otherRoutes = require('./routes/other.js')
 const scheduleRoutes = require('./routes/schedule.js')
+const competitionRoutes = require('./routes/competition.js')
 
 const app = express()
 
@@ -80,6 +81,7 @@ app.use('/api/reward-records', rewardRoutes)
 app.use('/api/room-praise', roomRoutes)
 app.use('/api/room-warning', roomRoutes)
 app.use('/api/schedule', scheduleRoutes)
+app.use('/api/competition', competitionRoutes)
 app.use('/api', otherRoutes)
 
 // 错误处理
