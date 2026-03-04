@@ -19,6 +19,7 @@ MongoDB collection: `Competition_Events` (GHA database)
   竞赛结束日期: Date,            // required (same as start for single-day)
   参与对象: String,              // e.g. "全校" / "高一" / "高二" / free text
   地点: String,                  // optional
+  报名链接: String,              // optional (registration URL)
   描述: String,                  // optional
   创建人: String,                // req.user.username
   创建人组别: String,            // req.user.group (S/B/T/F)
