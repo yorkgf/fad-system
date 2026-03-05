@@ -37,7 +37,9 @@
     "noEvents": "暂无竞赛",
     "eventDetail": "竞赛详情",
     "registrationPeriod": "报名时间",
-    "eventPeriod": "竞赛时间"
+    "eventPeriod": "竞赛时间",
+    "allCategories": "全部类别",
+    "filterCategory": "筛选类别"
   },
   "bestDorm": {
     "title": "最佳寝室排名",

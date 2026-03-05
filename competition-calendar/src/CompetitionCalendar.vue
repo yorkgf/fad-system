@@ -38,6 +38,23 @@
         </div>
 
         <div class="toolbar-right">
+          <el-select
+            v-model="selectedCategories"
+            multiple
+            collapse-tags
+            collapse-tags-tooltip
+            clearable
+            :placeholder="$t('competition.allCategories')"
+            style="width: 160px"
+            size="default"
+          >
+            <el-option
+              v-for="cat in categoryOptions"
+              :key="cat"
+              :label="cat"
+              :value="cat"
+            />
+          </el-select>
           <el-button @click="goToday">{{ $t('common.today') }}</el-button>
           <el-button text @click="sidebarVisible = !sidebarVisible">
             <el-icon>
@@ -376,6 +393,7 @@ const sidebarVisible = ref(true)
 const detailVisible = ref(false)
 const detailEvent = ref(null)
 const isMobile = ref(false)
+const selectedCategories = ref([])
 
 function checkMobile() {
   isMobile.value = window.innerWidth < 640
@@ -465,6 +483,13 @@ function eventTooltip(event) {
 }
 
 // --- Computed ---
+const categoryOptions = ['数学', '理科', '文科', '体育', '艺术', '科技', '其他']
+
+const filteredEvents = computed(() => {
+  if (selectedCategories.value.length === 0) return events.value
+  return events.value.filter(e => selectedCategories.value.includes(e.竞赛类别))
+})
+
 const weekdayNames = computed(() => [
   t('common.monday'),
   t('common.tuesday'),
@@ -503,8 +528,8 @@ const monthCells = computed(() => {
     const cellDate = addDays(startDate, i)
     const isCurrentMonth = cellDate.getMonth() === month
     const isToday = isSameDay(cellDate, today)
-    const dayEvents = events.value.filter(e => eventOnDay(e, cellDate))
-    const dayRegEvents = events.value.filter(e => regOnDay(e, cellDate) && !eventOnDay(e, cellDate))
+    const dayEvents = filteredEvents.value.filter(e => eventOnDay(e, cellDate))
+    const dayRegEvents = filteredEvents.value.filter(e => regOnDay(e, cellDate) && !eventOnDay(e, cellDate))
     cells.push({
       date: cellDate,
       day: cellDate.getDate(),
@@ -523,8 +548,8 @@ const weekDays = computed(() => {
   const days = []
   for (let i = 0; i < 7; i++) {
     const d = addDays(monday, i)
-    const dayEvents = events.value.filter(e => eventOnDay(e, d))
-    const dayRegEvents = events.value.filter(e => regOnDay(e, d) && !eventOnDay(e, d))
+    const dayEvents = filteredEvents.value.filter(e => eventOnDay(e, d))
+    const dayRegEvents = filteredEvents.value.filter(e => regOnDay(e, d) && !eventOnDay(e, d))
     days.push({
       date: toDateStr(d),
       name: weekdayNames.value[i],
@@ -539,7 +564,7 @@ const weekDays = computed(() => {
 
 const todayEvents = computed(() => {
   const today = new Date()
-  return events.value
+  return filteredEvents.value
     .filter(e => eventOnDay(e, today) || regOnDay(e, today))
     .map(e => ({
       ...e,
@@ -552,7 +577,7 @@ const thisWeekEvents = computed(() => {
   const today = new Date()
   const monday = getMonday(today)
   const sunday = addDays(monday, 6)
-  return events.value
+  return filteredEvents.value
     .filter(e => eventsOverlapRange(e, monday, sunday) || regOverlapRange(e, monday, sunday))
     .map(e => ({
       ...e,
@@ -566,7 +591,7 @@ const nextWeekEvents = computed(() => {
   const monday = getMonday(today)
   const nextMonday = addDays(monday, 7)
   const nextSunday = addDays(nextMonday, 6)
-  return events.value
+  return filteredEvents.value
     .filter(e => eventsOverlapRange(e, nextMonday, nextSunday) || regOverlapRange(e, nextMonday, nextSunday))
     .map(e => ({
       ...e,
@@ -581,7 +606,7 @@ const yearMonths = computed(() => {
   for (let m = 0; m < 12; m++) {
     const monthStart = new Date(year, m, 1)
     const monthEnd = new Date(year, m + 1, 0)
-    const monthEvents = events.value
+    const monthEvents = filteredEvents.value
       .filter(e => eventsOverlapRange(e, monthStart, monthEnd) || regOverlapRange(e, monthStart, monthEnd))
       .map(e => ({
         ...e,

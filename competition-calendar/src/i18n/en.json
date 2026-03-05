@@ -37,7 +37,9 @@
     "noEvents": "No competitions",
     "eventDetail": "Competition Details",
     "registrationPeriod": "Registration Period",
-    "eventPeriod": "Competition Period"
+    "eventPeriod": "Competition Period",
+    "allCategories": "All Categories",
+    "filterCategory": "Filter Category"
   },
   "bestDorm": {
     "title": "Best Dorm Ranking",

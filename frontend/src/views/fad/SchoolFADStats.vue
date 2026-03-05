@@ -174,6 +174,84 @@
         </el-card>
       </el-col>
 
+      <!-- 学生会成员FAD统计 -->
+      <el-col :span="24">
+        <el-card>
+          <template #header>
+            <div class="card-header-flex">
+              <span>{{ $t('fad.stats.studentUnionTitle') }}</span>
+              <el-tag type="info" size="small">{{ $t('fad.stats.studentUnionCount', { total: studentUnionTotal, count: studentUnionStats.length }) }}</el-tag>
+            </div>
+          </template>
+          <el-table :data="studentUnionStats" stripe class="responsive-table" v-if="studentUnionStats.length > 0">
+            <el-table-column type="expand">
+              <template #default="{ row }">
+                <el-card class="expanded-card">
+                  <template #header>
+                    <span>{{ $t('fad.stats.fadDetailRecords') }}</span>
+                  </template>
+                  <el-table :data="row.details" stripe size="small" class="details-table">
+                    <el-table-column prop="记录日期" :label="$t('fad.stats.recordDate')" min-width="100">
+                      <template #default="{ row }">
+                        {{ formatDate(row.记录日期) }}
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="记录事由" :label="$t('fad.stats.recordReason')" min-width="150" />
+                    <el-table-column prop="记录老师" :label="$t('fad.stats.recordTeacher')" min-width="80" class-name="hide-on-xs" />
+                    <el-table-column prop="FAD来源类型" :label="$t('fad.stats.sourceTypeCol')" min-width="80">
+                      <template #default="{ row }">
+                        <el-tag :type="getSourceTypeTag(row.FAD来源类型)" size="small">
+                          {{ getSourceTypeLabel(row.FAD来源类型) }}
+                        </el-tag>
+                      </template>
+                    </el-table-column>
+                    <el-table-column prop="是否已执行或冲抵" :label="$t('fad.stats.executionStatus')" min-width="80">
+                      <template #default="{ row }">
+                        <el-tag :type="row.是否已执行或冲抵 ? 'success' : 'danger'" size="small">
+                          {{ row.是否已执行或冲抵 ? $t('fad.stats.executedStatus') : $t('fad.stats.notExecutedStatus') }}
+                        </el-tag>
+                      </template>
+                    </el-table-column>
+                  </el-table>
+                </el-card>
+              </template>
+            </el-table-column>
+            <el-table-column prop="student" :label="$t('fad.stats.student')" min-width="70" />
+            <el-table-column prop="class" :label="$t('fad.stats.classCol')" min-width="80" class-name="hide-on-xs" />
+            <el-table-column prop="count" :label="$t('fad.stats.fadTotal')" min-width="65" sortable />
+            <el-table-column prop="executed" :label="$t('fad.stats.executed')" min-width="60" class-name="hide-on-xs" />
+            <el-table-column prop="unexecuted" :label="$t('fad.stats.unexecuted')" min-width="60">
+              <template #default="{ row }">
+                <el-tag v-if="row.unexecuted > 0" type="danger" size="small">
+                  {{ row.unexecuted }}
+                </el-tag>
+                <span v-else>0</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="offset" :label="$t('fad.stats.offset')" min-width="60" class-name="hide-on-sm" />
+            <el-table-column :label="$t('fad.stats.sourceDistribution')" min-width="150" class-name="hide-on-sm">
+              <template #default="{ row }">
+                <div class="source-tags">
+                  <el-tag v-if="row.dorm" type="warning" size="small" class="source-tag">
+                    {{ $t('fad.stats.dormPrefix') }}{{ row.dorm }}
+                  </el-tag>
+                  <el-tag v-if="row.teach" type="danger" size="small" class="source-tag">
+                    {{ $t('fad.stats.teachPrefix') }}{{ row.teach }}
+                  </el-tag>
+                  <el-tag v-if="row.elec" type="primary" size="small" class="source-tag">
+                    {{ $t('fad.stats.elecPrefix') }}{{ row.elec }}
+                  </el-tag>
+                  <el-tag v-if="row.other" type="info" size="small" class="source-tag">
+                    {{ $t('fad.stats.otherPrefix') }}{{ row.other }}
+                  </el-tag>
+                </div>
+              </template>
+            </el-table-column>
+          </el-table>
+          <el-empty v-else :description="$t('fad.stats.noStudentUnionFad')" />
+        </el-card>
+      </el-col>
+
       <!-- 按学生统计（FAD较多的学生） -->
       <el-col :span="24">
         <el-card>
@@ -287,6 +365,8 @@ const sourceTypeStats = ref([])
 const classStats = ref([])
 const perClassStats = ref([])
 const studentStats = ref([])
+const studentUnionStats = ref([])
+const studentUnionTotal = ref(0)
 const expandedRows = ref([])
 
 onMounted(async () => {
@@ -327,6 +407,8 @@ async function fetchStats() {
     classStats.value = (data.byClass || []).slice(0, 3)
     perClassStats.value = data.perClass || []
     studentStats.value = (data.byStudent || []).slice(0, 10)
+    studentUnionStats.value = data.byStudentUnion || []
+    studentUnionTotal.value = data.studentUnionTotal || 0
   } catch (error) {
     console.error('获取FAD统计失败:', error)
   } finally {

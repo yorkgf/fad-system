@@ -170,6 +170,7 @@
     "categoryTech": "Technology",
     "categoryOther": "Other",
     "allCategories": "All Categories",
+    "filterCategory": "Filter Category",
     "allParticipants": "All Students",
     "eventDetail": "Competition Details",
     "registrationPeriod": "Registration Period",
@@ -456,7 +457,10 @@
       "unexecutedCount": "Unexecuted Count",
       "viewingClass": "Viewing: {class} class FAD statistics",
       "unexecutedWarningList": "Students with Unexecuted FADs in This Class",
-      "sourceUncategorized": "Uncategorized"
+      "sourceUncategorized": "Uncategorized",
+      "studentUnionTitle": "Student Council FAD Statistics",
+      "studentUnionCount": "{total} council members, {count} with FADs",
+      "noStudentUnionFad": "No FAD records for student council members"
     }
   },
   "fadSource": {

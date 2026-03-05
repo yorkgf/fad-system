@@ -284,6 +284,35 @@ router.get('/stats', authMiddleware, async (req, res) => {
       { $sort: { unexecutedCount: -1 } }
     ]).toArray()
 
+    // 学生会成员FAD统计
+    const studentUnionMembers = await getCollection(Collections.Students)
+      .find({ 学生会: true })
+      .toArray()
+
+    const memberNames = studentUnionMembers.map(s => s.学生姓名)
+
+    let byStudentUnion = []
+    if (memberNames.length > 0) {
+      const unionFilter = { ...baseFilter, 学生: { $in: memberNames } }
+      byStudentUnion = await getCollection(Collections.FADRecords).aggregate([
+        { $match: unionFilter },
+        {
+          $group: {
+            _id: { student: '$学生', class: '$班级' },
+            count: { $sum: 1 },
+            executed: { $sum: { $cond: ['$是否已执行或冲抵', 1, 0] } },
+            unexecuted: { $sum: { $cond: ['$是否已执行或冲抵', 0, 1] } },
+            offset: { $sum: { $cond: ['$是否已冲销记录', 1, 0] } },
+            dorm: { $sum: { $cond: [{ $eq: ['$FAD来源类型', 'dorm'] }, 1, 0] } },
+            teach: { $sum: { $cond: [{ $eq: ['$FAD来源类型', 'teach'] }, 1, 0] } },
+            other: { $sum: { $cond: [{ $eq: ['$FAD来源类型', 'other'] }, 1, 0] } },
+            details: { $push: '$$ROOT' }
+          }
+        },
+        { $sort: { count: -1 } }
+      ]).toArray()
+    }
+
     res.json({
       success: true,
       data: {
@@ -322,7 +351,20 @@ router.get('/stats', authMiddleware, async (req, res) => {
           class: s._id.class,
           unexecutedCount: s.unexecutedCount,
           records: s.records
-        }))
+        })),
+        byStudentUnion: byStudentUnion.map(s => ({
+          student: s._id.student,
+          class: s._id.class,
+          count: s.count,
+          executed: s.executed,
+          unexecuted: s.unexecuted,
+          offset: s.offset,
+          dorm: s.dorm,
+          teach: s.teach,
+          other: s.other,
+          details: s.details || []
+        })),
+        studentUnionTotal: memberNames.length
       }
     })
   } catch (error) {

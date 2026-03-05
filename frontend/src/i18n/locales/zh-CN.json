@@ -170,6 +170,7 @@
     "categoryTech": "科技",
     "categoryOther": "其他",
     "allCategories": "全部类别",
+    "filterCategory": "筛选类别",
     "allParticipants": "全校",
     "eventDetail": "竞赛详情",
     "registrationPeriod": "报名时间",
@@ -456,7 +457,10 @@
       "unexecutedCount": "未执行数",
       "viewingClass": "正在查看：{class}班 的FAD统计",
       "unexecutedWarningList": "本班有未执行FAD的学生名单",
-      "sourceUncategorized": "未分类"
+      "sourceUncategorized": "未分类",
+      "studentUnionTitle": "学生会成员FAD统计",
+      "studentUnionCount": "学生会共 {total} 人，其中 {count} 人有FAD",
+      "noStudentUnionFad": "学生会成员暂无FAD记录"
     }
   },
   "fadSource": {
