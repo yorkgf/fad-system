@@ -5,29 +5,6 @@
       <!-- Toolbar -->
       <div class="calendar-toolbar">
         <div class="toolbar-left">
-          <el-button-group>
-            <el-button
-              :type="viewMode === 'year' ? 'primary' : ''"
-              @click="viewMode = 'year'"
-            >
-              {{ $t('competition.yearView') }}
-            </el-button>
-            <el-button
-              :type="viewMode === 'month' ? 'primary' : ''"
-              @click="viewMode = 'month'"
-            >
-              {{ $t('competition.monthView') }}
-            </el-button>
-            <el-button
-              :type="viewMode === 'week' ? 'primary' : ''"
-              @click="viewMode = 'week'"
-            >
-              {{ $t('competition.weekView') }}
-            </el-button>
-          </el-button-group>
-        </div>
-
-        <div class="toolbar-center">
           <el-button text @click="navigatePrev">
             <el-icon><ArrowLeft /></el-icon>
           </el-button>
@@ -56,237 +33,85 @@
             />
           </el-select>
           <el-button @click="goToday">{{ $t('common.today') }}</el-button>
-          <el-button text @click="sidebarVisible = !sidebarVisible">
-            <el-icon>
-              <Fold v-if="sidebarVisible" />
-              <Expand v-else />
-            </el-icon>
-          </el-button>
         </div>
       </div>
 
-      <!-- Month View -->
-      <template v-if="viewMode === 'month'">
-        <div class="weekday-header">
-          <div v-for="name in weekdayNames" :key="name" class="weekday-cell">
-            {{ name }}
-          </div>
-        </div>
-        <div class="month-grid">
-          <div
-            v-for="(cell, idx) in monthCells"
-            :key="idx"
-            class="month-cell"
-            :class="{
-              'other-month': !cell.currentMonth,
-              'today': cell.isToday
-            }"
-          >
-            <div class="day-number">{{ cell.day }}</div>
-            <div
-              v-for="event in cell.events"
-              :key="event._id"
-              class="event-bar"
-              :class="'cat-' + event.竞赛类别"
-              :title="eventTooltip(event)"
-              @click="showDetail(event)"
-            >
-              {{ event.竞赛名称 }}
-            </div>
-            <div
-              v-for="event in cell.regEvents"
-              :key="'reg-' + event._id"
-              class="event-bar reg-bar"
-              :class="'cat-' + event.竞赛类别"
-              :title="eventTooltip(event)"
-              @click="showDetail(event)"
-            >
-              {{ $t('competition.registration') }}: {{ event.竞赛名称 }}
-            </div>
-          </div>
-        </div>
-      </template>
-
-      <!-- Week View -->
-      <template v-if="viewMode === 'week'">
-        <div class="week-grid">
-          <div
-            v-for="day in weekDays"
-            :key="day.date"
-            class="week-col"
-            :class="{ 'today': day.isToday }"
-          >
-            <div class="week-col-header">
-              <div class="week-day-name">{{ day.name }}</div>
-              <div class="week-date-label">{{ day.dateLabel }}</div>
-            </div>
-            <div class="week-col-body">
-              <template v-if="day.events.length > 0 || day.regEvents.length > 0">
-                <div
-                  v-for="event in day.events"
-                  :key="event._id"
-                  class="event-card"
-                  :class="'cat-' + event.竞赛类别"
-                  @click="showDetail(event)"
-                >
-                  <div class="event-card-name">{{ event.竞赛名称 }}</div>
-                  <div v-if="hasRegistration(event)" class="event-card-reg">
-                    {{ $t('competition.registration') }}: {{ formatRegRange(event) }}
+      <!-- Tabs -->
+      <el-tabs v-model="activeTab" class="calendar-tabs">
+        <!-- Year View Tab -->
+        <el-tab-pane :label="$t('competition.yearView')" name="year">
+          <div class="year-grid">
+            <div v-for="m in yearMonths" :key="m.month" class="year-month-card">
+              <div class="year-month-title">{{ m.label }}</div>
+              <div class="year-month-events">
+                <template v-if="m.events.length > 0">
+                  <div v-for="event in m.events" :key="event._id" class="year-event-item" @click="showDetail(event)">
+                    <div class="year-event-name">{{ event.竞赛名称 }}</div>
+                    <div class="year-event-tags">
+                      <el-tag size="small" :type="categoryTagMap[event.竞赛类别] || 'info'">{{ event.竞赛类别 }}</el-tag>
+                      <el-tag v-if="event._isCompeting" size="small" type="danger">{{ $t('competition.competing') }}</el-tag>
+                      <el-tag v-if="event._isRegistering" size="small" type="warning">{{ $t('competition.registering') }}</el-tag>
+                    </div>
                   </div>
-                  <el-tag
-                    size="small"
-                    :type="categoryTagMap[event.竞赛类别] || 'info'"
-                  >
-                    {{ event.竞赛类别 }}
-                  </el-tag>
-                </div>
-                <div
-                  v-for="event in day.regEvents"
-                  :key="'reg-' + event._id"
-                  class="event-card reg-card"
-                  :class="'cat-' + event.竞赛类别"
-                  @click="showDetail(event)"
-                >
-                  <div class="event-card-name">{{ $t('competition.registration') }}: {{ event.竞赛名称 }}</div>
+                </template>
+                <div v-else class="year-month-empty">{{ $t('competition.noEvents') }}</div>
+              </div>
+            </div>
+          </div>
+        </el-tab-pane>
+
+        <!-- Today Tab -->
+        <el-tab-pane :label="$t('competition.today')" name="today">
+          <div class="tab-event-list">
+            <template v-if="todayEvents.length > 0">
+              <div v-for="event in todayEvents" :key="event._id" class="info-card" @click="showDetail(event)">
+                <div class="info-card-name">{{ event.竞赛名称 }}</div>
+                <div class="info-card-meta">
                   <el-tag size="small" :type="categoryTagMap[event.竞赛类别] || 'info'">{{ event.竞赛类别 }}</el-tag>
+                  <el-tag v-if="event._isCompeting" size="small" type="danger">{{ $t('competition.competing') }}</el-tag>
+                  <el-tag v-if="event._isRegistering" size="small" type="warning">{{ $t('competition.registering') }}</el-tag>
                 </div>
-              </template>
-              <div v-else class="empty-day">{{ $t('competition.noEvents') }}</div>
-            </div>
+              </div>
+            </template>
+            <div v-else class="info-empty">{{ $t('competition.noEvents') }}</div>
           </div>
-        </div>
-      </template>
+        </el-tab-pane>
 
-      <!-- Year View -->
-      <template v-if="viewMode === 'year'">
-        <div class="year-grid">
-          <div v-for="m in yearMonths" :key="m.month" class="year-month-card">
-            <div class="year-month-title" @click="goToMonth(m.month)">
-              {{ m.label }}
-            </div>
-            <div class="year-month-events">
-              <template v-if="m.events.length > 0">
-                <div
-                  v-for="event in m.events"
-                  :key="event._id"
-                  class="year-event-item"
-                  @click="showDetail(event)"
-                >
-                  <div class="year-event-name">{{ event.竞赛名称 }}</div>
-                  <div class="year-event-tags">
-                    <el-tag size="small" :type="categoryTagMap[event.竞赛类别] || 'info'">{{ event.竞赛类别 }}</el-tag>
-                    <el-tag v-if="event._isCompeting" size="small" type="danger">{{ $t('competition.competing') }}</el-tag>
-                    <el-tag v-if="event._isRegistering" size="small" type="warning">{{ $t('competition.registering') }}</el-tag>
-                  </div>
+        <!-- This Week Tab -->
+        <el-tab-pane :label="$t('competition.thisWeek')" name="thisWeek">
+          <div class="tab-event-list">
+            <template v-if="thisWeekEvents.length > 0">
+              <div v-for="event in thisWeekEvents" :key="event._id" class="info-card" @click="showDetail(event)">
+                <div class="info-card-name">{{ event.竞赛名称 }}</div>
+                <div class="info-card-meta">
+                  <el-tag size="small" :type="categoryTagMap[event.竞赛类别] || 'info'">{{ event.竞赛类别 }}</el-tag>
+                  <el-tag v-if="event._isCompeting" size="small" type="danger">{{ $t('competition.competing') }}</el-tag>
+                  <el-tag v-if="event._isRegistering" size="small" type="warning">{{ $t('competition.registering') }}</el-tag>
                 </div>
-              </template>
-              <div v-else class="year-month-empty">{{ $t('competition.noEvents') }}</div>
-            </div>
+              </div>
+            </template>
+            <div v-else class="info-empty">{{ $t('competition.noEvents') }}</div>
           </div>
-        </div>
-      </template>
+        </el-tab-pane>
+
+        <!-- Next Week Tab -->
+        <el-tab-pane :label="$t('competition.nextWeek')" name="nextWeek">
+          <div class="tab-event-list">
+            <template v-if="nextWeekEvents.length > 0">
+              <div v-for="event in nextWeekEvents" :key="event._id" class="info-card" @click="showDetail(event)">
+                <div class="info-card-name">{{ event.竞赛名称 }}</div>
+                <div class="info-card-meta">
+                  <el-tag size="small" :type="categoryTagMap[event.竞赛类别] || 'info'">{{ event.竞赛类别 }}</el-tag>
+                  <el-tag v-if="event._isCompeting" size="small" type="danger">{{ $t('competition.competing') }}</el-tag>
+                  <el-tag v-if="event._isRegistering" size="small" type="warning">{{ $t('competition.registering') }}</el-tag>
+                </div>
+              </div>
+            </template>
+            <div v-else class="info-empty">{{ $t('competition.noEvents') }}</div>
+          </div>
+        </el-tab-pane>
+      </el-tabs>
     </div>
-
-    <!-- Right: Collapsible Sidebar -->
-    <transition name="sidebar">
-      <div v-if="sidebarVisible" class="sidebar">
-        <!-- Today -->
-        <div class="sidebar-section">
-          <div class="sidebar-title">{{ $t('competition.today') }}</div>
-          <template v-if="todayEvents.length > 0">
-            <div
-              v-for="event in todayEvents"
-              :key="'today-' + event._id"
-              class="sidebar-card"
-              @click="showDetail(event)"
-            >
-              <div class="sidebar-card-name">{{ event.竞赛名称 }}</div>
-              <div class="sidebar-card-meta">
-                <el-tag
-                  size="small"
-                  :type="categoryTagMap[event.竞赛类别] || 'info'"
-                >
-                  {{ event.竞赛类别 }}
-                </el-tag>
-                <el-tag v-if="event._isCompeting" size="small" type="danger">{{ $t('competition.competing') }}</el-tag>
-                <el-tag v-if="event._isRegistering" size="small" type="warning">{{ $t('competition.registering') }}</el-tag>
-              </div>
-              <div class="sidebar-card-date">
-                {{ formatDate(event.竞赛开始日期) }} ~ {{ formatDate(event.竞赛结束日期) }}
-              </div>
-              <div v-if="hasRegistration(event)" class="sidebar-card-reg">
-                {{ $t('competition.registration') }}: {{ formatRegRange(event) }}
-              </div>
-            </div>
-          </template>
-          <div v-else class="empty-section">{{ $t('competition.noEvents') }}</div>
-        </div>
-
-        <!-- This Week -->
-        <div class="sidebar-section">
-          <div class="sidebar-title">{{ $t('competition.thisWeek') }}</div>
-          <template v-if="thisWeekEvents.length > 0">
-            <div
-              v-for="event in thisWeekEvents"
-              :key="event._id"
-              class="sidebar-card"
-              @click="showDetail(event)"
-            >
-              <div class="sidebar-card-name">{{ event.竞赛名称 }}</div>
-              <div class="sidebar-card-meta">
-                <el-tag
-                  size="small"
-                  :type="categoryTagMap[event.竞赛类别] || 'info'"
-                >
-                  {{ event.竞赛类别 }}
-                </el-tag>
-                <el-tag v-if="event._isCompeting" size="small" type="danger">{{ $t('competition.competing') }}</el-tag>
-                <el-tag v-if="event._isRegistering" size="small" type="warning">{{ $t('competition.registering') }}</el-tag>
-              </div>
-              <div class="sidebar-card-date">
-                {{ formatDate(event.竞赛开始日期) }} ~ {{ formatDate(event.竞赛结束日期) }}
-              </div>
-              <div v-if="hasRegistration(event)" class="sidebar-card-reg">
-                {{ $t('competition.registration') }}: {{ formatRegRange(event) }}
-              </div>
-            </div>
-          </template>
-          <div v-else class="empty-section">{{ $t('competition.noEvents') }}</div>
-        </div>
-
-        <!-- Next Week -->
-        <div class="sidebar-section">
-          <div class="sidebar-title">{{ $t('competition.nextWeek') }}</div>
-          <template v-if="nextWeekEvents.length > 0">
-            <div
-              v-for="event in nextWeekEvents"
-              :key="event._id"
-              class="sidebar-card"
-              @click="showDetail(event)"
-            >
-              <div class="sidebar-card-name">{{ event.竞赛名称 }}</div>
-              <div class="sidebar-card-meta">
-                <el-tag
-                  size="small"
-                  :type="categoryTagMap[event.竞赛类别] || 'info'"
-                >
-                  {{ event.竞赛类别 }}
-                </el-tag>
-                <el-tag v-if="event._isCompeting" size="small" type="danger">{{ $t('competition.competing') }}</el-tag>
-                <el-tag v-if="event._isRegistering" size="small" type="warning">{{ $t('competition.registering') }}</el-tag>
-              </div>
-              <div class="sidebar-card-date">
-                {{ formatDate(event.竞赛开始日期) }} ~ {{ formatDate(event.竞赛结束日期) }}
-              </div>
-              <div v-if="hasRegistration(event)" class="sidebar-card-reg">
-                {{ $t('competition.registration') }}: {{ formatRegRange(event) }}
-              </div>
-            </div>
-          </template>
-          <div v-else class="empty-section">{{ $t('competition.noEvents') }}</div>
-        </div>
-      </div>
-    </transition>
 
     <!-- Detail Dialog -->
     <el-dialog
@@ -387,13 +212,12 @@ const categoryTagMap = {
 
 // --- State ---
 const events = ref([])
-const viewMode = ref('month')
 const currentDate = ref(new Date())
-const sidebarVisible = ref(true)
 const detailVisible = ref(false)
 const detailEvent = ref(null)
 const isMobile = ref(false)
 const selectedCategories = ref([])
+const activeTab = ref('year')
 
 function checkMobile() {
   isMobile.value = window.innerWidth < 640
@@ -490,76 +314,9 @@ const filteredEvents = computed(() => {
   return events.value.filter(e => selectedCategories.value.includes(e.竞赛类别))
 })
 
-const weekdayNames = computed(() => [
-  t('common.monday'),
-  t('common.tuesday'),
-  t('common.wednesday'),
-  t('common.thursday'),
-  t('common.friday'),
-  t('common.saturday'),
-  t('common.sunday')
-])
-
 const currentLabel = computed(() => {
   const d = currentDate.value
-  if (viewMode.value === 'year') {
-    return `${d.getFullYear()}${t('common.year')}`
-  } else if (viewMode.value === 'month') {
-    return `${d.getFullYear()}${t('common.year')}${d.getMonth() + 1}${t('common.month')}`
-  } else {
-    const monday = getMonday(d)
-    const sunday = addDays(monday, 6)
-    return `${toDateStr(monday)} ~ ${toDateStr(sunday)}`
-  }
-})
-
-const monthCells = computed(() => {
-  const d = currentDate.value
-  const year = d.getFullYear()
-  const month = d.getMonth()
-
-  const firstDay = new Date(year, month, 1)
-  const firstDow = (firstDay.getDay() + 6) % 7
-  const startDate = addDays(firstDay, -firstDow)
-
-  const today = new Date()
-  const cells = []
-  for (let i = 0; i < 42; i++) {
-    const cellDate = addDays(startDate, i)
-    const isCurrentMonth = cellDate.getMonth() === month
-    const isToday = isSameDay(cellDate, today)
-    const dayEvents = filteredEvents.value.filter(e => eventOnDay(e, cellDate))
-    const dayRegEvents = filteredEvents.value.filter(e => regOnDay(e, cellDate) && !eventOnDay(e, cellDate))
-    cells.push({
-      date: cellDate,
-      day: cellDate.getDate(),
-      currentMonth: isCurrentMonth,
-      isToday,
-      events: dayEvents,
-      regEvents: dayRegEvents
-    })
-  }
-  return cells
-})
-
-const weekDays = computed(() => {
-  const monday = getMonday(currentDate.value)
-  const today = new Date()
-  const days = []
-  for (let i = 0; i < 7; i++) {
-    const d = addDays(monday, i)
-    const dayEvents = filteredEvents.value.filter(e => eventOnDay(e, d))
-    const dayRegEvents = filteredEvents.value.filter(e => regOnDay(e, d) && !eventOnDay(e, d))
-    days.push({
-      date: toDateStr(d),
-      name: weekdayNames.value[i],
-      dateLabel: `${d.getMonth() + 1}/${d.getDate()}`,
-      isToday: isSameDay(d, today),
-      events: dayEvents,
-      regEvents: dayRegEvents
-    })
-  }
-  return days
+  return `${d.getFullYear()}${t('common.year')}`
 })
 
 const todayEvents = computed(() => {
@@ -621,37 +378,18 @@ const yearMonths = computed(() => {
 // --- Navigation ---
 function navigatePrev() {
   const d = new Date(currentDate.value)
-  if (viewMode.value === 'year') {
-    d.setFullYear(d.getFullYear() - 1)
-  } else if (viewMode.value === 'month') {
-    d.setMonth(d.getMonth() - 1)
-  } else {
-    d.setDate(d.getDate() - 7)
-  }
+  d.setFullYear(d.getFullYear() - 1)
   currentDate.value = d
 }
 
 function navigateNext() {
   const d = new Date(currentDate.value)
-  if (viewMode.value === 'year') {
-    d.setFullYear(d.getFullYear() + 1)
-  } else if (viewMode.value === 'month') {
-    d.setMonth(d.getMonth() + 1)
-  } else {
-    d.setDate(d.getDate() + 7)
-  }
+  d.setFullYear(d.getFullYear() + 1)
   currentDate.value = d
 }
 
 function goToday() {
   currentDate.value = new Date()
-}
-
-function goToMonth(month) {
-  const d = new Date(currentDate.value)
-  d.setMonth(month)
-  currentDate.value = d
-  viewMode.value = 'month'
 }
 
 // --- Detail Dialog ---
@@ -728,6 +466,68 @@ onUnmounted(() => {
   text-align: center;
   user-select: none;
 }
+
+/* Quick Info Sections */
+.quick-info-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.info-section {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.info-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #3870a0;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.info-card {
+  background: white;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border-left: 3px solid #409eff;
+}
+
+.info-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transform: translateX(2px);
+}
+
+.info-card:last-child {
+  margin-bottom: 0;
+}
+
+.info-card-name {
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.info-card-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.info-empty {
+  color: #999;
+  font-size: 14px;
+  text-align: center;
+  padding: 20px;
+}
+
 
 /* Month View - Weekday Header */
 .weekday-header {
@@ -1134,6 +934,50 @@ onUnmounted(() => {
   color: #c0c4cc;
   font-size: 12px;
   padding: 8px 0;
+}
+
+/* Tabs */
+.calendar-tabs {
+  margin-top: 16px;
+}
+
+.tab-event-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  padding: 16px 0;
+}
+
+.info-card {
+  background: #f5f7fa;
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.info-card:hover {
+  background: #ecf5ff;
+}
+
+.info-card-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 8px;
+}
+
+.info-card-meta {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.info-empty {
+  text-align: center;
+  color: #c0c4cc;
+  padding: 40px 0;
+  font-size: 14px;
 }
 
 /* Responsive */

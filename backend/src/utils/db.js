@@ -22,7 +22,13 @@ async function connectDB() {
   }
 
   try {
-    client = new MongoClient(MONGO_URI)
+    client = new MongoClient(MONGO_URI, {
+      maxPoolSize: 10,
+      minPoolSize: 2,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 10000,
+      connectTimeoutMS: 10000
+    })
     await client.connect()
 
     // 连接 GHA（FAD主数据库）

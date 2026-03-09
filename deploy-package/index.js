@@ -88,16 +88,32 @@ app.use((err, req, res, next) => {
   })
 })
 
-// 连接数据库
-connectDB().catch(err => console.error('Database connection error:', err))
+// 云函数入口 - 确保数据库连接后再处理请求
+const handler = serverless(app)
+module.exports.handler = async (event, context) => {
+  try {
+    await connectDB()
+    return handler(event, context)
+  } catch (error) {
+    console.error('Handler error:', error)
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ success: false, error: '服务器错误' })
+    }
+  }
+}
 
-// 云函数入口 - 导出 serverless-http handler
-module.exports.handler = serverless(app)
-
-// 如果直接运行（本地开发）
+// 本地开发环境 - 启动前连接数据库
 const PORT = process.env.PORT || 8080
 if (require.main === module) {
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`)
-  })
+  connectDB()
+    .then(() => {
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`Server running on port ${PORT}`)
+      })
+    })
+    .catch(err => {
+      console.error('Failed to start server:', err)
+      process.exit(1)
+    })
 }
