@@ -9,6 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Add record type**: Update both `backend/src/utils/constants.js` AND `frontend/src/stores/common.js`
 - **Deploy backend**: Copy `backend/src/` to `deploy-package/src/`, upload to SCF
 - **Build standalone calendar**: `cd competition-calendar && npm run build`
+- **Competition calendar dev**: `cd competition-calendar && npm run dev`
+- **Meeting arrangement dev**: `cd "meeting arrangement" && npm run dev`
 
 ## Project Overview
 

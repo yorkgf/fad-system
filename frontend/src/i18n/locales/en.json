@@ -178,6 +178,9 @@
     "createSuccess": "Competition created",
     "updateSuccess": "Competition updated",
     "deleteSuccess": "Competition deleted",
+    "sortBy": "Sort By",
+    "sortByEventDate": "Sort by Competition Date",
+    "sortByRegDate": "Sort by Registration Deadline",
     "dateRangeError": "End date cannot be before start date",
     "regDateRangeError": "Registration deadline cannot be before registration start"
   },

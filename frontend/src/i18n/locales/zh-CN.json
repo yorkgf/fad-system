@@ -177,6 +177,9 @@
     "eventPeriod": "竞赛时间",
     "createSuccess": "竞赛创建成功",
     "updateSuccess": "竞赛更新成功",
+    "sortBy": "排序方式",
+    "sortByEventDate": "按竞赛时间排序",
+    "sortByRegDate": "按报名截止日期排序",
     "deleteSuccess": "竞赛删除成功",
     "dateRangeError": "结束日期不能早于开始日期",
     "regDateRangeError": "报名截止日期不能早于报名开始日期"

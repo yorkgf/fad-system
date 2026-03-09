@@ -15,6 +15,14 @@
           :value="cat.value"
         />
       </el-select>
+      <el-select
+        v-model="sortBy"
+        :placeholder="$t('competition.sortBy')"
+        style="width: 180px"
+      >
+        <el-option :label="$t('competition.sortByEventDate')" value="event" />
+        <el-option :label="$t('competition.sortByRegDate')" value="reg" />
+      </el-select>
       <el-input
         v-model="searchKeyword"
         :placeholder="$t('common.search')"
@@ -204,6 +212,7 @@ const loading = ref(false)
 const events = ref([])
 const filterCategory = ref('')
 const searchKeyword = ref('')
+const sortBy = ref('event')
 
 const dialogVisible = ref(false)
 const isEdit = ref(false)
@@ -260,7 +269,8 @@ const filteredEvents = computed(() => {
       (e.参与对象 || '').toLowerCase().includes(kw)
     )
   }
-  return list
+  const field = sortBy.value === 'reg' ? '报名截止日期' : '竞赛开始日期'
+  return [...list].sort((a, b) => (a[field] || '').localeCompare(b[field] || ''))
 })
 
 // --- Helpers ---
