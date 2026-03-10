@@ -896,6 +896,8 @@ onUnmounted(() => {
 
 .year-month-events {
   padding: 4px 0;
+  max-height: 480px;
+  overflow-y: auto;
 }
 
 .year-event-item {

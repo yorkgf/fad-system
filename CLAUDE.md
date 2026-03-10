@@ -55,7 +55,13 @@ This is deployed independently and uses the GHS database.
 1. Backend: `cd backend && cp .env.example .env` (configure env vars), then `npm install && npm run dev`
 2. Frontend: `cd frontend && npm install && npm run dev`
 
-**No test framework or linting/formatting tools are configured.** There are no unit tests, no ESLint, no Prettier. Ad-hoc validation scripts exist in `backend/` root (`test-*.js`, `check-*.js`, `migrate-*.js`) for manual testing and data migration.
+**No test framework or linting/formatting tools are configured.** There are no unit tests, no ESLint, no Prettier. Ad-hoc validation scripts exist in `backend/` root for manual testing and data migration:
+- `test-*.js` - Manual API/feature testing scripts
+- `check-*.js` - Data validation and consistency checks
+- `migrate-*.js` - Database migration utilities
+- `fix-*.js` - One-off data repair scripts
+
+**Note**: Root `package.json` exists but is not used for workspace management. Each subproject (`frontend/`, `backend/`, `competition-calendar/`, `meeting arrangement/`) manages its own dependencies independently.
 
 ### Dev Proxy
 Frontend dev server proxies `/api` to `http://localhost:8080` by default (configured in `frontend/vite.config.js`). To proxy to the production SCF backend instead, comment out the localhost target and uncomment the SCF URL in the proxy config.
