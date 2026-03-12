@@ -48,7 +48,7 @@ router.get('/', authMiddleware, async (req, res) => {
 // 获取未执行的FAD
 router.get('/unexecuted', authMiddleware, async (req, res) => {
   try {
-    const { semester, sourceType, page = 1, pageSize = 20 } = req.query
+    const { semester, sourceType, student, studentClass, page = 1, pageSize = 20 } = req.query
 
     const filter = {
       是否已执行或冲抵: false,
@@ -57,6 +57,8 @@ router.get('/unexecuted', authMiddleware, async (req, res) => {
 
     if (semester) filter.学期 = semester
     if (sourceType) filter.FAD来源类型 = sourceType
+    if (student) filter.学生 = { $regex: student, $options: 'i' }
+    if (studentClass) filter.班级 = studentClass
 
     const [records, total] = await paginate(
       getCollection(Collections.FADRecords),

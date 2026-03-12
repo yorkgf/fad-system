@@ -19,6 +19,46 @@
               />
             </el-select>
             <el-select
+              v-model="filters.student"
+              :placeholder="$t('fad.execution.searchStudent')"
+              style="width: 180px"
+              clearable
+              filterable
+              remote
+              reserve-keyword
+              :remote-method="searchStudents"
+              :loading="studentsLoading"
+              @change="fetchData"
+              @clear="fetchData"
+            >
+              <el-option
+                v-for="item in studentOptions"
+                :key="item.学生姓名"
+                :label="item.学生姓名"
+                :value="item.学生姓名"
+              >
+                <div class="student-option">
+                  <span class="student-name">{{ item.学生姓名 }}</span>
+                  <span class="student-class">{{ item.班级 }}</span>
+                </div>
+              </el-option>
+            </el-select>
+            <el-select
+              v-model="filters.studentClass"
+              :placeholder="$t('fad.execution.searchClass')"
+              style="width: 150px"
+              clearable
+              filterable
+              @change="fetchData"
+            >
+              <el-option
+                v-for="item in commonStore.classes"
+                :key="item.Class"
+                :label="item.Class"
+                :value="item.Class"
+              />
+            </el-select>
+            <el-select
               v-model="filters.sourceType"
               :placeholder="$t('fad.execution.fadSourceType')"
               style="width: 120px"
@@ -101,6 +141,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useCommonStore } from '@/stores/common'
 import { getUnexecutedFAD, executeFAD } from '@/api/fad'
+import { getStudents } from '@/api/students'
 import dayjs from 'dayjs'
 
 const { t } = useI18n()
@@ -109,10 +150,14 @@ const commonStore = useCommonStore()
 const loading = ref(false)
 const records = ref([])
 const selectedRows = ref([])
+const studentsLoading = ref(false)
+const studentOptions = ref([])
 
 const filters = reactive({
   semester: '',
-  sourceType: ''
+  sourceType: '',
+  student: '',
+  studentClass: ''
 })
 
 const pagination = reactive({
@@ -123,6 +168,7 @@ const pagination = reactive({
 
 onMounted(() => {
   commonStore.generateSemesters()
+  commonStore.fetchClasses()
   filters.semester = commonStore.getCurrentSemester()
   fetchData()
 })
@@ -133,6 +179,8 @@ async function fetchData() {
     const res = await getUnexecutedFAD({
       semester: filters.semester,
       sourceType: filters.sourceType || undefined,
+      student: filters.student || undefined,
+      studentClass: filters.studentClass || undefined,
       page: pagination.page,
       pageSize: pagination.pageSize
     })
@@ -142,6 +190,22 @@ async function fetchData() {
     records.value = []
   } finally {
     loading.value = false
+  }
+}
+
+async function searchStudents(query) {
+  if (!query) {
+    studentOptions.value = []
+    return
+  }
+  studentsLoading.value = true
+  try {
+    const res = await getStudents({ search: query.trim() })
+    studentOptions.value = res.data || res
+  } catch {
+    studentOptions.value = []
+  } finally {
+    studentsLoading.value = false
   }
 }
 
@@ -209,6 +273,18 @@ function getSourceTypeTag(type) {
 .filters {
   display: flex;
   gap: 12px;
+}
+
+.student-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.student-class {
+  color: #999;
+  font-size: 12px;
+  margin-left: 8px;
 }
 
 .table-footer {

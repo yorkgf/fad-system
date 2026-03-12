@@ -350,6 +350,8 @@
       "title": "FAD执行",
       "selectSemester": "选择学期",
       "fadSourceType": "FAD来源类型",
+      "searchStudent": "搜索学生姓名",
+      "searchClass": "选择班级",
       "student": "学生",
       "class": "班级",
       "recordDate": "记录日期",

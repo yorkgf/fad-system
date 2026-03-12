@@ -350,6 +350,8 @@
       "title": "FAD Execution",
       "selectSemester": "Select Semester",
       "fadSourceType": "FAD Source Type",
+      "searchStudent": "Search student name",
+      "searchClass": "Select Class",
       "student": "Student",
       "class": "Class",
       "recordDate": "Record Date",
