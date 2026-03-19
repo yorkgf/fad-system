@@ -329,6 +329,10 @@ const rules = computed(() => ({
 onMounted(async () => {
   commonStore.generateSemesters()
   form.semester = commonStore.getCurrentSemester()
+  // 确保 recordTypes 已加载（页面刷新后 recordTypes 会丢失）
+  if (userStore.recordTypes.length === 0 && !userStore.isCleaner && !userStore.isFaculty) {
+    await userStore.fetchRecordTypes()
+  }
   // 初始化时加载所有寝室列表
   await fetchDormList()
   // 监听窗口大小变化

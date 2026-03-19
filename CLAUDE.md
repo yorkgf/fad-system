@@ -8,9 +8,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Build for deploy**: `cd frontend && npm run build:prod`
 - **Add record type**: Update both `backend/src/utils/constants.js` AND `frontend/src/stores/common.js`
 - **Deploy backend**: Copy `backend/src/` to `deploy-package/src/`, upload to SCF
-- **Build standalone calendar**: `cd competition-calendar && npm run build`
+- **Build standalone calendar**: `cd competition-calendar && npm run build` (or `build:prod` for minified)
 - **Competition calendar dev**: `cd competition-calendar && npm run dev`
-- **Meeting arrangement dev**: `cd "meeting arrangement" && npm run dev`
+- **Meeting arrangement parent portal dev**: `cd "meeting arrangement" && npm run dev` (static HTML, no build step)
 
 ## Project Overview
 
@@ -19,7 +19,7 @@ FAD (学生纪律与奖励管理系统) - Student discipline and reward manageme
 **Integrated Systems:**
 - **FAD Core**: Student discipline/reward management (GHA database)
 - **Meeting Arrangement (日程管理)**: Parent-teacher conference booking system (GHS database) - Teacher portal integrated into FAD
-- **Parent Portal**: Standalone parent-facing booking interface in `meeting arrangement/` folder (separate Vue app, not part of main FAD build)
+- **Parent Portal**: Standalone parent-facing booking interface in `meeting arrangement/` folder — has its own SCF backend (`CFunction/scf_index.js`), static HTML pages (`pages/`), and separate `serverless.yml`. Not part of main FAD build. See `meeting arrangement/CLAUDE.md` for details.
 - **Competition Calendar (公开展示站)**: Standalone public-facing Vue app in `competition-calendar/` folder (separate build, deployed to separate EdgeOne Pages site, uses `/public-*` API endpoints without auth)
 
 ## Development Commands
@@ -43,13 +43,11 @@ npm run logs       # View SCF logs (tail)
 ```
 
 ### Meeting Arrangement (in `meeting arrangement/`)
-Standalone parent-facing Vue app for conference booking (separate from main FAD build):
-```bash
-cd "meeting arrangement"
-npm install
-npm run dev
-```
-This is deployed independently and uses the GHS database.
+Standalone parent-facing booking system with its own SCF backend (separate from main FAD backend):
+- **Parent pages**: Static HTML in `pages/` (index.html, parent_dashboard.html) — no build step, deploy directly
+- **Backend**: `CFunction/scf_index.js` — parent-only API server, deployed as separate SCF function via its own `serverless.yml`
+- **Database**: Uses GHS database (shared with FAD's schedule module)
+- See `meeting arrangement/CLAUDE.md` and `meeting arrangement/DEPLOY.md` for deployment details
 
 ### Local Development Setup
 1. Backend: `cd backend && cp .env.example .env` (configure env vars), then `npm install && npm run dev`
@@ -125,8 +123,11 @@ See `frontend/src/router/index.js` for the complete route permission matrix.
 ### AI Navigation Files
 - `AGENTS.md` (root) - Top-level project map with code symbols and conventions
 - `backend/src/routes/AGENTS.md` - Detailed backend route documentation
+- `frontend/AGENTS.md` - Frontend-specific guidance
 - `frontend/src/views/AGENTS.md` - Frontend view component documentation
+- `meeting arrangement/CLAUDE.md` - Parent portal architecture and deployment
 - `docs/user-guides/` - Per-role user guides (系统管理员, 班主任, 任课老师, Foreign Faculty, 保洁阿姨, etc.)
+- `docs/plans/` - Implementation plans (i18n, competition calendar) for historical context
 
 **DB_FIELDS Usage**: Use constants from `DB_FIELDS` (e.g., `DB_FIELDS.STUDENT`, `DB_FIELDS.SEMESTER`, `DB_FIELDS.WITHDRAWN`) instead of hardcoding Chinese field names in queries to ensure consistency.
 
@@ -268,6 +269,8 @@ Both `frontend/src/views/competition/CompetitionCalendar.vue` (FAD main) and `co
 - **Year view**: 4×3 grid of month cards, each listing events with category/status tags (no date grid)
 - **Sidebar**: Today / This Week / Next Week event lists with status tags (`报名`/`比赛`)
 
+The standalone `competition-calendar/` app also includes `BestClassRanking.vue` and `BestDormRanking.vue` (routed via `competition-calendar/src/router.js`), which use the `/public-best-class` and `/public-best-dorm` endpoints respectively.
+
 Key patterns:
 - `eventOnDay()` / `eventsOverlapRange()` — check competition period overlap
 - `regOnDay()` / `regOverlapRange()` — check registration period overlap
@@ -282,7 +285,7 @@ When modifying one calendar file, apply the same changes to the other to keep th
 ## Gotchas
 
 - `deploy-package/` is a pre-bundled SCF package - source changes require manual rebuild (see above)
-- `deploy-package/index.js` (root) is the **actual SCF entry point** (via `scf_bootstrap`), separate from `deploy-package/src/index.js`. When adding new routes, update BOTH files — root `index.js` uses `./src/routes/*` paths
+- `deploy-package/index.js` (root) is the **actual SCF entry point** (via `scf_bootstrap`), separate from `deploy-package/src/index.js` (which is a copy of `backend/src/index.js`). When adding new routes, update **three files**: `backend/src/index.js`, `deploy-package/src/index.js`, and `deploy-package/index.js` — the root entry point uses `./src/routes/*` paths and registers routes independently
 - `commonStore.semesters` contains objects `{ value, labelKey }`, not plain strings. Use `item.value` for `:key`/`:value` and `$t(item.labelKey)` for `:label` in `<el-option>`
 - When creating public-facing standalone sites, add `/public-*` route variants without `authMiddleware` (e.g., `/public-events`, `/public-best-dorm`)
 - Backend uses `dotenv` in dev mode (`index.js`) but it's not in `backend/package.json` - it relies on a hoisted install or must be installed separately
