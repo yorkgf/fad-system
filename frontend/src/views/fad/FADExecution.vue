@@ -72,6 +72,7 @@
                 :value="item.value"
               />
             </el-select>
+            <el-button type="success" @click="exportData">{{ $t('fad.execution.exportCsv') }}</el-button>
           </div>
         </div>
       </template>
@@ -240,6 +241,55 @@ async function handleExecute(rows) {
     }
   } finally {
     loading.value = false
+  }
+}
+
+async function exportData() {
+  try {
+    // 获取所有匹配记录（不分页）
+    const res = await getUnexecutedFAD({
+      semester: filters.semester,
+      sourceType: filters.sourceType || undefined,
+      student: filters.student || undefined,
+      studentClass: filters.studentClass || undefined,
+      page: 1,
+      pageSize: 99999
+    })
+    const allData = res.data || res
+    if (allData.length === 0) {
+      ElMessage.warning(t('fad.execution.noDataToExport'))
+      return
+    }
+
+    const headers = [
+      t('fad.execution.student'),
+      t('fad.execution.class'),
+      t('fad.execution.recordDate'),
+      t('fad.execution.recordReason'),
+      t('fad.execution.recordTeacher'),
+      t('fad.execution.sourceType')
+    ]
+    const rows = allData.map(row => [
+      row.学生,
+      row.班级,
+      formatDate(row.记录日期),
+      row.记录事由 || '',
+      row.记录老师,
+      getSourceTypeLabel(row.FAD来源类型)
+    ])
+
+    const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${c}"`).join(','))].join('\n')
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `FAD执行_${filters.semester}_${dayjs().format('YYYYMMDD_HHmmss')}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+
+    ElMessage.success(t('fad.execution.exportSuccess'))
+  } catch {
+    ElMessage.error(t('fad.execution.noDataToExport'))
   }
 }
 

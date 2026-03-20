@@ -370,7 +370,10 @@
       "sourceTeach": "教学类",
       "sourceElec": "电子产品违规",
       "sourceOther": "其他",
-      "sourceUncategorized": "未分类"
+      "sourceUncategorized": "未分类",
+      "exportCsv": "导出CSV",
+      "noDataToExport": "没有数据可导出",
+      "exportSuccess": "导出成功"
     },
     "deliver": {
       "title": "FAD通知单发放",

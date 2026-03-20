@@ -33,6 +33,21 @@
               <el-option :label="$t('myRecords.fadSourceEmpty')" value="_empty" />
             </el-select>
             <el-select
+              v-if="statusFilterOptions.length > 0"
+              v-model="filters.status"
+              :placeholder="$t('myRecords.filterStatus')"
+              style="width: 140px"
+              clearable
+              @change="updatePagination"
+            >
+              <el-option
+                v-for="item in statusFilterOptions"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              />
+            </el-select>
+            <el-select
               v-model="filters.semester"
               :placeholder="$t('myRecords.selectSemester')"
               style="width: 150px"
@@ -377,6 +392,51 @@ const availableFilterOptions = computed(() => {  // C组用户只能看到寝室
   }))
 })
 
+// 根据当前记录类型生成状态筛选选项
+const statusFilterOptions = computed(() => {
+  const collection = filters.collection
+  if (collection === 'FAD_Records') {
+    return [
+      { label: t('myRecords.notExecuted'), value: 'notExecuted' },
+      { label: t('myRecords.executedNotOffset'), value: 'executed' },
+      { label: t('myRecords.offsetDone'), value: 'offset' }
+    ]
+  }
+  if (collection === 'Room_Warning_Records') {
+    return [
+      { label: t('myRecords.notAccumulatedFad'), value: 'noFad' },
+      { label: t('myRecords.accumulatedFadNotDelivered'), value: 'fadNotDelivered' },
+      { label: t('myRecords.accumulatedFadDelivered'), value: 'fadDelivered' }
+    ]
+  }
+  if (collection === 'Room_Praise_Records') {
+    return [
+      { label: t('myRecords.notAccumulatedReward'), value: 'notAccumulatedReward' },
+      { label: t('myRecords.accumulatedReward'), value: 'accumulatedReward' }
+    ]
+  }
+  if (collection === 'Teaching_Reward_Ticket') {
+    return [
+      { label: t('myRecords.notExchangedReward'), value: 'notExchangedReward' },
+      { label: t('myRecords.exchangedReward'), value: 'exchangedReward' }
+    ]
+  }
+  if (collection === 'Room_Trash_Records') {
+    return [
+      { label: t('myRecords.notAccumulatedCriticism'), value: 'notAccumulatedCriticism' },
+      { label: t('myRecords.accumulatedCriticism'), value: 'accumulatedCriticism' }
+    ]
+  }
+  if (['Late_Records', 'Teaching_FAD_Ticket', 'Leave_Room_Late_Records', 'Back_School_Late_Records', 'MeetingRoom_Violation_Records'].includes(collection)) {
+    return [
+      { label: t('myRecords.notAccumulatedFad'), value: 'noFad' },
+      { label: t('myRecords.accumulatedFadNotDelivered'), value: 'fadNotDelivered' },
+      { label: t('myRecords.accumulatedFadDelivered'), value: 'fadDelivered' }
+    ]
+  }
+  return []
+})
+
 const loading = ref(false)
 const allRecords = ref([]) // 存储所有记录
 const teachers = ref([])
@@ -384,6 +444,7 @@ const teachers = ref([])
 const filters = reactive({
   collection: 'FAD_Records', // 默认显示 FAD 记录
   fadSourceType: null, // FAD来源类型筛选
+  status: '', // 状态筛选
   semester: '',
   teacher: '',
   student: '',
@@ -409,6 +470,11 @@ const filteredRecords = computed(() => {
     } else {
       result = result.filter(r => r.FAD来源类型 === filters.fadSourceType)
     }
+  }
+
+  // 状态筛选
+  if (filters.status) {
+    result = result.filter(r => getRecordStatusKey(r) === filters.status)
   }
 
   // 学生姓名筛选
@@ -490,10 +556,11 @@ onMounted(async () => {
 async function fetchData() {
   loading.value = true
 
-  // 切换记录类型时清空FAD来源筛选
+  // 切换记录类型时清空FAD来源筛选和状态筛选
   if (filters.collection !== 'FAD_Records') {
     filters.fadSourceType = null
   }
+  filters.status = ''
 
   try {
     const params = {
@@ -785,6 +852,37 @@ function hasFADStatus(row) {
     '擅自进入会议室或接待室'
   ]
   return fadRecordTypes.includes(row.记录类型)
+}
+
+// 获取记录的状态 key（用于状态筛选）
+function getRecordStatusKey(row) {
+  if (row.记录类型 === 'FAD') {
+    if (row.是否已冲销记录) return 'offset'
+    if (row.是否已执行或冲抵) return 'executed'
+    return 'notExecuted'
+  }
+  if (row.记录类型 === '寝室批评') {
+    if (row.fadStatus === '已累计FAD，已发放') return 'fadDelivered'
+    if (row.fadStatus === '已累计FAD，未发放') return 'fadNotDelivered'
+    if (row.fadStatus === '未累计FAD') return 'noFad'
+    if (row.是否已累计FAD) return 'fadDelivered'
+    return 'noFad'
+  }
+  if (row.记录类型 === '寝室表扬') {
+    return row.是否已累计Reward ? 'accumulatedReward' : 'notAccumulatedReward'
+  }
+  if (row.记录类型 === 'Teaching Reward Ticket') {
+    return row.是否已累计Reward ? 'exchangedReward' : 'notExchangedReward'
+  }
+  if (row.记录类型 === '寝室垃圾未倒') {
+    return row.是否已累计寝室批评 ? 'accumulatedCriticism' : 'notAccumulatedCriticism'
+  }
+  if (hasFADStatus(row)) {
+    if (row.fadStatus === '已累计FAD，已发放') return 'fadDelivered'
+    if (row.fadStatus === '已累计FAD，未发放') return 'fadNotDelivered'
+    return 'noFad'
+  }
+  return 'valid'
 }
 </script>
 

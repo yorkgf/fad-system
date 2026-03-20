@@ -7,6 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Local dev**: `cd backend && npm run dev` + `cd frontend && npm run dev`
 - **Build for deploy**: `cd frontend && npm run build:prod`
 - **Add record type**: Update both `backend/src/utils/constants.js` AND `frontend/src/stores/common.js`
+- **Add new route**: Update `backend/src/index.js`, `deploy-package/src/index.js`, AND `deploy-package/index.js` (3 files)
 - **Deploy backend**: Copy `backend/src/` to `deploy-package/src/`, upload to SCF
 - **Build standalone calendar**: `cd competition-calendar && npm run build` (or `build:prod` for minified)
 - **Competition calendar dev**: `cd competition-calendar && npm run dev`
@@ -110,7 +111,7 @@ See `frontend/src/router/index.js` for the complete route permission matrix.
 - **Duplicate prevention**: `寝室表扬`, `寝室批评`, `寝室垃圾未倒` cannot be duplicated for same student on same day
 - **Dual database**: GHA (main FAD data) + GHS (meeting arrangement); see `db.js` for `getCollection()` vs `getGHSCollection()`
 - **Teacher profile sync**: GHS teacher profiles auto-created from GHA data when accessing schedule features
-- **Frontend API mirroring**: `frontend/src/api/` files mirror backend route files 1:1 (auth.js, records.js, fad.js, reward.js, room.js, students.js, other.js, schedule.js), with `request.js` as the shared Axios instance
+- **Frontend API mirroring**: `frontend/src/api/` files mirror backend route files 1:1 (auth.js, records.js, fad.js, reward.js, room.js, students.js, other.js, schedule.js, competition.js), with `request.js` as the shared Axios instance
 
 ### Key Files for Business Logic
 - `backend/src/utils/constants.js` - Accumulation rules, record type→collection mappings, FAD source types, threshold constants, `DB_FIELDS` for standardized field names

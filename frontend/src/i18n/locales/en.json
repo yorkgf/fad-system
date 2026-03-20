@@ -370,7 +370,10 @@
       "sourceTeach": "Teaching",
       "sourceElec": "Electronics Violation",
       "sourceOther": "Other",
-      "sourceUncategorized": "Uncategorized"
+      "sourceUncategorized": "Uncategorized",
+      "exportCsv": "Export CSV",
+      "noDataToExport": "No data to export",
+      "exportSuccess": "Export successful"
     },
     "deliver": {
       "title": "FAD Notice Delivery",
