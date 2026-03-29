@@ -73,6 +73,25 @@
     "navCalendar": "竞赛日历",
     "navBestDorm": "最佳寝室",
     "navBestClass": "最佳班级",
+    "navUniversities": "大学信息",
     "langSwitch": "English"
+  },
+  "access": {
+    "title": "学生页面",
+    "description": "请输入访问码以继续",
+    "placeholder": "输入访问码",
+    "submit": "验证",
+    "invalid": "访问码无效"
+  },
+  "universities": {
+    "tier1": "Ivy League 常春藤联盟",
+    "tier2": "顶尖非藤校",
+    "tier3": "优秀大学",
+    "searchPlaceholder": "搜索大学名称...",
+    "admissionRate": "录取率",
+    "intl": "国际生",
+    "noResults": "无匹配结果",
+    "backToList": "返回列表",
+    "notFound": "未找到该大学"
   }
 }

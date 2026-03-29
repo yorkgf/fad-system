@@ -13,6 +13,9 @@
           <router-link to="/best-class" class="nav-link" :class="{ active: $route.path === '/best-class' }">
             {{ $t('app.navBestClass') }}
           </router-link>
+          <router-link to="/universities" class="nav-link" :class="{ active: $route.path.startsWith('/universit') }">
+            {{ $t('app.navUniversities') }}
+          </router-link>
         </nav>
       </div>
       <button class="lang-btn" @click="switchLang">

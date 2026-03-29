@@ -1,6 +1,6 @@
 const { Router } = require('express')
 const { ObjectId } = require('mongodb')
-const { getCollection, Collections } = require('../utils/db.js')
+const { getCollection, getGHSCollection, Collections } = require('../utils/db.js')
 const { authMiddleware } = require('../utils/auth.js')
 const { paginate } = require('../utils/pagination.js')
 const { THRESHOLDS } = require('../utils/constants.js')
@@ -483,6 +483,26 @@ router.post('/teaching-tickets/reward/exchange', authMiddleware, async (req, res
   } catch (error) {
     console.error('Teaching ticket to reward error:', error)
     res.status(500).json({ success: false, error: '兑换失败' })
+  }
+})
+
+// 验证学生访问码（无需登录认证）
+router.post('/verify-student-access', async (req, res) => {
+  try {
+    const { code } = req.body
+    if (!code) {
+      return res.status(400).json({ success: false, error: '请输入访问码' })
+    }
+
+    const record = await getGHSCollection('Student_Access').findOne({ code })
+    if (!record) {
+      return res.status(401).json({ success: false, error: '访问码无效' })
+    }
+
+    res.json({ success: true })
+  } catch (error) {
+    console.error('Verify student access error:', error)
+    res.status(500).json({ success: false, error: '验证失败' })
   }
 })
 

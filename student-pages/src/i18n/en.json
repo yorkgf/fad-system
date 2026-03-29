@@ -73,6 +73,25 @@
     "navCalendar": "Calendar",
     "navBestDorm": "Best Dorm",
     "navBestClass": "Best Class",
+    "navUniversities": "Universities",
     "langSwitch": "中文"
+  },
+  "access": {
+    "title": "Student Pages",
+    "description": "Enter access code to continue",
+    "placeholder": "Enter access code",
+    "submit": "Verify",
+    "invalid": "Invalid access code"
+  },
+  "universities": {
+    "tier1": "Ivy League",
+    "tier2": "Top Non-Ivy",
+    "tier3": "Excellent Universities",
+    "searchPlaceholder": "Search universities...",
+    "admissionRate": "Admission",
+    "intl": "Int'l",
+    "noResults": "No results",
+    "backToList": "Back to list",
+    "notFound": "University not found"
   }
 }
