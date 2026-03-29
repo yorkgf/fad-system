@@ -9,8 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Add record type**: Update both `backend/src/utils/constants.js` AND `frontend/src/stores/common.js`
 - **Add new route**: Update `backend/src/index.js`, `deploy-package/src/index.js`, AND `deploy-package/index.js` (3 files)
 - **Deploy backend**: Copy `backend/src/` to `deploy-package/src/`, upload to SCF
-- **Build standalone calendar**: `cd competition-calendar && npm run build` (or `build:prod` for minified)
-- **Competition calendar dev**: `cd competition-calendar && npm run dev`
+- **Build standalone calendar**: `cd student-pages && npm run build` (or `build:prod` for minified)
+- **Competition calendar dev**: `cd student-pages && npm run dev`
 - **Meeting arrangement parent portal dev**: `cd "meeting arrangement" && npm run dev` (static HTML, no build step)
 
 ## Project Overview
@@ -21,7 +21,7 @@ FAD (学生纪律与奖励管理系统) - Student discipline and reward manageme
 - **FAD Core**: Student discipline/reward management (GHA database)
 - **Meeting Arrangement (日程管理)**: Parent-teacher conference booking system (GHS database) - Teacher portal integrated into FAD
 - **Parent Portal**: Standalone parent-facing booking interface in `meeting arrangement/` folder — has its own SCF backend (`CFunction/scf_index.js`), static HTML pages (`pages/`), and separate `serverless.yml`. Not part of main FAD build. See `meeting arrangement/CLAUDE.md` for details.
-- **Competition Calendar (公开展示站)**: Standalone public-facing Vue app in `competition-calendar/` folder (separate build, deployed to separate EdgeOne Pages site, uses `/public-*` API endpoints without auth)
+- **Competition Calendar (公开展示站)**: Standalone public-facing Vue app in `student-pages/` folder (separate build, deployed to separate EdgeOne Pages site, uses `/public-*` API endpoints without auth)
 
 ## Development Commands
 
@@ -60,7 +60,7 @@ Standalone parent-facing booking system with its own SCF backend (separate from 
 - `migrate-*.js` - Database migration utilities
 - `fix-*.js` - One-off data repair scripts
 
-**Note**: Root `package.json` exists but is not used for workspace management. Each subproject (`frontend/`, `backend/`, `competition-calendar/`, `meeting arrangement/`) manages its own dependencies independently.
+**Note**: Root `package.json` exists but is not used for workspace management. Each subproject (`frontend/`, `backend/`, `student-pages/`, `meeting arrangement/`) manages its own dependencies independently.
 
 ### Dev Proxy
 Frontend dev server proxies `/api` to `http://localhost:8080` by default (configured in `frontend/vite.config.js`). To proxy to the production SCF backend instead, comment out the localhost target and uncomment the SCF URL in the proxy config.
@@ -230,13 +230,13 @@ cd frontend && npm run build:prod
 
 ### Competition Calendar Standalone (EdgeOne Pages)
 ```bash
-cd competition-calendar && npm run build
+cd student-pages && npm run build
 # Deploy dist/ folder to a separate EdgeOne Pages site
 ```
 - Separate Vue 3 + Vite + Element Plus app (no Pinia, no auth)
 - Uses public API endpoints (`/public-events`, `/public-best-dorm`, `/public-best-class`) that require no JWT
-- Production API URL in `competition-calendar/.env.production`
-- i18n files at `competition-calendar/src/i18n/{zh-CN,en}.json` — must be kept in sync with `frontend/src/i18n/locales/` for shared keys
+- Production API URL in `student-pages/.env.production`
+- i18n files at `student-pages/src/i18n/{zh-CN,en}.json` — must be kept in sync with `frontend/src/i18n/locales/` for shared keys
 
 ### Deploy Package Rebuild
 After modifying backend source: copy `backend/src/` to `deploy-package/src/` and reinstall production dependencies in `deploy-package/`.
@@ -263,14 +263,14 @@ When adding new UI text, add keys to **both** `zh-CN.json` and `en.json`. Use `$
 
 ## Competition Calendar Architecture
 
-Both `frontend/src/views/competition/CompetitionCalendar.vue` (FAD main) and `competition-calendar/src/CompetitionCalendar.vue` (standalone) implement the same calendar UI with three views:
+Both `frontend/src/views/competition/CompetitionCalendar.vue` (FAD main) and `student-pages/src/CompetitionCalendar.vue` (standalone) implement the same calendar UI with three views:
 
 - **Month view**: 7-column grid with event bars (solid = competition, dashed = registration-only)
 - **Week view**: 7-column layout with event cards (same solid/dashed distinction)
 - **Year view**: 4×3 grid of month cards, each listing events with category/status tags (no date grid)
 - **Sidebar**: Today / This Week / Next Week event lists with status tags (`报名`/`比赛`)
 
-The standalone `competition-calendar/` app also includes `BestClassRanking.vue` and `BestDormRanking.vue` (routed via `competition-calendar/src/router.js`), which use the `/public-best-class` and `/public-best-dorm` endpoints respectively.
+The standalone `student-pages/` app also includes `BestClassRanking.vue` and `BestDormRanking.vue` (routed via `student-pages/src/router.js`), which use the `/public-best-class` and `/public-best-dorm` endpoints respectively.
 
 Key patterns:
 - `eventOnDay()` / `eventsOverlapRange()` — check competition period overlap
