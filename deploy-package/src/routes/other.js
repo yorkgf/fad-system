@@ -486,7 +486,7 @@ router.post('/teaching-tickets/reward/exchange', authMiddleware, async (req, res
   }
 })
 
-// 验证学生访问码（无需登录认证）
+// 验证学生访问码（无需登录认证）+ IP 白名单（GHS 数据库）
 router.post('/verify-student-access', async (req, res) => {
   try {
     const { code } = req.body
@@ -497,6 +497,17 @@ router.post('/verify-student-access', async (req, res) => {
     const record = await getGHSCollection('Student_Access').findOne({ code })
     if (!record) {
       return res.status(401).json({ success: false, error: '访问码无效' })
+    }
+
+    // IP 白名单检查（从 GHS.Student_Config 读取，无记录则不限制）
+    const config = await getGHSCollection('Student_Config').findOne({ key: 'allowed_ips' })
+    if (config && config.ips && config.ips.length > 0) {
+      const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+        || req.headers['x-real-ip']
+        || req.socket.remoteAddress
+      if (!config.ips.includes(clientIP)) {
+        return res.status(403).json({ success: false, error: '当前网络环境不允许访问' })
+      }
     }
 
     res.json({ success: true })
