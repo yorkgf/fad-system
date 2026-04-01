@@ -11,14 +11,19 @@
       />
     </div>
 
-    <el-tabs v-model="activeSource" type="card" class="source-tabs">
-      <el-tab-pane
+    <div class="source-tags">
+      <el-tag
         v-for="source in essaySources"
         :key="source.id"
-        :label="`${source.name} (${getTotalEssays(source)})`"
-        :name="source.id"
-      />
-    </el-tabs>
+        :type="sourceTagType[source.id]"
+        :effect="activeSource === source.id ? 'dark' : 'plain'"
+        size="large"
+        class="source-tag"
+        @click="activeSource = source.id"
+      >
+        {{ source.name }} ({{ getTotalEssays(source) }})
+      </el-tag>
+    </div>
 
     <div class="themes-grid">
       <div
@@ -64,6 +69,13 @@ const router = useRouter()
 
 const activeSource = ref('IvyLeague')
 const searchQuery = ref('')
+
+const sourceTagType = {
+  IvyLeague: '',
+  HarvardIndependent: 'danger',
+  UC: 'warning',
+  NiuXiaoNiuwen: 'success'
+}
 
 const currentSource = computed(() =>
   essaySources.find(s => s.id === activeSource.value)
@@ -118,12 +130,24 @@ function goToTheme(theme) {
   color: #303133;
 }
 
-.source-tabs {
+.source-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-bottom: 20px;
 }
 
-.source-tabs :deep(.el-tabs__header) {
-  margin-bottom: 0;
+.source-tag {
+  cursor: pointer;
+  font-size: 14px;
+  padding: 8px 18px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.source-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 .themes-grid {
