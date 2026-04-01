@@ -74,6 +74,8 @@
     "navBestDorm": "最佳寝室",
     "navBestClass": "最佳班级",
     "navUniversities": "大学信息",
+    "navEssayGuide": "写作指南",
+    "navEssayExamples": "范文浏览",
     "langSwitch": "English"
   },
   "access": {
@@ -93,5 +95,27 @@
     "noResults": "无匹配结果",
     "backToList": "返回列表",
     "notFound": "未找到该大学"
+  },
+  "essay": {
+    "searchLessons": "搜索写作要点...",
+    "selectLesson": "从左侧选择一个写作要点",
+    "coreIdea": "核心观点",
+    "detailedGuide": "详细指导",
+    "tags": "相关标签",
+    "relatedEssays": "相关范文",
+    "sources": "参考资料",
+    "essayExamples": "范文分类浏览",
+    "searchEssays": "搜索范文标题、作者...",
+    "more": "更多",
+    "noResults": "无匹配结果",
+    "backToExamples": "返回范文列表",
+    "notFound": "未找到内容",
+    "loadError": "加载失败",
+    "backToGuide": "返回写作指南",
+    "researchDocs": "研究文档",
+    "generalResearch": "综合研究",
+    "admittedProfiles": "录取学生画像",
+    "essayResonance": "学校价值观与文书共振",
+    "categoryResearch": "分类深度研究"
   }
 }

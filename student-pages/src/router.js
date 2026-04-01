@@ -32,6 +32,31 @@ const routes = [
     path: '/university/:id',
     name: 'UniversityDetail',
     component: () => import('./views/UniversityDetail.vue')
+  },
+  {
+    path: '/essay-guide',
+    name: 'EssayGuide',
+    component: () => import('./views/EssayGuide.vue')
+  },
+  {
+    path: '/essay-examples',
+    name: 'EssayExamples',
+    component: () => import('./views/EssayExamples.vue')
+  },
+  {
+    path: '/essay-detail/:source/:theme',
+    name: 'EssayDetail',
+    component: () => import('./views/EssayDetail.vue')
+  },
+  {
+    path: '/knowledge/:doc',
+    name: 'KnowledgeViewer',
+    component: () => import('./views/KnowledgeBaseViewer.vue')
+  },
+  {
+    path: '/knowledge/:doc/:category',
+    name: 'KnowledgeLesson',
+    component: () => import('./views/KnowledgeBaseViewer.vue')
   }
 ]
 

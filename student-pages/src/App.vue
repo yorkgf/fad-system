@@ -16,6 +16,12 @@
           <router-link to="/universities" class="nav-link" :class="{ active: $route.path.startsWith('/universit') }">
             {{ $t('app.navUniversities') }}
           </router-link>
+          <router-link to="/essay-guide" class="nav-link" :class="{ active: $route.path === '/essay-guide' }">
+            {{ $t('app.navEssayGuide') }}
+          </router-link>
+          <router-link to="/essay-examples" class="nav-link" :class="{ active: $route.path.startsWith('/essay-examples') || $route.path.startsWith('/essay-detail') }">
+            {{ $t('app.navEssayExamples') }}
+          </router-link>
         </nav>
       </div>
       <button class="lang-btn" @click="switchLang">

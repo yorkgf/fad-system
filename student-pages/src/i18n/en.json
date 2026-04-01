@@ -74,6 +74,8 @@
     "navBestDorm": "Best Dorm",
     "navBestClass": "Best Class",
     "navUniversities": "Universities",
+    "navEssayGuide": "Essay Guide",
+    "navEssayExamples": "Essay Examples",
     "langSwitch": "中文"
   },
   "access": {
@@ -93,5 +95,27 @@
     "noResults": "No results",
     "backToList": "Back to list",
     "notFound": "University not found"
+  },
+  "essay": {
+    "searchLessons": "Search writing lessons...",
+    "selectLesson": "Select a lesson from the sidebar",
+    "coreIdea": "Core Idea",
+    "detailedGuide": "Detailed Guide",
+    "tags": "Related Tags",
+    "relatedEssays": "Related Example Essays",
+    "sources": "Source References",
+    "essayExamples": "Essay Examples by Category",
+    "searchEssays": "Search essays by title, author...",
+    "more": "more",
+    "noResults": "No results",
+    "backToExamples": "Back to essay list",
+    "notFound": "Essay not found",
+    "loadError": "Failed to load essay",
+    "backToGuide": "Back to Essay Guide",
+    "researchDocs": "Research Documents",
+    "generalResearch": "General Research",
+    "admittedProfiles": "Admitted Student Profiles",
+    "essayResonance": "School Values & Essay Resonance",
+    "categoryResearch": "Category Deep Dives"
   }
 }
