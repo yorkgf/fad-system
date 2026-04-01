@@ -19,6 +19,15 @@ export function isAuthenticated() {
   }
 }
 
+export async function checkIPAccess() {
+  try {
+    const res = await axios.get(`${API_BASE}/check-student-access`)
+    return res.data?.success === true
+  } catch {
+    return false
+  }
+}
+
 export async function authenticate(code) {
   const res = await axios.post(`${API_BASE}/verify-student-access`, { code })
   if (res.data?.success) {

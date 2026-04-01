@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { isAuthenticated } from './auth.js'
+import { isAuthenticated, checkIPAccess, clearAuth } from './auth.js'
 
 const routes = [
   {
@@ -65,9 +65,15 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to) => {
+router.beforeEach(async (to) => {
   if (to.meta.public) return true
   if (!isAuthenticated()) {
+    return { name: 'Login', query: { redirect: to.fullPath } }
+  }
+  // 已认证用户：复验 IP 白名单
+  const ipOk = await checkIPAccess()
+  if (!ipOk) {
+    clearAuth()
     return { name: 'Login', query: { redirect: to.fullPath } }
   }
   return true

@@ -517,4 +517,23 @@ router.post('/verify-student-access', async (req, res) => {
   }
 })
 
+// 检查当前 IP 是否在白名单（无需登录码，用于已认证用户的 IP 复验）
+router.get('/check-student-access', async (req, res) => {
+  try {
+    const config = await getGHSCollection('Student_Config').findOne({ key: 'allowed_ips' })
+    if (config && config.ips && config.ips.length > 0) {
+      const clientIP = req.headers['x-forwarded-for']?.split(',')[0]?.trim()
+        || req.headers['x-real-ip']
+        || req.socket.remoteAddress
+      if (!config.ips.includes(clientIP)) {
+        return res.status(403).json({ success: false, error: '当前网络环境不允许访问' })
+      }
+    }
+    res.json({ success: true })
+  } catch (error) {
+    console.error('Check student access error:', error)
+    res.status(500).json({ success: false, error: '检查失败' })
+  }
+})
+
 module.exports = router
