@@ -49,6 +49,16 @@ const routes = [
     component: () => import('./views/EssayDetail.vue')
   },
   {
+    path: '/online-courses',
+    name: 'OnlineCourseList',
+    component: () => import('./views/OnlineCourseList.vue')
+  },
+  {
+    path: '/online-course/:id',
+    name: 'OnlineCourseDetail',
+    component: () => import('./views/OnlineCourseDetail.vue')
+  },
+  {
     path: '/knowledge/:doc',
     name: 'KnowledgeViewer',
     component: () => import('./views/KnowledgeBaseViewer.vue')

@@ -74,6 +74,7 @@
     "navBestDorm": "最佳寝室",
     "navBestClass": "最佳班级",
     "navUniversities": "大学信息",
+    "navOnlineCourses": "线上课程",
     "navEssayGuide": "写作指南",
     "navEssayExamples": "范文浏览",
     "langSwitch": "English"
@@ -117,5 +118,30 @@
     "admittedProfiles": "录取学生画像",
     "essayResonance": "学校价值观与文书共振",
     "categoryResearch": "分类深度研究"
+  },
+  "onlineCourses": {
+    "comparison": "快速对比",
+    "school": "大学",
+    "onlineCredit": "线上学分",
+    "forHighSchool": "高中生",
+    "forUndergrad": "本科生",
+    "costRange": "费用范围",
+    "deadline": "截止日期",
+    "highSchool": "高中生",
+    "undergraduate": "本科生",
+    "credits": "学分",
+    "catIvy": "常春藤联盟",
+    "catPrivate": "顶尖私立大学",
+    "catUC": "顶尖公立大学（UC系统）",
+    "backToList": "返回列表",
+    "officialSite": "官方网站",
+    "notFound": "未找到该项目",
+    "decisionGuide": "如何选择？",
+    "lowestCost": "预算最低",
+    "highestRank": "排名最高",
+    "intlFriendly": "国际学生最友好",
+    "mostCourses": "课程选择最多",
+    "mostFlexible": "时间最灵活",
+    "lowestBar": "申请门槛最低"
   }
 }

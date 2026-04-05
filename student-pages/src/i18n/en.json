@@ -74,6 +74,7 @@
     "navBestDorm": "Best Dorm",
     "navBestClass": "Best Class",
     "navUniversities": "Universities",
+    "navOnlineCourses": "Online Courses",
     "navEssayGuide": "Essay Guide",
     "navEssayExamples": "Essay Examples",
     "langSwitch": "中文"
@@ -117,5 +118,30 @@
     "admittedProfiles": "Admitted Student Profiles",
     "essayResonance": "School Values & Essay Resonance",
     "categoryResearch": "Category Deep Dives"
+  },
+  "onlineCourses": {
+    "comparison": "Quick Comparison",
+    "school": "University",
+    "onlineCredit": "Online Credit",
+    "forHighSchool": "High School",
+    "forUndergrad": "Undergrad",
+    "costRange": "Cost Range",
+    "deadline": "Deadline",
+    "highSchool": "High School",
+    "undergraduate": "Undergraduate",
+    "credits": " credits",
+    "catIvy": "Ivy League",
+    "catPrivate": "Top Private Universities",
+    "catUC": "Top Public Universities (UC System)",
+    "backToList": "Back to list",
+    "officialSite": "Official Website",
+    "notFound": "Program not found",
+    "decisionGuide": "How to Choose?",
+    "lowestCost": "Lowest Cost",
+    "highestRank": "Highest Ranking",
+    "intlFriendly": "Most Int'l-Friendly",
+    "mostCourses": "Most Course Options",
+    "mostFlexible": "Most Flexible Schedule",
+    "lowestBar": "Lowest Entry Bar"
   }
 }

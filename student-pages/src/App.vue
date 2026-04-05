@@ -16,6 +16,9 @@
           <router-link to="/universities" class="nav-link" :class="{ active: $route.path.startsWith('/universit') }">
             {{ $t('app.navUniversities') }}
           </router-link>
+          <router-link to="/online-courses" class="nav-link" :class="{ active: $route.path.startsWith('/online-course') }">
+            {{ $t('app.navOnlineCourses') }}
+          </router-link>
           <router-link to="/essay-guide" class="nav-link" :class="{ active: $route.path === '/essay-guide' }">
             {{ $t('app.navEssayGuide') }}
           </router-link>
