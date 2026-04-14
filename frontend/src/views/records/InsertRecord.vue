@@ -89,17 +89,41 @@
           </el-select>
         </el-form-item>
 
+        <!-- Class Selection (only for teaching ticket record types) -->
+        <el-form-item
+          v-if="isTeachingTicketRecord"
+          :label="$t('insertRecord.class')"
+          prop="classFilter"
+        >
+          <el-select
+            v-model="form.classFilter"
+            :placeholder="$t('insertRecord.selectClass')"
+            style="width: 100%"
+            filterable
+            clearable
+            :teleported="false"
+            @change="handleClassChange"
+          >
+            <el-option
+              v-for="item in classList"
+              :key="item"
+              :label="item"
+              :value="item"
+            />
+          </el-select>
+        </el-form-item>
+
         <!-- Student Selection -->
-        <el-form-item :label="isDormRelatedRecord && form.dorm ? $t('insertRecord.dormStudents') : $t('insertRecord.student')" prop="selectedStudents">
+        <el-form-item :label="studentSelectLabel" prop="selectedStudents">
           <el-select
             v-model="form.selectedStudents"
-            :placeholder="isDormRelatedRecord && form.dorm ? $t('insertRecord.dormStudentsPlaceholder') : $t('insertRecord.studentSearchPlaceholder')"
+            :placeholder="studentSelectPlaceholder"
             style="width: 100%"
             multiple
             filterable
-            :remote="!isDormRelatedRecord || !form.dorm"
+            :remote="isStudentSelectRemote"
             reserve-keyword
-            :remote-method="!isDormRelatedRecord || !form.dorm ? searchStudents : undefined"
+            :remote-method="studentRemoteMethod"
             :loading="studentsLoading"
             :teleported="false"
             @change="handleStudentsChange"
@@ -224,7 +248,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useI18n } from 'vue-i18n'
 import { useUserStore } from '@/stores/user'
 import { useCommonStore } from '@/stores/common'
-import { getStudents } from '@/api/students'
+import { getStudents, getClasses } from '@/api/students'
 import { insertRecord } from '@/api/records'
 import dayjs from 'dayjs'
 
@@ -237,6 +261,7 @@ const submitting = ref(false)
 const studentsLoading = ref(false)
 const students = ref([])
 const dorms = ref([]) // 寝室列表
+const classList = ref([]) // 班级列表
 const studentClassMap = ref({}) // 学生姓名 -> 班级 的映射
 const windowWidth = ref(window.innerWidth)
 
@@ -253,6 +278,7 @@ const form = reactive({
   sourceType: 'other',
   semester: '',
   dorm: '', // 寝室
+  classFilter: '', // 班级筛选（Teaching Ticket用）
   ticketCount: 1, // 票据数量（Reward/Teaching Reward Ticket/Teaching FAD Ticket）
   selectedStudents: [], // 选中的学生姓名列表
   date: dayjs().format('YYYY-MM-DD'),
@@ -273,6 +299,12 @@ const isDormRelatedRecord = computed(() => {
 const ticketRelatedTypes = ['Reward', 'Teaching Reward Ticket', 'Teaching FAD Ticket']
 const isTicketRecord = computed(() => {
   return ticketRelatedTypes.includes(form.recordType)
+})
+
+// 是否是教学票记录（Teaching Reward Ticket / Teaching FAD Ticket）
+const teachingTicketTypes = ['Teaching Reward Ticket', 'Teaching FAD Ticket']
+const isTeachingTicketRecord = computed(() => {
+  return teachingTicketTypes.includes(form.recordType)
 })
 
 // 需要填写事由的记录类型
@@ -316,6 +348,34 @@ const localizedSemesters = computed(() =>
   commonStore.semesters.map(s => ({ ...s, label: t(s.labelKey) }))
 )
 
+// Whether student select should be in remote search mode
+const isStudentSelectRemote = computed(() => {
+  if (isDormRelatedRecord.value && form.dorm) return false // dorm: static list
+  if (isTeachingTicketRecord.value && form.classFilter) return false // class: static list
+  return true // remote search
+})
+
+// Student select label based on context
+const studentSelectLabel = computed(() => {
+  if (isDormRelatedRecord.value && form.dorm) return t('insertRecord.dormStudents')
+  if (isTeachingTicketRecord.value && form.classFilter) return t('insertRecord.classStudents')
+  return t('insertRecord.student')
+})
+
+// Student select placeholder based on context
+const studentSelectPlaceholder = computed(() => {
+  if (isDormRelatedRecord.value && form.dorm) return t('insertRecord.dormStudentsPlaceholder')
+  if (isTeachingTicketRecord.value && form.classFilter) return t('insertRecord.classStudentsPlaceholder')
+  return t('insertRecord.studentSearchPlaceholder')
+})
+
+// Determine student select remote mode
+function studentRemoteMethod(query) {
+  if (isDormRelatedRecord.value && form.dorm) return // dorm mode: static list
+  if (isTeachingTicketRecord.value && form.classFilter) return // class mode: static list
+  searchStudents(query) // remote search mode
+}
+
 // Computed validation rules with i18n
 const rules = computed(() => ({
   recordType: [{ required: true, message: t('insertRecord.validation.recordTypeRequired'), trigger: 'change' }],
@@ -335,6 +395,8 @@ onMounted(async () => {
   }
   // 初始化时加载所有寝室列表
   await fetchDormList()
+  // 初始化时加载班级列表
+  await fetchClassList()
   // 监听窗口大小变化
   window.addEventListener('resize', handleResize)
 })
@@ -379,6 +441,10 @@ function handleRecordTypeChange() {
   if (!isDormRelatedRecord.value) {
     form.dorm = ''
   }
+  // 如果不是教学票记录，清空班级选择
+  if (!isTeachingTicketRecord.value) {
+    form.classFilter = ''
+  }
   // 重置学生选择
   form.selectedStudents = []
   students.value = []
@@ -404,6 +470,38 @@ async function handleDormChange() {
     console.log('设置后的学生列表:', students.value)
   } catch (error) {
     console.error('获取寝室学生失败:', error)
+    students.value = []
+  } finally {
+    studentsLoading.value = false
+  }
+}
+
+// 获取班级列表
+async function fetchClassList() {
+  try {
+    const res = await getClasses()
+    const classes = res.data || res
+    classList.value = classes.map(c => c.Class || c).sort()
+  } catch (error) {
+    console.error('获取班级列表失败:', error)
+  }
+}
+
+// 处理班级选择变化
+async function handleClassChange() {
+  // 重置学生选择
+  form.selectedStudents = []
+  students.value = []
+  studentClassMap.value = {}
+
+  if (!form.classFilter) return
+
+  studentsLoading.value = true
+  try {
+    const res = await getStudents({ class: form.classFilter })
+    students.value = res.data || res
+  } catch (error) {
+    console.error('获取班级学生失败:', error)
     students.value = []
   } finally {
     studentsLoading.value = false
@@ -550,6 +648,7 @@ async function handleSubmit() {
     form.selectedStudents = []
     form.description = ''
     form.dorm = ''
+    form.classFilter = ''
     form.ticketCount = 1
     studentClassMap.value = {}
     students.value = []
@@ -563,6 +662,7 @@ async function handleSubmit() {
     form.selectedStudents = []
     form.description = ''
     form.dorm = ''
+    form.classFilter = ''
     form.ticketCount = 1
     studentClassMap.value = {}
     students.value = []
@@ -574,6 +674,7 @@ async function handleSubmit() {
 function resetForm() {
   formRef.value.resetFields()
   form.dorm = ''
+  form.classFilter = ''
   form.ticketCount = 1
   form.selectedStudents = []
   students.value = []
