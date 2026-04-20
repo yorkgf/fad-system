@@ -601,12 +601,12 @@ async function printFADRecords(row) {
     try {
       const fontUrl = '/SourceHanSansSC-Regular.ttf'
       const fontResponse = await fetch(fontUrl)
-      if (fontResponse.ok) {
-        const fontBytes = await fontResponse.arrayBuffer()
-        font = await pdfDoc.embedFont(fontBytes)
-      } else {
-        throw new Error('字体文件不存在')
+      const fontContentType = fontResponse.headers.get('content-type') || ''
+      if (!fontResponse.ok || fontContentType.includes('text/html')) {
+        throw new Error('字体文件未正确部署')
       }
+      const fontBytes = await fontResponse.arrayBuffer()
+      font = await pdfDoc.embedFont(fontBytes)
     } catch (fontError) {
       console.warn('加载中文字体失败:', fontError)
       const { StandardFonts } = await import('pdf-lib')

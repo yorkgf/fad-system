@@ -165,30 +165,31 @@ function handleSelectionChange(rows) {
 
 async function handleDownload(row) {
   try {
-    // 加载PDF模板
-    const templateUrl = '/FAD Form.pdf'
+    const templateUrl = '/fad-form.pdf'
     const response = await fetch(templateUrl)
     if (!response.ok) {
       throw new Error(`加载PDF模板失败: ${response.status}`)
+    }
+    const contentType = response.headers.get('content-type') || ''
+    if (contentType.includes('text/html')) {
+      throw new Error('PDF模板文件未正确部署，请检查 public/fad-form.pdf 是否存在')
     }
 
     const templateBytes = await response.arrayBuffer()
     const pdfDoc = await PDFDocument.load(templateBytes)
 
-    // 注册 fontkit 以支持自定义字体
     pdfDoc.registerFontkit(fontkit)
 
-    // 加载中文字体
     const fontUrl = '/SourceHanSansSC-Regular.ttf'
     let font
     try {
       const fontResponse = await fetch(fontUrl)
-      if (fontResponse.ok) {
-        const fontBytes = await fontResponse.arrayBuffer()
-        font = await pdfDoc.embedFont(fontBytes)
-      } else {
-        throw new Error('字体文件不存在')
+      const fontContentType = fontResponse.headers.get('content-type') || ''
+      if (!fontResponse.ok || fontContentType.includes('text/html')) {
+        throw new Error('字体文件未正确部署')
       }
+      const fontBytes = await fontResponse.arrayBuffer()
+      font = await pdfDoc.embedFont(fontBytes)
     } catch (fontError) {
       console.warn('加载中文字体失败，尝试使用备用方案:', fontError)
       const { StandardFonts } = await import('pdf-lib')
