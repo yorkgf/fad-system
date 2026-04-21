@@ -9,8 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Add record type**: Update both `backend/src/utils/constants.js` AND `frontend/src/stores/common.js`
 - **Add new route**: Update `backend/src/index.js`, `deploy-package/src/index.js`, AND `deploy-package/index.js` (3 files)
 - **Deploy backend**: Copy `backend/src/` to `deploy-package/src/`, upload to SCF
-- **Build standalone calendar**: `cd student-pages && npm run build` (or `build:prod` for minified)
-- **Competition calendar dev**: `cd student-pages && npm run dev`
+- **Build student portal**: `cd student-pages && npm run build` (or `build:prod` for minified)
+- **Student portal dev**: `cd student-pages && npm run dev`
 - **Meeting arrangement parent portal dev**: `cd "meeting arrangement" && npm run dev` (static HTML, no build step)
 
 ## Project Overview
@@ -21,7 +21,7 @@ FAD (学生纪律与奖励管理系统) - Student discipline and reward manageme
 - **FAD Core**: Student discipline/reward management (GHA database)
 - **Meeting Arrangement (日程管理)**: Parent-teacher conference booking system (GHS database) - Teacher portal integrated into FAD
 - **Parent Portal**: Standalone parent-facing booking interface in `meeting arrangement/` folder — has its own SCF backend (`CFunction/scf_index.js`), static HTML pages (`pages/`), and separate `serverless.yml`. Not part of main FAD build. See `meeting arrangement/CLAUDE.md` for details.
-- **Competition Calendar (公开展示站)**: Standalone public-facing Vue app in `student-pages/` folder (separate build, deployed to separate EdgeOne Pages site, uses `/public-*` API endpoints without auth)
+- **Student Portal (公开展示站)**: Standalone Vue app in `student-pages/` folder — competition calendar, best-class/dorm rankings, university info (CDS data), essay guides, online courses, knowledge base. Deployed to separate EdgeOne Pages site. Public routes (`/public-*`) need no auth; other content requires access-code gate (IP-based + code verification, not JWT). See `student-pages/CLAUDE.md` for full architecture.
 
 ## Development Commands
 
@@ -68,7 +68,7 @@ Frontend dev server proxies `/api` to `http://localhost:8080` by default (config
 ## Architecture
 
 ### Tech Stack
-- **Frontend**: Vue 3 (Composition API) + Element Plus + Pinia + Vue Router + Axios + Vite (ES Modules)
+- **Frontend**: Vue 3 (Composition API) + Element Plus + Pinia + Vue Router + Axios + Vite (ES Modules) + pdf-lib (client-side PDF generation for FAD notices and teaching tickets)
 - **Backend**: Express + MongoDB (native driver, not Mongoose) + JWT + serverless-http (CommonJS)
 - **Deployment**: Tencent SCF (backend) + EdgeOne Pages (frontend)
 
@@ -106,7 +106,7 @@ See `frontend/src/router/index.js` for the complete route permission matrix.
 ### Key Architectural Patterns
 - **Unified record insertion**: `POST /api/records` is a single endpoint that dispatches to different MongoDB collections based on the `recordType` field in the request body (mapped via `RECORD_TYPE_TO_COLLECTION` in `constants.js`)
 - **Record accumulation**: Records accumulate per `ACCUMULATE_RULES` in `constants.js`, auto-triggering FAD/Reward creation at thresholds
-- **FAD source tracking**: Every FAD has a `FAD来源类型` field (dorm/teach/elec/other) for analytics
+- **FAD source tracking**: Every FAD has a `FAD来源类型` field — four source types: `dorm` (寝室), `teach` (教学), `elec` (电子产品), `other` (其他) — for analytics
 - **Reward offset logic**: 2 Rewards offset FAD execution; 3 Rewards offset the entire FAD record. Operates on **academic year** scope (Fall + following Spring), not single semester
 - **Duplicate prevention**: `寝室表扬`, `寝室批评`, `寝室垃圾未倒` cannot be duplicated for same student on same day
 - **Dual database**: GHA (main FAD data) + GHS (meeting arrangement); see `db.js` for `getCollection()` vs `getGHSCollection()`
@@ -121,12 +121,22 @@ See `frontend/src/router/index.js` for the complete route permission matrix.
 - `frontend/src/router/index.js` - Route permission matrix by user group
 - `frontend/src/api/request.js` - Axios instance with auth interceptor and error handling (401→auto logout)
 
+### Client-Side PDF Generation
+`pdf-lib` + `@pdf-lib/fontkit` generate PDF documents in the browser (no server-side rendering). Used in:
+- `FADDeliver.vue` - FAD notice slips (`fad-form.pdf` template)
+- `TeachingTickets.vue` - Teaching tickets (`reward-template.pdf` template)
+- `PraiseReward.vue` - Praise/reward certificates (`reward-template.pdf` template)
+
+PDF templates in `public/`: `fad-form.pdf` and `reward-template.pdf` — loaded at runtime, filled with student/record data.
+
 ### AI Navigation Files
 - `AGENTS.md` (root) - Top-level project map with code symbols and conventions
 - `backend/src/routes/AGENTS.md` - Detailed backend route documentation
 - `frontend/AGENTS.md` - Frontend-specific guidance
 - `frontend/src/views/AGENTS.md` - Frontend view component documentation
 - `meeting arrangement/CLAUDE.md` - Parent portal architecture and deployment
+- `student-pages/CLAUDE.md` - Student portal architecture, auth, data files, and deployment
+- `deploy-package/DEPLOY.md` - SCF deployment instructions for the backend package
 - `docs/user-guides/` - Per-role user guides (系统管理员, 班主任, 任课老师, Foreign Faculty, 保洁阿姨, etc.)
 - `docs/plans/` - Implementation plans (i18n, competition calendar) for historical context
 
@@ -270,7 +280,12 @@ Both `frontend/src/views/competition/CompetitionCalendar.vue` (FAD main) and `st
 - **Year view**: 4×3 grid of month cards, each listing events with category/status tags (no date grid)
 - **Sidebar**: Today / This Week / Next Week event lists with status tags (`报名`/`比赛`)
 
-The standalone `student-pages/` app also includes `BestClassRanking.vue` and `BestDormRanking.vue` (routed via `student-pages/src/router.js`), which use the `/public-best-class` and `/public-best-dorm` endpoints respectively.
+The standalone `student-pages/` app also includes:
+- `BestClassRanking.vue` and `BestDormRanking.vue` — use `/public-best-class` and `/public-best-dorm` endpoints
+- `views/UniversityList.vue` / `UniversityDetail.vue` — university CDS data with markdown-it rendering from `src/data/university-info/*.md`
+- `views/EssayGuide.vue` / `EssayExamples.vue` / `EssayDetail.vue` — essay knowledge graph and example essays from `public/essays/{source}/{theme}.md`
+- `views/OnlineCourseList.vue` / `OnlineCourseDetail.vue` — online course listings
+- `views/KnowledgeBaseViewer.vue` — renders markdown docs from `public/knowledge-graph/*.md`
 
 Key patterns:
 - `eventOnDay()` / `eventsOverlapRange()` — check competition period overlap
@@ -289,6 +304,7 @@ When modifying one calendar file, apply the same changes to the other to keep th
 - `deploy-package/index.js` (root) is the **actual SCF entry point** (via `scf_bootstrap`), separate from `deploy-package/src/index.js` (which is a copy of `backend/src/index.js`). When adding new routes, update **three files**: `backend/src/index.js`, `deploy-package/src/index.js`, and `deploy-package/index.js` — the root entry point uses `./src/routes/*` paths and registers routes independently
 - `commonStore.semesters` contains objects `{ value, labelKey }`, not plain strings. Use `item.value` for `:key`/`:value` and `$t(item.labelKey)` for `:label` in `<el-option>`
 - When creating public-facing standalone sites, add `/public-*` route variants without `authMiddleware` (e.g., `/public-events`, `/public-best-dorm`)
+- `student-pages/` has its own access-code auth gate (IP check + access code, not JWT) — only the `/login` route is truly public; all other routes require passing the auth guard. Backend endpoints: `POST /api/verify-student-access`, `GET /api/check-student-access` (in `other.js`, no `authMiddleware`)
 - Backend uses `dotenv` in dev mode (`index.js`) but it's not in `backend/package.json` - it relies on a hoisted install or must be installed separately
 - Email notifications use Brevo API - `NO_EMAIL_TYPES` in `constants.js` lists excluded record types (`寝室表扬`, `Teaching Reward Ticket`, `Reward`)
 - Teacher login data is initialized via the "教职工" page in the "其他" module

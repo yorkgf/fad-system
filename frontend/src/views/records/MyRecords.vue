@@ -366,6 +366,8 @@ const localizedFadSourceTypes = computed(() =>
 const availableFilterOptions = computed(() => {  // C组用户只能看到寝室相关记录
   if (userStore.isCleaner) {
     return [
+      { label: t('myRecords.collectionLeaveRoomLate'), value: 'Leave_Room_Late_Records' },
+      { label: t('myRecords.collectionBackSchoolLate'), value: 'Back_School_Late_Records' },
       { label: t('myRecords.collectionRoomPraise'), value: 'Room_Praise_Records' },
       { label: t('myRecords.collectionRoomWarning'), value: 'Room_Warning_Records' },
       { label: t('myRecords.collectionRoomTrash'), value: 'Room_Trash_Records' }

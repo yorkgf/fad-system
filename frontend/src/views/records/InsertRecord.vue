@@ -316,6 +316,8 @@ const localizedRecordTypes = computed(() => {
   // C组用户只能录入寝室相关记录
   if (userStore.isCleaner) {
     return [
+      { value: '寝室迟出', label: t('recordTypeLabels.dormLateExit'), group: 'C' },
+      { value: '未按规定返校', label: t('recordTypeLabels.returnViolation'), group: 'C' },
       { value: '寝室表扬', label: t('recordTypeLabels.dormPraise'), group: 'C' },
       { value: '寝室批评', label: t('recordTypeLabels.dormCriticism'), group: 'C' },
       { value: '寝室垃圾未倒', label: t('recordTypeLabels.dormTrashNotDumped'), group: 'C' }
