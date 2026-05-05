@@ -359,25 +359,26 @@ router.post('/sessions', authMiddleware, scheduleAccessMiddleware, async (req, r
 // 批量创建日程时段
 router.post('/sessions/batch', authMiddleware, scheduleAccessMiddleware, async (req, res) => {
   try {
-    const { dates, startTime, endTime, location, maxBookings = 1, note } = req.body
+    const { sessions: inputSessions } = req.body
 
-    if (!dates || !Array.isArray(dates) || dates.length === 0) {
-      return res.status(400).json({ success: false, error: '请至少选择一个日期' })
+    if (!inputSessions || !Array.isArray(inputSessions) || inputSessions.length === 0) {
+      return res.status(400).json({ success: false, error: '请至少提供一个时段' })
     }
 
-    const sessions = dates.map(date => ({
+    const now = new Date()
+    const sessions = inputSessions.map(s => ({
       teacherEmail: req.user.email,
       teacherName: req.user.name,
-      date: date,
-      startTime,
-      endTime,
-      location: location || '',
-      maxBookings: parseInt(maxBookings) || 1,
+      date: s.date,
+      startTime: s.startTime,
+      endTime: s.endTime,
+      location: s.location || '',
+      maxBookings: parseInt(s.maxBookings) || 1,
       currentBookings: 0,
-      note: note || '',
+      note: s.note || '',
       isActive: true,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      createdAt: now,
+      updatedAt: now
     }))
 
     const result = await getGHSCollection(GHSCollections.Sessions).insertMany(sessions)
