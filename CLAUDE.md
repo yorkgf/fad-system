@@ -103,9 +103,11 @@ Six user groups defined in `backend/src/utils/userGroups.js`:
 
 See `frontend/src/router/index.js` for the complete route permission matrix.
 
+**Notable permission detail**: Admin A (`'A'`) is excluded from `COMPETITION_MANAGE_GROUPS` — all non-C groups except A can manage competitions. This is intentional: A has school-level admin focus, while S/B/T/F handle competition CRUD.
+
 ### Key Architectural Patterns
 - **Unified record insertion**: `POST /api/records` is a single endpoint that dispatches to different MongoDB collections based on the `recordType` field in the request body (mapped via `RECORD_TYPE_TO_COLLECTION` in `constants.js`)
-- **Record accumulation**: Records accumulate per `ACCUMULATE_RULES` in `constants.js`, auto-triggering FAD/Reward creation at thresholds
+- **Record accumulation**: Records accumulate per `ACCUMULATE_RULES` in `constants.js`, auto-triggering FAD/Reward creation at thresholds (see "Core Business Rules" for full table)
 - **FAD source tracking**: Every FAD has a `FAD来源类型` field — four source types: `dorm` (寝室), `teach` (教学), `elec` (电子产品), `other` (其他) — for analytics
 - **Reward offset logic**: 2 Rewards offset FAD execution; 3 Rewards offset the entire FAD record. Operates on **academic year** scope (Fall + following Spring), not single semester
 - **Duplicate prevention**: `寝室表扬`, `寝室批评`, `寝室垃圾未倒` cannot be duplicated for same student on same day
@@ -116,10 +118,12 @@ See `frontend/src/router/index.js` for the complete route permission matrix.
 ### Key Files for Business Logic
 - `backend/src/utils/constants.js` - Accumulation rules, record type→collection mappings, FAD source types, threshold constants, `DB_FIELDS` for standardized field names
 - `backend/src/utils/userGroups.js` - User group definitions and permission helper functions
-- `backend/src/routes/records.js` - Core record insertion with accumulation, duplicate prevention, reward offset logic (~1000 lines, largest route file)
+- `backend/src/utils/pagination.js` - Shared pagination helper for paginated queries
+- `backend/src/routes/records.js` - Core record insertion with accumulation, duplicate prevention, reward offset logic (~1100 lines, largest route file)
 - `frontend/src/stores/common.js` - Record type definitions (must stay in sync with backend), semester utilities
 - `frontend/src/router/index.js` - Route permission matrix by user group
 - `frontend/src/api/request.js` - Axios instance with auth interceptor and error handling (401→auto logout)
+- `frontend/src/utils/userGroups.js` - Mirror of backend's `userGroups.js` (used by router for client-side permission checks)
 
 ### Client-Side PDF Generation
 `pdf-lib` + `@pdf-lib/fontkit` generate PDF documents in the browser (no server-side rendering). Used in:
@@ -130,6 +134,9 @@ See `frontend/src/router/index.js` for the complete route permission matrix.
 PDF templates in `public/`: `fad-form.pdf` and `reward-template.pdf` — loaded at runtime, filled with student/record data.
 
 ### AI Navigation Files
+
+**Note**: AGENTS.md files were generated 2026-01-26 and have stale line counts and directory references. Trust the code, not the AGENTS.md counts.
+
 - `AGENTS.md` (root) - Top-level project map with code symbols and conventions
 - `backend/src/routes/AGENTS.md` - Detailed backend route documentation
 - `frontend/AGENTS.md` - Frontend-specific guidance
@@ -146,7 +153,6 @@ PDF templates in `public/`: `fad-form.pdf` and `reward-template.pdf` — loaded 
 
 - MongoDB native driver (not Mongoose) - queries use MongoDB aggregation syntax directly
 - Main database: `GHA` via `MONGO_URI`; secondary: `GHS` via `GHS_MONGO_URI`
-- `GHS.sessions.csv` - Export of meeting booking data from GHS database (for backup/analysis)
 - Collections follow `{Type}_Records` pattern (e.g., `FAD_Records`, `Late_Records`)
 - System collections: `Teachers`, `Students`, `All_Classes`
 - Special collections without `_Records` suffix: `Teaching_FAD_Ticket`, `Teaching_Reward_Ticket`
@@ -238,13 +244,11 @@ cd frontend && npm run build:prod
 ```
 - Production API URL configured in `frontend/.env.production` as `VITE_API_BASE_URL`
 
-### Competition Calendar Standalone (EdgeOne Pages)
+### Student Portal (EdgeOne Pages)
 ```bash
 cd student-pages && npm run build
 # Deploy dist/ folder to a separate EdgeOne Pages site
 ```
-- Separate Vue 3 + Vite + Element Plus app (no Pinia, no auth)
-- Uses public API endpoints (`/public-events`, `/public-best-dorm`, `/public-best-class`) that require no JWT
 - Production API URL in `student-pages/.env.production`
 - i18n files at `student-pages/src/i18n/{zh-CN,en}.json` — must be kept in sync with `frontend/src/i18n/locales/` for shared keys
 
@@ -253,13 +257,7 @@ After modifying backend source: copy `backend/src/` to `deploy-package/src/` and
 
 ## Internationalization (i18n)
 
-The frontend supports bilingual UI (Chinese/English) via `vue-i18n` v9.
-
-### Key Files
-- `frontend/src/i18n/index.js` - i18n instance, locale storage (`localStorage` key `fad-locale`, default `zh-CN`), Element Plus locale integration
-- `frontend/src/i18n/locales/zh-CN.json` - Chinese translations
-- `frontend/src/i18n/locales/en.json` - English translations
-- `frontend/src/components/LangSwitch.vue` - Language toggle dropdown (triggers page reload to apply Element Plus locale)
+The frontend supports bilingual UI (Chinese/English) via `vue-i18n` v9. Configuration in `frontend/src/i18n/index.js`, translations in `frontend/src/i18n/locales/{zh-CN,en}.json`.
 
 ### i18n Patterns
 - **Record types** use `labelKey` in `stores/common.js` (e.g., `'recordTypes.morningLate'`) instead of hardcoded Chinese labels; computed properties resolve these to translated strings
@@ -271,32 +269,11 @@ The frontend supports bilingual UI (Chinese/English) via `vue-i18n` v9.
 ### Adding Translations
 When adding new UI text, add keys to **both** `zh-CN.json` and `en.json`. Use `$t('section.key')` in templates or `t('section.key')` from `useI18n()` in script setup.
 
-## Competition Calendar Architecture
+## Competition Calendar
 
-Both `frontend/src/views/competition/CompetitionCalendar.vue` (FAD main) and `student-pages/src/CompetitionCalendar.vue` (standalone) implement the same calendar UI with three views:
+`frontend/src/views/competition/CompetitionCalendar.vue` (FAD main) and `student-pages/src/CompetitionCalendar.vue` (standalone) implement the same calendar UI (month/week/year views + sidebar). **When modifying one calendar file, apply the same changes to the other to keep them in sync.**
 
-- **Month view**: 7-column grid with event bars (solid = competition, dashed = registration-only)
-- **Week view**: 7-column layout with event cards (same solid/dashed distinction)
-- **Year view**: 4×3 grid of month cards, each listing events with category/status tags (no date grid)
-- **Sidebar**: Today / This Week / Next Week event lists with status tags (`报名`/`比赛`)
-
-The standalone `student-pages/` app also includes:
-- `BestClassRanking.vue` and `BestDormRanking.vue` — use `/public-best-class` and `/public-best-dorm` endpoints
-- `views/UniversityList.vue` / `UniversityDetail.vue` — university CDS data with markdown-it rendering from `src/data/university-info/*.md`
-- `views/EssayGuide.vue` / `EssayExamples.vue` / `EssayDetail.vue` — essay knowledge graph and example essays from `public/essays/{source}/{theme}.md`
-- `views/OnlineCourseList.vue` / `OnlineCourseDetail.vue` — online course listings
-- `views/KnowledgeBaseViewer.vue` — renders markdown docs from `public/knowledge-graph/*.md`
-
-Key patterns:
-- `eventOnDay()` / `eventsOverlapRange()` — check competition period overlap
-- `regOnDay()` / `regOverlapRange()` — check registration period overlap
-- `regEvents` in month/week cells = events in registration period but NOT competition period (dedup)
-- Sidebar events have `_isCompeting` / `_isRegistering` flags (can both be true)
-- CSS uses Unicode escapes for Chinese category class names (e.g., `.cat-\6570\5B66` for 数学)
-- Registration bars/cards use `dashed` border style, competition uses solid background
-- Category colors: 数学=#409eff, 理科=#2ecc71, 文科=#e74c3c, 体育=#67c23a, 艺术=#9b59b6, 科技=#e6a23c, 其他=#909399
-
-When modifying one calendar file, apply the same changes to the other to keep them in sync.
+The standalone `student-pages/` app uses public API endpoints (`/public-events`, `/public-best-dorm`, `/public-best-class`) that require no JWT. See `student-pages/CLAUDE.md` for full architecture.
 
 ## Gotchas
 
