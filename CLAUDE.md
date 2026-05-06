@@ -11,7 +11,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **Deploy backend**: Copy `backend/src/` to `deploy-package/src/`, upload to SCF
 - **Build student portal**: `cd student-pages && npm run build` (or `build:prod` for minified)
 - **Student portal dev**: `cd student-pages && npm run dev`
-- **Meeting arrangement parent portal dev**: `cd "meeting arrangement" && npm run dev` (static HTML, no build step)
+- **Meeting arrangement parent portal**: Static HTML in `meeting arrangement/pages/` — no build step, open directly or deploy to EdgeOne Pages
 
 ## Project Overview
 
@@ -138,11 +138,15 @@ PDF templates in `public/`: `fad-form.pdf` and `reward-template.pdf` — loaded 
 **Note**: AGENTS.md files were generated 2026-01-26 and have stale line counts and directory references. Trust the code, not the AGENTS.md counts.
 
 - `AGENTS.md` (root) - Top-level project map with code symbols and conventions
+- `backend/src/AGENTS.md` - Backend source structure overview
 - `backend/src/routes/AGENTS.md` - Detailed backend route documentation
 - `frontend/AGENTS.md` - Frontend-specific guidance
+- `frontend/src/AGENTS.md` - Frontend source structure
 - `frontend/src/views/AGENTS.md` - Frontend view component documentation
+- `frontend/src/api/AGENTS.md` - API wrapper documentation
 - `meeting arrangement/CLAUDE.md` - Parent portal architecture and deployment
 - `student-pages/CLAUDE.md` - Student portal architecture, auth, data files, and deployment
+- `deploy-package/CLAUDE.md` - Deploy package guidance
 - `deploy-package/DEPLOY.md` - SCF deployment instructions for the backend package
 - `docs/user-guides/` - Per-role user guides (系统管理员, 班主任, 任课老师, Foreign Faculty, 保洁阿姨, etc.)
 - `docs/plans/` - Implementation plans (i18n, competition calendar) for historical context

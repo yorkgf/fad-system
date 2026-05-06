@@ -3269,7 +3269,7 @@
                 currentGrade = 'G11';
             } else if (className.startsWith('十年级')) {
                 currentGrade = 'G10';
-            } else if (className.startsWith('九年级')) {
+            } else if (className.startsWith('九年级') || className.startsWith('预备')) {
                 currentGrade = 'Pre';
             } else {
                 // 如果无法匹配，尝试从班级前3个字符提取（如G10A）
