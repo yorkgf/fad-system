@@ -105,42 +105,6 @@
       </div>
     </div>
 
-    <!-- 关键决策维度 -->
-    <div class="decision-section">
-      <h2 class="section-title">{{ $t('onlineCourses.decisionGuide') }}</h2>
-      <div class="decision-grid">
-        <div class="decision-card" @click="$router.push('/online-course/nyu')">
-          <div class="decision-icon">💰</div>
-          <h4>{{ $t('onlineCourses.lowestCost') }}</h4>
-          <p>NYU / Harvard — $4,180/4{{ $t('onlineCourses.credits') }}</p>
-        </div>
-        <div class="decision-card" @click="$router.push('/online-course/harvard')">
-          <div class="decision-icon">🏆</div>
-          <h4>{{ $t('onlineCourses.highestRank') }}</h4>
-          <p>Harvard (#3)</p>
-        </div>
-        <div class="decision-card" @click="$router.push('/online-course/cornell')">
-          <div class="decision-icon">🌍</div>
-          <h4>{{ $t('onlineCourses.intlFriendly') }}</h4>
-          <p>Cornell</p>
-        </div>
-        <div class="decision-card" @click="$router.push('/online-course/ucla')">
-          <div class="decision-icon">📚</div>
-          <h4>{{ $t('onlineCourses.mostCourses') }}</h4>
-          <p>UCLA — 800+</p>
-        </div>
-        <div class="decision-card" @click="$router.push('/online-course/georgetown')">
-          <div class="decision-icon">🕐</div>
-          <h4>{{ $t('onlineCourses.mostFlexible') }}</h4>
-          <p>Georgetown</p>
-        </div>
-        <div class="decision-card" @click="$router.push('/online-course/ucsd')">
-          <div class="decision-icon">🚪</div>
-          <h4>{{ $t('onlineCourses.lowestBar') }}</h4>
-          <p>UCSD</p>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -352,57 +316,12 @@ function categoryIcon(catId) {
   gap: 4px;
 }
 
-/* Decision guide */
-.decision-section {
-  margin-bottom: 36px;
-}
-
-.decision-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-
-.decision-card {
-  background: #fff;
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.25s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  border: 1px solid #f0f0f0;
-}
-
-.decision-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-  border-color: #5b9bd5;
-}
-
-.decision-icon {
-  font-size: 28px;
-  margin-bottom: 8px;
-}
-
-.decision-card h4 {
-  font-size: 14px;
-  color: #303133;
-  margin-bottom: 4px;
-}
-
-.decision-card p {
-  font-size: 13px;
-  color: #909399;
-}
-
 @media (max-width: 1024px) {
   .program-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
   .program-grid { grid-template-columns: 1fr; }
-  .decision-grid { grid-template-columns: repeat(2, 1fr); }
   .section-title { font-size: 18px; }
   .comparison-table { font-size: 13px; }
   .comparison-table th,
@@ -410,6 +329,5 @@ function categoryIcon(catId) {
 }
 
 @media (max-width: 480px) {
-  .decision-grid { grid-template-columns: 1fr; }
 }
 </style>
