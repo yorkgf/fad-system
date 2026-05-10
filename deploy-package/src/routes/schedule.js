@@ -632,13 +632,13 @@ router.put('/bookings/:id', authMiddleware, scheduleAccessMiddleware, async (req
         return res.status(403).json({ success: false, error: '无权限修改此预约' })
       }
 
-      // 如果是取消预约，清除时段中的预约信息
+      // 如果是取消预约，清除时段中的预约信息，使时段重新对家长可见
       if (status === 'cancelled') {
         await getGHSCollection(GHSCollections.Sessions).updateOne(
           { _id: new ObjectId(sessionId) },
           {
             $set: {
-              bookedBy: '老师关闭',
+              bookedBy: '',
               studentName: '',
               parentPhone: '',
               note: '',
@@ -756,7 +756,7 @@ router.get('/my-sessions', authMiddleware, scheduleAccessMiddleware, async (req,
           .toArray()
 
         // 2. 如果没有 bookings 记录，但有 bookedBy 字段（历史数据），构建预约信息
-        if (bookings.length === 0 && session.bookedBy && session.bookedBy.trim() !== '' && session.bookedBy !== '老师关闭') {
+        if (bookings.length === 0 && session.bookedBy && session.bookedBy.trim() !== '') {
           bookings = [{
             _id: 'legacy_' + session._id,
             sessionId: session._id.toString(),
